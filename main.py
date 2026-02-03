@@ -111,6 +111,10 @@ class EXEBuilderApp(ctk.CTk):
         self.icon_user_cleared = False
         self.output_user_cleared = False
         self.exe_name_user_cleared = False
+        
+        self._was_build_ready = False
+        self._dependency_popup_shown = False
+        
 
 
         # =============================================================
@@ -471,7 +475,10 @@ class EXEBuilderApp(ctk.CTk):
             placeholder_text="No output folder selected..."
         )
         self.output_entry.pack(side="left")
+        
+        
 
+        
         def get_desktop_path():
             return os.path.join(os.path.expanduser("~"), "Desktop")
 
@@ -570,6 +577,62 @@ class EXEBuilderApp(ctk.CTk):
         self.state_ctrl.load_state()
         self._loading_state = False
         self.validator.update_build_button_state()
+        
+        self.validation_controller = ValidationController(self)
+        
+    def show_dependency_warning_popup(self, packages: list[str]):
+        if not packages:
+            return
+
+        self.popup = ctk.CTkToplevel(self)
+        self.popup.title("Dependency Notice")
+        self.popup.resizable(False, False)
+        self.popup.attributes("-topmost", True)
+
+        # Ensure geometry is up to date
+        self.update_idletasks()
+
+        # Position popup to the right of main window
+        x = self.winfo_x() + self.winfo_width() + 10
+        y = self.winfo_y() + 50
+        self.popup.geometry(f"+{x}+{y}")
+
+        frame = ctk.CTkFrame(self.popup)
+        frame.pack(fill="both", expand=True, padx=15, pady=15)
+
+        ctk.CTkLabel(
+            frame,
+            text="This script references the following external packages:",
+            font=ctk.CTkFont("Rubik UI",size=15, weight="bold"),
+            wraplength=320,
+            justify="left"
+        ).pack(anchor="w", pady=(0, 8))
+
+        pkg_text = ", ".join(packages)
+
+        ctk.CTkLabel(
+            frame,
+            text=pkg_text,
+            font=ctk.CTkFont("Rubik UI",size=15, weight="bold"),
+            wraplength=320,
+            justify="left"
+        ).pack(anchor="w", pady=(0, 12))
+
+        ctk.CTkLabel(
+            frame,
+            text="Ensure they are installed in the selected Python environment. E.g. py -3.14 -m pip install <package-name>.",
+            font=("Rubik UI", 15, "bold"),
+            wraplength=320,
+            justify="left"
+        ).pack(anchor="w", pady=(0, 12))
+
+        ctk.CTkButton(
+            frame,
+            text="OK",
+            font=("Rubik UI", 15, "bold"),
+            command=self.popup.destroy,
+            width=80
+        ).pack(anchor="e")
 
     # -------------------------------------------------------------
     #  Restore always-on-top when user returns to the app
@@ -578,7 +641,8 @@ class EXEBuilderApp(ctk.CTk):
     def _restore_topmost(self, event=None):
         # Restore always-on-top only when user returns to the app
         self.attributes("-topmost", True)
-
+        
+    
     # -------------------------------------------------------------
     #  Build EXE
     # -------------------------------------------------------------
@@ -591,6 +655,8 @@ class EXEBuilderApp(ctk.CTk):
 
         from datetime import datetime
         import os, time, subprocess
+        
+        
 
         timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S") 
         self.debug_log_path = os.path.join( os.path.expanduser("~"), "Desktop", f"EXE_BUILDER_DEBUG_{timestamp}.log" )
@@ -774,6 +840,8 @@ class EXEBuilderApp(ctk.CTk):
             os.path.join(outdir, "build", final_exe_name),
             os.path.join(outdir, "spec", final_exe_name),
         ]
+        
+        
 
         # ==================================================
         # Run PyInstaller (threaded)
@@ -823,6 +891,8 @@ class EXEBuilderApp(ctk.CTk):
                 self.after(0, self.restore_build_ui)
 
         threading.Thread(target=run_build, daemon=True).start()
+        
+
 
     # ==================================================
     # UI RESTORE: Build finished / aborted / cancelled
