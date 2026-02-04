@@ -1,6 +1,8 @@
-Win 11 → Python → EXE Builder
+**Win 11 → Python → EXE Builder**
 
-Why this exists
+
+
+**Why this exists:**
 
 
 
@@ -25,9 +27,21 @@ This tool is designed around the entire Windows EXE build workflow, not just inv
 
 
 * Windows 11
-* Python 3.13 or 3.14 (recommended)
+* Python 3.11 3.12 3.13 or 3.14 
 * PyInstaller installed in the selected interpreter
 * Not tested or supported on other operating systems
+
+
+
+The tool assumes a working Python environment and focuses on providing a safe, predictable build process, not dependency analysis or repair.
+
+
+
+At the time of testing:
+
+
+
+Python 3.11 3.12 3.13 and 3.14 produced stable builds
 
 
 
@@ -82,20 +96,6 @@ This tool does not:
 * **Build the EXE for the EXE builder yourself**
 
 
-
-The tool assumes a working Python environment and focuses on providing a safe, predictable build process, not dependency analysis or repair.
-
-
-
-At the time of testing:
-
-
-
-Python 3.13 and 3.14 produced stable builds
-
-
-
-Python 3.11–3.12 are not supported due to PyInstaller/runtime incompatibilities observed during testing
 
 
 
