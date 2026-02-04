@@ -14,9 +14,9 @@ This tool is designed around the entire Windows EXE build workflow, not just inv
 
 
 
-* selecting and validating Python interpreters.
-* managing build inputs and outputs.
-* executing PyInstaller in a controlled, predictable way.
+* Selecting and validating Python interpreters.
+* Managing build inputs and outputs.
+* Executing PyInstaller in a controlled, predictable way.
 * It also includes shortcuts to Windows Installed Apps for managing Python installations and direct links to Python.org, reducing context switching when configuring or repairing build environments.
 * Win 11 → Python → EXE Builder converts Python scripts and projects into standalone Windows executables by orchestrating interpreter selection, validation, build execution, and clean-up around PyInstaller.
 
@@ -33,15 +33,15 @@ This tool is designed around the entire Windows EXE build workflow, not just inv
 
 
 
-The tool assumes a working Python environment and focuses on providing a safe, predictable build process, not dependency analysis or repair.
+**The tool assumes a working Python environment and focuses on providing a safe, predictable build process, not dependency analysis or repair.**
 
 
 
-At the time of testing:
+**At the time of testing:**
 
 
 
-Python 3.11 3.12 3.13 and 3.14 produced stable builds
+**Python 3.11 3.12 3.13 and 3.14 produced stable builds**
 
 
 
@@ -65,8 +65,10 @@ Users must run the application from source using a local Python installation.
 
 * Each user’s settings are stored locally on their own machine.
 * No user configuration or state is embedded inside any executable binary.
-* Application state is stored in a local JSON file alongside the running script.
+* Must have \_internal folder and any json state and the app EXE in the same folder, can then just move it all wherever you want.
 * No configuration or data is shared, uploaded, or transmitted.
+* Pin to taskbar works
+* Copy shortcut works
 
 
 
@@ -89,11 +91,11 @@ Users must run the application from source using a local Python installation.
 
 
 
-* **Install Python 3.13 or 3.14**
+* **Install a recent python (haven't tested it on earier versions before 3.11)**
 * **py -3.14 -m pip install pyinstaller**
 * **Clone this repository**
 * **In the GUI, select the Python interpreter that has PyInstaller installed, then start the build**
-* **Build the EXE for the EXE builder yourself**
+* **Build the EXE for the EXE builder itself**
 
 
 
