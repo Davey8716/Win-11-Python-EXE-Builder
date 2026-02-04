@@ -49,13 +49,13 @@ This tool is designed around the entire Windows EXE build workflow, not just inv
 
 
 
-This repository contains source code only.
+* This repository contains source code only.
 
 
 
-Prebuilt executables are not distributed through this repository.
+* Prebuilt executables are not distributed through this repository.
 
-Users must run the application from source using a local Python installation.
+* Users must run the application from source using a local Python installation.
 
 
 
