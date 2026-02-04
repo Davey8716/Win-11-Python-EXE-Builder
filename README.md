@@ -20,7 +20,7 @@ Win 11 → Python → EXE Builder is a Windows GUI that converts Python scripts 
 
 
 
-* Python 3.13 or 3.14
+* Python 3.13 or 3.14(recommended)
 * PyInstaller installed in the selected interpreter
 * Windows 11
 * Not tested or supported on other operating systems
@@ -35,8 +35,8 @@ This repository contains both:
 
 
 
-* the full source code
-* This repository contains the full source code and a prebuilt executable for users who prefer not to build from source.
+* This repository contains the full source code and a prebuilt executable with \_internals for users who prefer not to build from source.
+* \_internals and the exe must be in the same folder for the exe to work.
 
 
 
@@ -45,12 +45,15 @@ This repository contains both:
 
 
 * Each user’s settings are stored locally on their own machine.
-* No configuration or state is shared or bundled with the EXE.
+* No user configuration or state is embedded inside the executable binary.
+* The application is distributed as a one-folder (onedir) build.
+* The executable must remain in the same folder as the \_internal directory generated during the build.
+* The \_internal folder contains required runtime DLLs and support files.
+* Do not move the executable or \_internal folder independently.
+* Move the entire application folder to preserve functionality.
 * The application stores its JSON state file alongside the executable.
-* This application is distributed as a one-folder build.
-* Do not move individual files. Move the entire folder to preserve functionality.
-* Settings are stored locally alongside the executable, allowing the application folder to be moved without losing configuration.
-* A shortcut of the exe can be put on desktop or it pinned to taskbar.
+* The application folder can be moved without losing configuration.
+* A shortcut may be placed on the desktop or pinned to the taskbar.
 
 
 
@@ -106,10 +109,4 @@ Python 3.11–3.12 are not supported due to PyInstaller/runtime incompatibilitie
 
 
 **If you need logs stored elsewhere, modify the path only after confirming the application builds and runs correctly.**
-
-
-
-
-
-
 
