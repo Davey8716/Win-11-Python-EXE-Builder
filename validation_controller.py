@@ -1,4 +1,8 @@
 import os
+import sys
+import ast
+
+
 
 class ValidationController:
     def __init__(self, app):
@@ -132,6 +136,34 @@ class ValidationController:
         outdir_ok = outdir and os.path.isdir(outdir)
         exe_ok = bool(exe_name)
         python_ok = python and os.path.isfile(python)
+        
+        is_ready = bool(script_ok and outdir_ok and exe_ok and python_ok)
+        
+        # Reset popup eligibility when leaving READY state
+        if not is_ready:
+            self.app._dependency_popup_shown = False
+
+        
+        # ==========================================================
+        # Dependency advisory — fire ONCE when NOT READY → READY
+        # ==========================================================
+
+        if is_ready and not self.app._was_build_ready:
+            external_packages = self.run_dependency_advisory(script)
+
+            if external_packages and not self.app._dependency_popup_shown:
+                self.app._dependency_popup_shown = True
+
+                # MUST be scheduled on main thread
+                self.app.after(
+                    0,
+                    lambda packages=external_packages:
+                        self.app.show_dependency_warning_popup(packages)
+                )
+
+        # Track previous state
+        self.app._was_build_ready = is_ready
+
 
         if script_ok and outdir_ok and exe_ok and python_ok:
             script_name = os.path.basename(script)
@@ -268,5 +300,38 @@ class ValidationController:
                 fg_color="#555555",
                 hover_color="#555555"
             )
+            
+    
+    def extract_imports_from_file(self,py_file: str) -> set[str]:
+        imports = set()
+
+        try:
+            with open(py_file, "r", encoding="utf-8") as f:
+                tree = ast.parse(f.read(), filename=py_file)
+        except Exception:
+            return imports  # fail silently, advisory only
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    imports.add(alias.name.split(".")[0])
+            elif isinstance(node, ast.ImportFrom):
+                if node.module:
+                    imports.add(node.module.split(".")[0])
+
+        return imports
+    
+    def filter_external_imports(self,imports: set[str]) -> list[str]:
+        stdlib = set(sys.stdlib_module_names)
+        return sorted(i for i in imports if i not in stdlib)
+
+    
+    def run_dependency_advisory(self, entry_file: str) -> list[str]:
+        imports = self.extract_imports_from_file(entry_file)
+        external = self.filter_external_imports(imports)
+        return external
+
+
+
 
 
