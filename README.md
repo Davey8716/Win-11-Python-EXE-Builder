@@ -99,8 +99,6 @@ Users must run the application from source using a local Python installation.
 
 
 
-
-
 **Debug log path**
 
 
@@ -120,4 +118,9 @@ Users must run the application from source using a local Python installation.
 
 
 **If you need logs stored elsewhere, modify the path only after confirming the application builds and runs correctly.**
+
+## Contributions
+This project is currently maintained as a personal testbed.
+Bug reports and discussion are welcome, but pull requests are not being accepted at this time.
+Feel free to fork it and work it on yourself if you wish.
 
