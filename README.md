@@ -22,12 +22,12 @@ This tool is designed around the entire Windows EXE build workflow, not just inv
 
 
 
-**Build requirements**
+**Build requirements:**
 
 
 
 * Windows 11
-* Python 3.11 3.12 3.13 or 3.14 
+* Python 3.11 3.12 3.13 or 3.14
 * PyInstaller installed in the selected interpreter
 * Not tested or supported on other operating systems
 
@@ -45,7 +45,7 @@ Python 3.11 3.12 3.13 and 3.14 produced stable builds
 
 
 
-**Distribution**
+**Distribution:**
 
 
 
@@ -59,7 +59,7 @@ Users must run the application from source using a local Python installation.
 
 
 
-**Local state \& portability**
+**Local state \& portability:**
 
 
 
@@ -70,11 +70,11 @@ Users must run the application from source using a local Python installation.
 
 
 
-**Important limitations**
+**Important limitations:**
 
 
 
-This tool does not:
+**This tool does not:**
 
 
 
@@ -85,7 +85,7 @@ This tool does not:
 
 
 
-**Building and running from source**
+**Building and running from source:**
 
 
 
