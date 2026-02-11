@@ -1,6 +1,6 @@
 **Win 11 → Python → EXE Builder**
 
-"If this tool was useful, consider starring the repo, some feedback would be nice."
+If this tool was useful, consider starring the repo, some feedback would be nice.
 
 **Why this exists:**
 
