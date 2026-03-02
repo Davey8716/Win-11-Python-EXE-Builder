@@ -809,7 +809,7 @@ class EXEBuilderApp(ctk.CTk):
             "--noconfirm",
             "--collect-all=tkinter",
             "--collect-all=tk",
-             "--collect-all=qt_material",   # <-- ADD THIS
+            "--collect-all=qt_material",   # <-- ADD THIS
             "--windowed",
             "--noconsole",
             "--hidden-import=pynput",
