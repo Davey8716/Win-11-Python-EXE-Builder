@@ -856,7 +856,8 @@ class EXEBuilderApp(ctk.CTk):
                     f.write("ENTERED run_build\n")
                     f.write("CMD: " + " ".join(cmd) + "\n")
 
-                self.build_process = subprocess.Popen(
+                # Launch ONCE
+                proc = subprocess.Popen(
                     cmd,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
@@ -864,13 +865,17 @@ class EXEBuilderApp(ctk.CTk):
                     creationflags=CREATE_NO_WINDOW
                 )
 
-                out, err = self.build_process.communicate()
-                ret = self.build_process.returncode
+                # Store reference for cancellation
+                self.build_process = proc
+
+                out, err = proc.communicate()
+                ret = proc.returncode
 
                 with open(self.debug_log_path, "a", encoding="utf-8") as f:
                     f.write(f"RETURN CODE: {ret}\n")
                     f.write("STDERR:\n" + (err or "<empty>") + "\n")
 
+                # If cancelled mid-build
                 if not self.building:
                     return
 
@@ -889,6 +894,7 @@ class EXEBuilderApp(ctk.CTk):
                     ))
 
             finally:
+                self.build_process = None
                 self.after(0, self.restore_build_ui)
 
         threading.Thread(target=run_build, daemon=True).start()
