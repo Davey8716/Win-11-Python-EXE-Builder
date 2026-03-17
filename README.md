@@ -1,3 +1,5 @@
+**Updated as of 17/3/26 to use Pysude6 qt widgets**, probably is more buggy now**
+
 **Win 11 → Python → EXE Builder**
 
 If this tool was useful, consider starring the repo, some feedback would be nice.
