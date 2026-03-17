@@ -13,10 +13,12 @@ from tooltips import attach_tooltips
 
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit, QDialog
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit, QDialog,QSizePolicy
 
 from validation_controller import ValidationController
 from activation_controller import ActivationController
+from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QPalette, QColor
 from file_pickers import FilePickerController
 from state_controller import StateController
 from PySide6.QtCore import QTimer
@@ -60,6 +62,7 @@ class EXEBuilderApp(QWidget):
         super().__init__()
 
         self.state_ctrl = StateController(self)
+        self._eta_running = False
 
         self.entry_script = None
         self.project_root = None
@@ -104,7 +107,7 @@ class EXEBuilderApp(QWidget):
         self.build_counter = 0
 
         self.setWindowTitle("")
-        self.setFixedSize(500, 725)
+        self.setFixedSize(500, 750)
 
         # --------------------
         # VARIABLES
@@ -176,14 +179,19 @@ class EXEBuilderApp(QWidget):
         # =============================================================
 
         title_row = QWidget(self)
+        title_row.setFixedHeight(40)  # ⬅️ force compact height
+
         title_layout = QHBoxLayout(title_row)
-        title_layout.setContentsMargins(0, 0, 0, 0)
-        title_layout.setSpacing(10)
+        title_layout.setContentsMargins(0,0,0,0)
+        title_layout.setSpacing(2)
+        
+
 
         # Toggle
         self.tooltips_checkbox = QCheckBox("Tooltips")
         self.tooltips_checkbox.setChecked(True)
-        self.tooltips_checkbox.setFont(QFont("Rubik UI", 13, QFont.Bold))
+        self.tooltips_checkbox.setFont(QFont("Rubik UI", 11, QFont.Bold))  # ⬅️ smaller font
+        self.tooltips_checkbox.setFixedHeight(30)  # ⬅️ tighter
 
         def on_tooltips_toggle(state):
             self.tooltips_enabled = bool(state)
@@ -191,16 +199,19 @@ class EXEBuilderApp(QWidget):
 
         self.tooltips_checkbox.stateChanged.connect(on_tooltips_toggle)
         title_layout.addWidget(self.tooltips_checkbox)
+        title_layout.addStretch()
+
 
         # Title
         title_label = QLabel(" Win 11 → Python → EXE Builder")
-        title_label.setFont(QFont("Rubik UI", 15, QFont.Bold))
+        title_label.setFont(QFont("Rubik UI", 12, QFont.Bold))  # ⬅️ smaller
+        title_label.setFixedHeight(30)  # ⬅️ tighter
         title_layout.addWidget(title_label)
-        title_layout.addStretch()
-        
+
+
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(10, 10, 10, 10)
-        self.main_layout.setSpacing(8)
+        self.main_layout.setContentsMargins(1,1,1,1)
+        self.main_layout.setSpacing(2)
 
         self.main_layout.addWidget(title_row)
 
@@ -215,8 +226,9 @@ class EXEBuilderApp(QWidget):
 
         row2 = QWidget(self)
         row2_layout = QVBoxLayout(row2)
-        row2_layout.setContentsMargins(0, 0, 0, 0)
-        row2_layout.setSpacing(5)
+        row2_layout.setContentsMargins(1,1,1,1)
+        row2_layout.setSpacing(1)
+
         
         # -------------------------
         # Combined FRAME (apps + interpreter)
@@ -228,8 +240,9 @@ class EXEBuilderApp(QWidget):
         combined_frame.setLineWidth(1)
 
         combined_layout = QVBoxLayout(combined_frame)
-        combined_layout.setContentsMargins(6, 6, 6, 6)
-        combined_layout.setSpacing(6)
+        combined_layout.setContentsMargins(1,1,1,1)
+        combined_layout.setSpacing(1)
+
 
         # =================================================
         # Apps (ROW inside vertical stack)
@@ -237,7 +250,7 @@ class EXEBuilderApp(QWidget):
 
         apps_row = QWidget()
         apps_layout = QHBoxLayout(apps_row)
-        apps_layout.setContentsMargins(0, 0, 0, 0)
+        apps_layout.setContentsMargins(1,1,1,1)
 
         self.apps_btn = QPushButton("Open Installed Apps")
         self.apps_btn.setFixedWidth(160)
@@ -259,8 +272,9 @@ class EXEBuilderApp(QWidget):
 
         interpreter_container = QWidget()
         interpreter_layout = QVBoxLayout(interpreter_container)
-        interpreter_layout.setContentsMargins(0, 0, 0, 0)
-        interpreter_layout.setSpacing(4)
+        interpreter_layout.setContentsMargins(3,3,3,3)
+        interpreter_layout.setSpacing(3)
+
 
         # --- Button ---
         self.interpreter_btn = QPushButton("Select Python Interpreter")
@@ -286,8 +300,8 @@ class EXEBuilderApp(QWidget):
         # add interpreter block into frame
         combined_layout.addWidget(interpreter_container)
 
-        # IMPORTANT: this keeps everything sitting correctly under apps
-        combined_layout.addStretch()
+        # # IMPORTANT: this keeps everything sitting correctly under apps
+        # combined_layout.addStretch()
 
         # =================================================
         # ADD FRAME (only once)
@@ -308,8 +322,9 @@ class EXEBuilderApp(QWidget):
         python_frame.setLineWidth(1)
 
         python_layout = QVBoxLayout(python_frame)
-        python_layout.setContentsMargins(6, 6, 6, 6)
-        python_layout.setSpacing(5)
+        python_layout.setContentsMargins(3,3,3,3)
+        python_layout.setSpacing(3)
+
 
         # =================================================
         # Row 1: Select folder button
@@ -338,7 +353,9 @@ class EXEBuilderApp(QWidget):
 
         script_row = QWidget()
         script_layout = QHBoxLayout(script_row)
-        script_layout.setContentsMargins(0, 0, 0, 0)
+        script_layout.setContentsMargins(3,3,3,3)
+        script_layout.setSpacing(3)
+
 
         self.script_path_input = QLineEdit()
         self.script_path_input.setReadOnly(True)
@@ -398,18 +415,21 @@ class EXEBuilderApp(QWidget):
 
         icon_frame_layout = QVBoxLayout(icon_frame)
         icon_frame_layout.setContentsMargins(6, 6, 6, 6)
-        icon_frame_layout.setSpacing(0)
+        icon_frame_layout.setSpacing(3)
+
 
         icon_block = QWidget()
         icon_block_layout = QVBoxLayout(icon_block)
-        icon_block_layout.setContentsMargins(0, 0, 0, 0)
-        icon_block_layout.setSpacing(6)
+        icon_block_layout.setContentsMargins(1,1,1,1)
+        icon_block_layout.setSpacing(1)
+
 
         # -------- Row 1: buttons --------
 
         icon_btn_row = QWidget()
         icon_btn_layout = QHBoxLayout(icon_btn_row)
-        icon_btn_layout.setContentsMargins(0, 0, 0, 0)
+        icon_btn_layout.setContentsMargins(1,1,1,1)
+        icon_btn_layout.setSpacing(3)
 
         self.icon_btn = QPushButton("Select Icon (optional)")
         self.icon_btn.setFixedWidth(160)
@@ -428,13 +448,18 @@ class EXEBuilderApp(QWidget):
 
         icon_entry_row = QWidget()
         icon_entry_layout = QHBoxLayout(icon_entry_row)
-        icon_entry_layout.setContentsMargins(0, 0, 0, 0)
+        icon_entry_layout.setContentsMargins(3,3,3,3)
+        icon_entry_layout.setSpacing(3)
+
+     # ← ADD THIS
 
         self.icon_path_input = QLineEdit()
+        
         self.icon_path_input.setReadOnly(True)
         self.icon_path_input.setPlaceholderText("No icon selected...")
         self.icon_path_input.setFixedWidth(360)
         icon_entry_layout.addWidget(self.icon_path_input)
+       
 
         def clear_icon():
             self.icon_path_input.clear()
@@ -458,8 +483,7 @@ class EXEBuilderApp(QWidget):
         icon_entry_layout.addWidget(self.icon_clear_btn)
         
         
-        icon_block_layout.addWidget(icon_entry_row)
-        icon_block_layout.addStretch(5)
+        icon_block_layout.addWidget(icon_entry_row, alignment= Qt.AlignLeft)
 
         icon_frame_layout.addWidget(icon_block)
         self.main_layout.addWidget(icon_frame)
@@ -470,8 +494,9 @@ class EXEBuilderApp(QWidget):
 
         output_block = QWidget()
         output_block_layout = QVBoxLayout(output_block)
-        output_block_layout.setContentsMargins(0, 0, 0, 0)
-        output_block_layout.setSpacing(2)
+        output_block_layout.setContentsMargins(3,3,3,3)
+        output_block_layout.setSpacing(3)
+
 
         # -------- Row 1: button + status stack --------
 
@@ -486,7 +511,8 @@ class EXEBuilderApp(QWidget):
 
         output_layout = QVBoxLayout(output_frame)
         output_layout.setContentsMargins(6, 6, 6, 6)
-        output_layout.setSpacing(5)
+        output_layout.setSpacing(3)
+
 
         # =================================================
         # Row 1: Select Output Folder button
@@ -521,7 +547,7 @@ class EXEBuilderApp(QWidget):
 
         output_entry_row = QWidget()
         output_entry_layout = QHBoxLayout(output_entry_row)
-        output_entry_layout.setContentsMargins(0, 0, 0, 0)
+        output_entry_layout.setContentsMargins(1,1,1,1)
 
         self.output_path_input = QLineEdit()
         self.output_path_input.setReadOnly(True)
@@ -560,7 +586,7 @@ class EXEBuilderApp(QWidget):
 
         exe_row = QWidget()
         exe_layout = QHBoxLayout(exe_row)
-        exe_layout.setContentsMargins(0, 0, 0, 0)
+        exe_layout.setContentsMargins(3,3,3,3)
 
         self.exe_name_input = QLineEdit()
         self.exe_name_input.setReadOnly(True)
@@ -640,7 +666,8 @@ class EXEBuilderApp(QWidget):
 
         build_layout = QVBoxLayout(build_frame)
         build_layout.setContentsMargins(6, 6, 6, 6)
-        build_layout.setSpacing(6)
+        build_layout.setSpacing(3)
+
 
         # =================================================
         # Row 1: Build button (centered)
@@ -649,7 +676,7 @@ class EXEBuilderApp(QWidget):
         self.build_btn = QPushButton("Build EXE")
         self.build_btn.clicked.connect(self.build_exe)
 
-        build_layout.addWidget(self.build_btn, alignment=Qt.AlignHCenter)
+        build_layout.addWidget(self.build_btn, alignment=Qt.AlignLeft)
 
         # =================================================
         # Row 2: Status
@@ -688,7 +715,6 @@ class EXEBuilderApp(QWidget):
             self.interpreter_btn,
             self.icon_btn,
             self.ico_convert_btn,
-            self.build_btn,
             self.output_btn
             
         ]:
@@ -773,7 +799,9 @@ class EXEBuilderApp(QWidget):
     # -------------------------------------------------------------
 
     def build_exe(self):
-
+        self.building = False  # kill any previous loop instantly
+        self._eta_running = True
+        self.state_ctrl.update_eta_loop()
 
 
         # ==================================================
@@ -802,7 +830,7 @@ class EXEBuilderApp(QWidget):
         # CANCEL MODE
         # ==================================================
 
-        if self.building:
+        if self.build_process:
             self.build_cancellation.cancel_build()
             return
 
@@ -848,13 +876,8 @@ class EXEBuilderApp(QWidget):
         self.build_btn.setStyleSheet("background-color: #d43c3c;")
         self.build_btn.clicked.disconnect()
         self.build_btn.clicked.connect(self.build_exe)
-
-        self.status_label.setFont(self.status_font_building)
         self.status_label.setFixedWidth(425)
 
-        if hasattr(self, "icon_clear_btn"):
-            self.icon_clear_btn.setEnabled(False)
-            self.icon_clear_btn.setStyleSheet("background-color: #2a2a2a;")
 
         self.build_start_time = time.time()
         self.state_ctrl.update_eta_loop()
@@ -887,7 +910,7 @@ class EXEBuilderApp(QWidget):
                 "Python interpreter not found.\n"
                 "Please select a Python interpreter before building."
             )
-            return
+            return  
 
         result = subprocess.run(
             [python, "-m", "PyInstaller", "--version"],
@@ -968,8 +991,12 @@ class EXEBuilderApp(QWidget):
         # ==================================================
 
         self.status_label.setText("Building...")
-
-        def run_build():
+        
+        
+        # ⛔ move this OUT of thread (safe here)
+        self.set_controls_enabled(False)
+        
+        def run_build(cmd):
             try:
                 with open(self.debug_log_path, "a", encoding="utf-8") as f:
                     f.write("ENTERED run_build\n")
@@ -992,23 +1019,76 @@ class EXEBuilderApp(QWidget):
                     f.write(f"RETURN CODE: {ret}\n")
                     f.write("STDERR:\n" + (err or "<empty>") + "\n")
 
-                if not self.building:
-                    return
+                # ✅ SAFE HANDOFF TO UI THREAD
+                def on_complete():
+                    if not self.building:
+                        return
 
-                if ret == 0:
-                    QTimer.singleShot(0, lambda: self.status_label.setText("Build complete."))
-                    self.last_build_seconds = int(time.time() - self.build_start_time)
-                    self.state_ctrl.save_state()
-                    QTimer.singleShot(5000, self.showMinimized)
-                else:
-                    QTimer.singleShot(0, lambda: self.status_label.setText("Build failed. See debug log."))
+                    if ret == 0:
+                        self.last_build_seconds = int(time.time() - self.build_start_time)
+                        self.state_ctrl.save_state()
+
+                        self.set_status("Build complete.")
+                        QTimer.singleShot(5000, self.showMinimized)
+                    else:
+                        self.set_status("Build failed. See debug log.")
+                
+                self._eta_running = False
+                self.build_btn.setText("Build EXE")
+                self.build_btn.setStyleSheet("background-color: #3bbf3b;")
+                self.set_status("Build complete." if ret == 0 else "Build failed. See debug log.")
+
+                try:
+                    self.build_btn.clicked.disconnect()
+                except:
+                    pass
+
+                self.build_btn.clicked.connect(self.build_exe)
+                                
+                    
+
+                QTimer.singleShot(0, lambda: on_complete())  # ← SAFE
 
             finally:
-                self.build_process = None
-                QTimer.singleShot(0, self.restore_build_ui)
+                # ✅ SAFE UI CLEANUP
+                def finalize_ui():
+                    self.build_process = None
+                    self.restore_build_ui()
+                   
+                
+                QTimer.singleShot(0, lambda: finalize_ui())  # ← SAFE
 
 
-        threading.Thread(target=run_build, daemon=True).start()
+        # ✅ THIS MUST BE RIGHT AFTER THE FUNCTION
+        threading.Thread(
+            target=run_build,
+            args=(cmd,),
+            daemon=True
+        ).start()
+         
+            
+    def ui_safe(self, fn):
+        QTimer.singleShot(0, fn)
+
+
+
+    def set_controls_enabled(self, enabled: bool):
+        disabled_style = "background-color: #2a2a2a;"
+        normal_style = "background-color: #444444;"
+
+        # 🔒 LOCK DURING BUILD
+        locked_controls = [
+            self.script_clear_btn,
+            self.icon_clear_btn,
+            self.output_refresh_btn,
+            self.refresh_btn,   # exe name reset
+        ]
+
+        for btn in locked_controls:
+            btn.setEnabled(enabled)
+            btn.setStyleSheet(normal_style if enabled else disabled_style)
+
+
 
     # ==================================================
     # UI RESTORE: Build finished / aborted / cancelled
@@ -1016,9 +1096,11 @@ class EXEBuilderApp(QWidget):
 
     def restore_build_ui(self):
         self.building = False
+        self.set_controls_enabled(True)
+        self._eta_running = False
 
         # -------------------------------
-        # Restore Build button
+        # Restore Build buttonet_controls_enable
         # -------------------------------
 
         try:
@@ -1063,6 +1145,93 @@ if __name__ == "__main__":
     QApplication.setFont(font)
 
     app = QApplication(sys.argv)
+    app.setStyle("Fusion")
+    
+    
+    palette = QPalette()   # ✅ MUST create instance
+    
+    palette.setColor(QPalette.Window, QColor(18, 18, 18))
+    palette.setColor(QPalette.Base, QColor(25, 25, 25))
+    palette.setColor(QPalette.AlternateBase, QColor(35, 35, 35))
+
+    palette.setColor(QPalette.Text, QColor(220, 220, 220))
+    palette.setColor(QPalette.WindowText, QColor(220, 220, 220))
+
+    palette.setColor(QPalette.Button, QColor(60, 60, 60))
+    palette.setColor(QPalette.ButtonText, QColor(220, 220, 220))
+
+    palette.setColor(QPalette.Highlight, QColor(80, 120, 200))
+    palette.setColor(QPalette.HighlightedText, QColor(255, 255, 255))
+    
+
+    app.setPalette(palette)
+    
+    app.setStyleSheet("""
+    /* -----------------------------
+    GLOBAL BACKGROUND
+    ----------------------------- */
+    QWidget {
+        background-color: #121212;
+        color: #e0e0e0;
+        font-family: "Rubik UI";
+    }
+
+    /* -----------------------------
+    FRAMES (FORCE CONSISTENT GREY)
+    ----------------------------- */
+    QFrame {
+        background-color: #1c1c1c;
+        border: 1px solid #2e2e2e;
+        border-radius: 6px;
+    }
+
+    /* 🔴 FORCE CHILDREN INSIDE FRAMES */
+    QFrame QWidget {
+        background-color: #1c1c1c;
+    }
+
+    /* subtle highlight edge */
+    QFrame:hover {
+        border: 1px solid #3a3a3a;
+    }
+
+    /* -----------------------------
+    INPUT FIELDS
+    ----------------------------- */
+    QLineEdit {
+        background-color: #252525;
+        border: 1px solid #3a3a3a;
+        padding: 6px;
+        border-radius: 4px;
+    }
+
+    /* -----------------------------
+    STATUS COLORS
+    ----------------------------- */
+    QLineEdit[readOnly="true"] {
+        background-color: #202020;
+    }
+
+    /* -----------------------------
+    BUTTONS
+    ----------------------------- */
+    QPushButton {
+        background-color: #494949;
+        border: 1px solid #3a3a3a;
+        border-radius: 5px;
+        padding: 6px;
+    }
+
+    QPushButton:hover {
+        background-color: #5a5a5a;
+    }
+
+    QPushButton:pressed {
+        background-color: #3f3f3f;
+    }
+    """)
+    
+    
     window = EXEBuilderApp()
     window.show()
     sys.exit(app.exec())

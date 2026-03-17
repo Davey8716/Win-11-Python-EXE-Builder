@@ -1,6 +1,7 @@
 import os
 import subprocess
 from PySide6.QtWidgets import QFileDialog, QDialog, QVBoxLayout, QPushButton, QLabel, QComboBox
+from PySide6.QtCore import Qt
 
 
 # -------------------------------------------------------------
@@ -338,7 +339,7 @@ class ScriptPickerPopup(QDialog):
             font-family: "Rubik";
             font-size: 13px;
         """)
-        layout.addWidget(self.dropdown)
+        layout.addWidget(self.dropdown, alignment =Qt.AlignHCenter)
 
         confirm_btn = QPushButton("Confirm")
         confirm_btn.setFixedWidth(160)
@@ -348,7 +349,7 @@ class ScriptPickerPopup(QDialog):
             font-size: 13px;
             font-weight: bold;
         """)
-        layout.addWidget(confirm_btn)
+        layout.addWidget(confirm_btn, alignment=Qt.AlignHCenter)
 
     def confirm(self):
         selected_file = self.dropdown.currentText()

@@ -1,7 +1,7 @@
 import os
 import sys
 import ast
-
+from PySide6.QtCore import QTimer
 
 
 class ValidationController:
@@ -119,20 +119,30 @@ class ValidationController:
         # ==========================================================
         # Dependency advisory — fire ONCE when NOT READY → READY
         # ==========================================================
-
         if is_ready and not self.app._was_build_ready:
             external_packages = self.run_dependency_advisory(script)
 
             if external_packages and not self.app._dependency_popup_shown:
                 self.app._dependency_popup_shown = True
+
+                
+
+                QTimer.singleShot(
+                    0,
+                    lambda: self.app.show_dependency_warning_popup(external_packages)
+                )
+
                 state["external_packages"] = external_packages
             else:
                 state["external_packages"] = []
-        else:
-            state["external_packages"] = []
+                
 
         # Track previous state
         self.app._was_build_ready = is_ready
+        
+
+
+    
         
         
 
@@ -154,12 +164,37 @@ class ValidationController:
 
         return state
     
+        # --------------------------------
+        
         
 
 
     def update_build_button_state(self):
         # Handled in Qt layer
-        pass
+        state = self.validation_status_message()
+        is_ready = state["is_ready"]
+
+        if hasattr(self.app, "build_btn"):
+            self.app.build_btn.setEnabled(is_ready)
+
+            if is_ready:
+                self.app.build_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #3bbf3b;
+                    }
+                    QPushButton:hover {
+                        background-color: #2e9e2e;
+                    }
+                """)
+            else:
+                self.app.build_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #be1a1a;
+                        color: #777777;
+                    }
+                """)
+        
+        
 
         # -------------------------------
         # Enable / disable output revert button

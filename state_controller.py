@@ -20,23 +20,23 @@ class StateController:
     # ============================================================
     # ETA time estimator
     # ============================================================
-
     def update_eta_loop(self):
-        if not self.app.building:
+        if not getattr(self.app, "_eta_running", False):
+            return
+
+        if not getattr(self.app, "building", False):
             return
 
         elapsed = int(time.time() - self.app.build_start_time)
         est_total = self.app.last_build_seconds
         remaining = max(est_total - elapsed, 0)
 
-        self.app.status_label.setFont(self.app.status_font_normal)  # or building if you prefer
-
         self.app.status_label.setText(
             f"Building... {elapsed}s elapsed — approx {remaining}s remaining"
         )
-        
 
         QTimer.singleShot(500, self.update_eta_loop)
+        
 
     # ============================================================
     # LOAD
@@ -107,6 +107,10 @@ class StateController:
             if self.app.script_path:
                 if hasattr(self.app, "script_path_input"):
                     self.app.script_path_input.setText(self.app.script_path)
+                    
+            if self.app.exe_name:
+                if hasattr(self.app, "exe_name_input"):
+                    self.app.exe_name_input.setText(self.app.exe_name)
                     
             # -------------------------
             # Push icon into UI
