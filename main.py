@@ -1,49 +1,64 @@
-import customtkinter as ctk
+import sys
+import os
+import subprocess
+import time
 import webbrowser
-import sys, os
 import ctypes
 import threading
+
+from datetime import datetime
+from ctypes import wintypes
+from bundle_validation import validate_bundle_inputs
+from tooltips import attach_tooltips
+
+
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit, QDialog
+
 from validation_controller import ValidationController
 from activation_controller import ActivationController
 from file_pickers import FilePickerController
-from ctypes import wintypes
 from state_controller import StateController
+from PySide6.QtCore import QTimer
+from PySide6.QtGui import QFont
 
 CREATE_NO_WINDOW = 0x08000000
 
 # Try to create a mutex
-mutex = ctypes.windll.kernel32.CreateMutexW(None, wintypes.BOOL(True), "EXEBUILDER_MUTEX")
+mutex = ctypes.windll.kernel32.CreateMutexW(
+    None,
+    wintypes.BOOL(True),
+    "EXEBUILDER_MUTEX"
+)
 
 # ERROR_ALREADY_EXISTS means another instance is running
 if ctypes.GetLastError() == 183:
-    # Try to open the activation event in the running app
     event = ctypes.windll.kernel32.OpenEventW(
-        0x00100002,   # EVENT_MODIFY_STATEP
+        0x00100002,
         False,
         "EXEBUILDER_ACTIVATE_EVENT"
     )
 
-    # If the event exists, signal it
     if event:
         ctypes.windll.kernel32.SetEvent(event)
 
-    # Exit this second instance
     sys.exit(0)
+
 
 def resource_path(relative_path):
     if hasattr(sys, "_MEIPASS"):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
 
+
 # -------------------------------------------------------------
 #  EXE Builder App
 # -------------------------------------------------------------
 
-class EXEBuilderApp(ctk.CTk):
+class EXEBuilderApp(QWidget):
     def __init__(self):
-        ctk.set_widget_scaling(1.0)
-        ctk.set_window_scaling(1.0)
         super().__init__()
+
         self.state_ctrl = StateController(self)
 
         self.entry_script = None
@@ -51,10 +66,10 @@ class EXEBuilderApp(ctk.CTk):
         self.exe_name_user_modified = False
         self.python_interpreter_path = ""
         self.last_python_dir = ""
+
         self.validator = ValidationController(self)
         self.activation_controller = ActivationController(self)
         self.file_pickers = FilePickerController(self)
-
 
         # 🔒 A build cannot survive a restart
         self.building = False
@@ -63,21 +78,24 @@ class EXEBuilderApp(ctk.CTk):
         # SINGLE INSTANCE: Listen for activation events
         # ---------------------------------------------------------
 
-
         self.activate_event = ctypes.windll.kernel32.CreateEventW(
-            None, False, False, "EXEBUILDER_ACTIVATE_EVENT"
+            None,
+            False,
+            False,
+            "EXEBUILDER_ACTIVATE_EVENT"
         )
 
         threading.Thread(
             target=self.activation_controller.listen_for_activation,
             daemon=True
         ).start()
-        
+
         # ---------------------------------------------------------
         # ALWAYS ON TOP
         # ---------------------------------------------------------
-        
-        self.attributes("-topmost", True)
+
+        self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+
         self.building = False
         self.build_process = None
         self.current_build_paths = []
@@ -85,35 +103,30 @@ class EXEBuilderApp(ctk.CTk):
         self.last_build_seconds = 45
         self.build_counter = 0
 
-        self.title("")
-        self.geometry("480x600")
-        self.resizable(False, False)
-
-        ctk.set_appearance_mode("dark")
-        ctk.set_default_color_theme("blue")
-        
-        self.bind("<FocusIn>", self._restore_topmost)
+        self.setWindowTitle("")
+        self.setFixedSize(500, 725)
 
         # --------------------
         # VARIABLES
         # --------------------
-        
+
         self.tooltips_enabled = True
-        self.script_path_var = ctk.StringVar()
-        self.icon_path_var = ctk.StringVar()
-        self.output_path_var = ctk.StringVar()
-        self.python_path_var = ctk.StringVar()
-        self.exe_name_var = ctk.StringVar()
-        
+        self.script_path = ""
+        self.icon_path = ""
+        self.output_path = ""
+        self.python_path = ""
+        self.exe_name = ""
+
         self._loading_state = True
         self.script_user_cleared = False
         self.python_user_cleared = False
         self.icon_user_cleared = False
         self.output_user_cleared = False
         self.exe_name_user_cleared = False
-        
+
         self._was_build_ready = False
         self._dependency_popup_shown = False
+        
         
 
 
@@ -121,33 +134,33 @@ class EXEBuilderApp(ctk.CTk):
         # EXE name ownership tracking (USER intent only)
         # =============================================================
 
-        def _on_exe_name_user_edit(*_):
+        def _on_exe_name_user_edit(text):
             if self._loading_state:
                 return
             self.exe_name_user_modified = True
 
-        self.exe_name_var.trace_add("write", _on_exe_name_user_edit)
-        
+
         # =============================================================
         # EXE name cleared by USER
         # =============================================================
 
-        def on_exe_name_change(*_):
+        def on_exe_name_change(text):
             if self._loading_state:
                 return
 
-            value = self.exe_name_var.get().strip()
+            value = text.strip()
             if not value:
                 self.exe_name_user_cleared = True
                 self.state_ctrl.save_state()
 
-        self.exe_name_var.trace_add("write", on_exe_name_change)
+            self.validator.update_build_button_state()
 
-        def on_script_path_change(*_):
-            value = self.script_path_var.get().strip()
 
+        def on_script_path_change(text):
             if self._loading_state:
                 return
+
+            value = text.strip()
 
             if not value:
                 self.entry_script = None
@@ -157,202 +170,212 @@ class EXEBuilderApp(ctk.CTk):
 
             self.validator.update_build_button_state()
 
-        self.script_path_var.trace_add("write", on_script_path_change)
-
-        self.output_path_var.trace_add(
-            "write",
-            lambda *_: (
-                None if self._loading_state
-                else self.validator.update_build_button_state()
-            )
-        )
-
-        self.exe_name_var.trace_add(
-            "write",
-            lambda *_: (
-                None if self._loading_state
-                else self.validator.update_build_button_state()
-            )
-        )
-
-        self.icon_path_var.trace_add(
-            "write",
-            lambda *_: (
-                None if self._loading_state
-                else self.validator.update_build_button_state()
-            )
-        )
 
         # =============================================================
-        # Title + Tooltip Toggle (Switch)
+        # Title + Tooltip Toggle
         # =============================================================
 
-        title_row = ctk.CTkFrame(self, fg_color="transparent")
-        title_row.pack(pady=10, padx=20, fill="x")
+        title_row = QWidget(self)
+        title_layout = QHBoxLayout(title_row)
+        title_layout.setContentsMargins(0, 0, 0, 0)
+        title_layout.setSpacing(10)
 
-        # Toggle variable
-        self.tooltips_var = ctk.BooleanVar(value=True)
+        # Toggle
+        self.tooltips_checkbox = QCheckBox("Tooltips")
+        self.tooltips_checkbox.setChecked(True)
+        self.tooltips_checkbox.setFont(QFont("Rubik UI", 13, QFont.Bold))
 
-        def on_tooltips_toggle():
-            self.tooltips_enabled = self.tooltips_var.get()
+        def on_tooltips_toggle(state):
+            self.tooltips_enabled = bool(state)
             self.state_ctrl.save_state()
 
-        self.tooltips_switch = ctk.CTkSwitch(
-            title_row,
-            text="Tooltips",
-            variable=self.tooltips_var,
-            command=on_tooltips_toggle,
-            font=("Rubik UI", 15, "bold")
-        )
-        self.tooltips_switch.pack(side="left")
+        self.tooltips_checkbox.stateChanged.connect(on_tooltips_toggle)
+        title_layout.addWidget(self.tooltips_checkbox)
 
-        title_label = ctk.CTkLabel(
-            title_row,
-            text=" Win 11 → Python → EXE Builder",
-            font=("Rubik UI", 20, "bold")
-        )
-        title_label.pack(side="left", padx=(12, 0))
+        # Title
+        title_label = QLabel(" Win 11 → Python → EXE Builder")
+        title_label.setFont(QFont("Rubik UI", 15, QFont.Bold))
+        title_layout.addWidget(title_label)
+        title_layout.addStretch()
+        
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(10, 10, 10, 10)
+        self.main_layout.setSpacing(8)
+
+        self.main_layout.addWidget(title_row)
+
 
         # =============================================================
-        # Script Picker Section
-        # =============================================================
-        # =============================================================
-        # Icon Picker
+        # Script / Buttons Section
         # =============================================================
 
         def open_python_site():
-            urls = [
-                "www.python.org"]
-            for url in urls:
-                webbrowser.open(url)
+            webbrowser.open("https://www.python.org")
 
-        # ---------------------------------
-        # Left-side vertical button stack
-        # ---------------------------------
+
+        row2 = QWidget(self)
+        row2_layout = QVBoxLayout(row2)
+        row2_layout.setContentsMargins(0, 0, 0, 0)
+        row2_layout.setSpacing(5)
         
-        row2 = ctk.CTkFrame(self, fg_color="transparent")
-        row2.pack(pady=5, padx=20, fill="x")
+        # -------------------------
+        # Combined FRAME (apps + interpreter)
+        # -------------------------
 
-        btn_stack = ctk.CTkFrame(row2, fg_color="transparent")
-        btn_stack.pack(anchor="w")
+        combined_frame = QFrame()
+        combined_frame.setFrameShape(QFrame.StyledPanel)
+        combined_frame.setFrameShadow(QFrame.Raised)
+        combined_frame.setLineWidth(1)
+
+        combined_layout = QVBoxLayout(combined_frame)
+        combined_layout.setContentsMargins(6, 6, 6, 6)
+        combined_layout.setSpacing(6)
+
+        # =================================================
+        # Apps (ROW inside vertical stack)
+        # =================================================
+
+        apps_row = QWidget()
+        apps_layout = QHBoxLayout(apps_row)
+        apps_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.apps_btn = QPushButton("Open Installed Apps")
+        self.apps_btn.setFixedWidth(160)
+        self.apps_btn.clicked.connect(self.file_pickers.open_installed_apps)
+
+        self.open_python_site_btn = QPushButton("Python.org")
+        self.open_python_site_btn.setFixedWidth(120)
+        self.open_python_site_btn.clicked.connect(open_python_site)
+
+        apps_layout.addWidget(self.apps_btn)
+        apps_layout.addWidget(self.open_python_site_btn)
+        apps_layout.addStretch()
+
+        combined_layout.addWidget(apps_row)
+
+        # =================================================
+        # Interpreter (VERTICAL stack)
+        # =================================================
+
+        interpreter_container = QWidget()
+        interpreter_layout = QVBoxLayout(interpreter_container)
+        interpreter_layout.setContentsMargins(0, 0, 0, 0)
+        interpreter_layout.setSpacing(4)
+
+        # --- Button ---
+        self.interpreter_btn = QPushButton("Select Python Interpreter")
+        self.interpreter_btn.setFixedWidth(180)
+        self.interpreter_btn.clicked.connect(
+            self.file_pickers.select_python_interpreter
+        )
+        interpreter_layout.addWidget(self.interpreter_btn, alignment=Qt.AlignLeft)
+
+        # --- Status ---
+        self.python_status_label = QLineEdit("PYTHON INTERPRETER NOT SET")
+        self.python_status_label.setReadOnly(True)
+        self.python_status_label.setFont(QFont("Rubik UI", 13))
+        self.python_status_label.setStyleSheet("color: #be1a1a;")
+        interpreter_layout.addWidget(self.python_status_label)
+
+        # --- Path ---
+        self.python_entry = QLineEdit()
+        self.python_entry.setReadOnly(True)
+        self.python_entry.setPlaceholderText("No Python interpreter selected...")
+        interpreter_layout.addWidget(self.python_entry)
+
+        # add interpreter block into frame
+        combined_layout.addWidget(interpreter_container)
+
+        # IMPORTANT: this keeps everything sitting correctly under apps
+        combined_layout.addStretch()
+
+        # =================================================
+        # ADD FRAME (only once)
+        # =================================================
+
+        row2_layout.addWidget(combined_frame)
         
-        apps_row = ctk.CTkFrame(btn_stack, fg_color="transparent")
-        apps_row.pack(anchor="w", pady=(0, 5))
-
-        self.apps_btn = ctk.CTkButton(
-            apps_row,
-            text="Open Installed Apps",
-            command=self.file_pickers.open_installed_apps,
-            width=160,
-            font=("Rubik UI", 15, "bold")
-        )
-        self.apps_btn.pack(side="left")
-
-        self.open_python_site_btn = ctk.CTkButton(
-            apps_row,
-            text="Python.org",
-            command=open_python_site,
-            fg_color="#0B62A8",
-            hover_color="#0B62A8",
-            font=("Rubik UI", 15, "bold"),
-            width=120
-        )
-        self.open_python_site_btn.pack(side="left", padx=(10, 0))
-
+        # ✅ ADD THIS RIGHT HERE
+        self.main_layout.addWidget(row2)
 
         # ---------------------------------
-        # Python Interpreter (INLINE ROW)
+        # Python Folder FRAME (vertical)
         # ---------------------------------
 
-        interpreter_row = ctk.CTkFrame(btn_stack, fg_color="transparent")
-        interpreter_row.pack(anchor="w", pady=(0, 10), fill="x")
+        python_frame = QFrame()
+        python_frame.setFrameShape(QFrame.StyledPanel)
+        python_frame.setFrameShadow(QFrame.Raised)
+        python_frame.setLineWidth(1)
 
-        self.interpreter_btn = ctk.CTkButton(
-            interpreter_row,
-            text="Select Python Interpreter",
-            command=self.file_pickers.select_python_interpreter,
-            width=160,
-            font=("Rubik UI", 15, "bold")
-        )
-        self.interpreter_btn.pack(side="left", pady = (5,2))
+        python_layout = QVBoxLayout(python_frame)
+        python_layout.setContentsMargins(6, 6, 6, 6)
+        python_layout.setSpacing(5)
 
-        self.python_status_label = ctk.CTkLabel(
-            interpreter_row,
-            text="PYTHON INTERPRETER NOT SET",
-            font=("Rubik UI", 15),
-            text_color="#be1a1a"
-        )
-        self.python_status_label.pack(side="left", padx=(8, 0))
+        # =================================================
+        # Row 1: Select folder button
+        # =================================================
 
-        self.python_entry = ctk.CTkEntry(
-            btn_stack,
-            textvariable=self.python_path_var,
-            width=360,
-            state="readonly",
-            placeholder_text="No Python interpreter selected..."
-        )
-        self.python_entry.pack(anchor="w", pady=(0, 5))
+        self.folder_btn = QPushButton("Select Python Folder")
+        self.folder_btn.setFixedWidth(160)
+        self.folder_btn.clicked.connect(self.file_pickers.select_script_folder)
 
-        # ---------------------------------
-        # Python Folder (STACKED, TIGHT)
-        # ---------------------------------
+        python_layout.addWidget(self.folder_btn, alignment=Qt.AlignLeft)
 
-        python_block = ctk.CTkFrame(btn_stack, fg_color="transparent")
-        python_block.pack(anchor="w", pady=(0, 5), fill="x")
+        # =================================================
+        # Row 2: Status
+        # =================================================
 
-        # -------- Row 1: button + status --------
-        folder_row = ctk.CTkFrame(python_block, fg_color="transparent")
-        folder_row.pack(anchor="w", pady=(0, 5), fill="x")
+        self.script_folder_status_label = QLineEdit("PYTHON FOLDER NOT SET")
+        self.script_folder_status_label.setFont(QFont("Rubik UI", 13))
+        self.script_folder_status_label.setStyleSheet("color: #be1a1a;")
+        self.script_folder_status_label.setReadOnly(True)
 
-        self.folder_btn = ctk.CTkButton(
-            folder_row,
-            text="Select Python Folder",
-            command=self.file_pickers.select_script_folder,
-            width=160,
-            font=("Rubik UI", 15, "bold")
-        )
-        self.folder_btn.pack(side="left", pady = 5)   # ❌ no pady here
+        python_layout.addWidget(self.script_folder_status_label)
 
-        self.script_folder_status_label = ctk.CTkLabel(
-            folder_row,
-            text="PYTHON FOLDER NOT SET",
-            font=("Rubik UI", 15),
-            text_color="#be1a1a"
-        )
-        self.script_folder_status_label.pack(side="left", padx=(8, 0))
+        # =================================================
+        # Row 3: Path + reset (side-by-side)
+        # =================================================
 
-        # -------- Row 2: entry + clear --------
-        script_row = ctk.CTkFrame(python_block, fg_color="transparent")
-        script_row.pack(anchor="w", pady=(0, 0), fill="x")
+        script_row = QWidget()
+        script_layout = QHBoxLayout(script_row)
+        script_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.script_entry = ctk.CTkEntry(
-            script_row,
-            textvariable=self.script_path_var,
-            width=360,
-            placeholder_text="Select script or folder..."
-        )
-        self.script_entry.pack(side="left")
-        
+        self.script_path_input = QLineEdit()
+        self.script_path_input.setReadOnly(True)
+        self.script_path_input.setPlaceholderText("Select script or folder...")
+        script_layout.addWidget(self.script_path_input)
+
         def clear_script_path():
-            # Clear exactly like icon clear behavior
-            self.script_path_var.set("")
+            self.script_path_input.clear()
             self.script_user_cleared = True
             self.entry_script = None
             self.project_root = None
+            self.script_path = ""
             self.state_ctrl.save_state()
             self.validator.update_build_button_state()
 
+        self.script_clear_btn = QPushButton("↺")
+        self.script_clear_btn.setFixedSize(36, 32)
+        self.script_clear_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #444444;
+            }
+            QPushButton:hover {
+                background-color: #555555;
+            }
+        """)
+        self.script_clear_btn.clicked.connect(clear_script_path)
 
-        self.script_clear_btn = ctk.CTkButton(
-            script_row,
-            text="↺",
-            width=36,
-            height=32,
-            fg_color="#444444",
-            hover_color="#555555",
-            command=clear_script_path
-        )
-        self.script_clear_btn.pack(side="left", padx=(8, 0))
+        script_layout.addWidget(self.script_clear_btn)
+
+        python_layout.addWidget(script_row)
+
+        # =================================================
+        # ADD FRAME
+        # =================================================
+
+        self.main_layout.addWidget(python_frame)
+       
 
         # =============================================================
         # Icon Picker
@@ -367,152 +390,182 @@ class EXEBuilderApp(ctk.CTk):
             for url in urls:
                 webbrowser.open(url)
 
-        icon_block = ctk.CTkFrame(self, fg_color="transparent")
-        icon_block.pack(anchor="w", pady=(0, 6), padx=20, fill="x")
+
+        icon_frame = QFrame()
+        icon_frame.setFrameShape(QFrame.StyledPanel)
+        icon_frame.setFrameShadow(QFrame.Raised)
+        icon_frame.setLineWidth(1)
+
+        icon_frame_layout = QVBoxLayout(icon_frame)
+        icon_frame_layout.setContentsMargins(6, 6, 6, 6)
+        icon_frame_layout.setSpacing(0)
+
+        icon_block = QWidget()
+        icon_block_layout = QVBoxLayout(icon_block)
+        icon_block_layout.setContentsMargins(0, 0, 0, 0)
+        icon_block_layout.setSpacing(6)
 
         # -------- Row 1: buttons --------
-        icon_btn_row = ctk.CTkFrame(icon_block, fg_color="transparent")
-        icon_btn_row.pack(anchor="w", pady=(0, 6), fill="x")
 
-        self.icon_btn = ctk.CTkButton(
-            icon_btn_row,
-            text="Select Icon (optional)",
-            command=self.file_pickers.select_icon,
-            fg_color="#0B62A8",
-            hover_color="#0B62A8",
-            width=160,
-            font=("Rubik UI", 15, "bold")
-        )
-        self.icon_btn.pack(side="left", padx=(0, 6))
+        icon_btn_row = QWidget()
+        icon_btn_layout = QHBoxLayout(icon_btn_row)
+        icon_btn_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.ico_convert_btn = ctk.CTkButton(
-            icon_btn_row,
-            text="Open ICO Converters",
-            command=open_icon_sites,
-            fg_color="#0B62A8",
-            hover_color="#0B62A8",
-            font=("Rubik UI", 15, "bold"),
-            width=160
-        )
-        self.ico_convert_btn.pack(side="left")
+        self.icon_btn = QPushButton("Select Icon (optional)")
+        self.icon_btn.setFixedWidth(160)
+        self.icon_btn.clicked.connect(self.file_pickers.select_icon)
+        icon_btn_layout.addWidget(self.icon_btn)
+
+        self.ico_convert_btn = QPushButton("Open ICO Converters")
+        self.ico_convert_btn.setFixedWidth(160)
+        self.ico_convert_btn.clicked.connect(open_icon_sites)
+        icon_btn_layout.addWidget(self.ico_convert_btn)
+
+        icon_btn_layout.addStretch()
+        icon_block_layout.addWidget(icon_btn_row)
 
         # -------- Row 2: entry + clear --------
-        icon_entry_row = ctk.CTkFrame(icon_block, fg_color="transparent")
-        icon_entry_row.pack(anchor="w", pady=(0, 0), fill="x")
 
-        self.icon_entry = ctk.CTkEntry(
-            icon_entry_row,
-            textvariable=self.icon_path_var,
-            width=360,
-            placeholder_text="No icon selected..."
-        )
-        self.icon_entry.pack(side="left")
+        icon_entry_row = QWidget()
+        icon_entry_layout = QHBoxLayout(icon_entry_row)
+        icon_entry_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.icon_path_input = QLineEdit()
+        self.icon_path_input.setReadOnly(True)
+        self.icon_path_input.setPlaceholderText("No icon selected...")
+        self.icon_path_input.setFixedWidth(360)
+        icon_entry_layout.addWidget(self.icon_path_input)
 
         def clear_icon():
-            self.icon_path_var.set("")
+            self.icon_path_input.clear()
             self.icon_user_cleared = True
+            self.icon_path = ""
             self.state_ctrl.save_state()
             self.validator.update_build_button_state()
 
-        self.icon_clear_btn = ctk.CTkButton(
-            icon_entry_row,
-            text="↺",
-            width=36,
-            height=32,
-            fg_color="#444444",
-            hover_color="#555555",
-            command=clear_icon
-        )
-        self.icon_clear_btn.pack(side="left", padx=(8, 0))
+        self.icon_clear_btn = QPushButton("↺")
+        self.icon_clear_btn.setFixedSize(36, 32)
+        self.icon_clear_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #444444;
+            }
+            QPushButton:hover {
+                background-color: #555555;
+            }
+        """)
+        self.icon_clear_btn.clicked.connect(clear_icon)
+
+        icon_entry_layout.addWidget(self.icon_clear_btn)
+        
+        
+        icon_block_layout.addWidget(icon_entry_row)
+        icon_block_layout.addStretch(5)
+
+        icon_frame_layout.addWidget(icon_block)
+        self.main_layout.addWidget(icon_frame)
 
         # =============================================================
         # Output Folder
         # =============================================================
 
-        output_block = ctk.CTkFrame(self, fg_color="transparent")
-        output_block.pack(anchor="w", pady=(0, 2), padx=20, fill="x")
+        output_block = QWidget()
+        output_block_layout = QVBoxLayout(output_block)
+        output_block_layout.setContentsMargins(0, 0, 0, 0)
+        output_block_layout.setSpacing(2)
 
-        # -------- Row 1: button + status stack (TIGHT) --------
-        output_btn_row = ctk.CTkFrame(output_block, fg_color="transparent")
-        output_btn_row.pack(anchor="w", pady=(0, 2), fill="x")
+        # -------- Row 1: button + status stack --------
 
-        self.output_btn = ctk.CTkButton(
-            output_btn_row,
-            text="Select Output Folder",
-            command=self.file_pickers.select_output_folder,
-            width=160,
-            font=("Rubik UI", 15, "bold")
-        )
-        self.output_btn.pack(side="left")   # ❌ no pady
+        # =============================================================
+        # Output FRAME (structured vertical)
+        # =============================================================
 
-        output_status_stack = ctk.CTkFrame(output_btn_row, fg_color="transparent")
-        output_status_stack.pack(side="left", padx=(8, 0))
+        output_frame = QFrame()
+        output_frame.setFrameShape(QFrame.StyledPanel)
+        output_frame.setFrameShadow(QFrame.Raised)
+        output_frame.setLineWidth(1)
 
-        self.output_path_status_label = ctk.CTkLabel(
-            output_status_stack,
-            text="EXE OUTPUT PATH NOT SET",
-            font=("Rubik UI", 15),
-            text_color="#be1a1a"
-        )
-        self.output_path_status_label.pack(anchor="w", pady=(1, 1))
+        output_layout = QVBoxLayout(output_frame)
+        output_layout.setContentsMargins(6, 6, 6, 6)
+        output_layout.setSpacing(5)
 
-        self.exe_name_status_label = ctk.CTkLabel(
-            output_status_stack,
-            text="EXE NAME NOT SET",
-            font=("Rubik UI", 15),
-            text_color="#be1a1a"
-        )
-        self.exe_name_status_label.pack(anchor="w", pady=(1, 1))
+        # =================================================
+        # Row 1: Select Output Folder button
+        # =================================================
 
-        # -------- Row 2: output entry + reset --------
-        output_entry_row = ctk.CTkFrame(output_block, fg_color="transparent")
-        output_entry_row.pack(anchor="w", pady=(0, 5), fill="x")
+        self.output_btn = QPushButton("Select Output Folder")
+        self.output_btn.setFixedWidth(160)
+        self.output_btn.clicked.connect(self.file_pickers.select_output_folder)
 
-        self.output_entry = ctk.CTkEntry(
-            output_entry_row,
-            textvariable=self.output_path_var,
-            width=360,
-            placeholder_text="No output folder selected..."
-        )
-        self.output_entry.pack(side="left")
-        
-        
+        output_layout.addWidget(self.output_btn, alignment=Qt.AlignLeft)
 
-        
+        # =================================================
+        # Row 2: Status lines (stacked)
+        # =================================================
+
+        self.output_path_status_label = QLineEdit("EXE OUTPUT PATH NOT SET")
+        self.output_path_status_label.setReadOnly(True)
+        self.output_path_status_label.setFont(QFont("Rubik UI", 13))
+        self.output_path_status_label.setStyleSheet("color: #be1a1a;")
+
+        self.exe_name_status_label = QLineEdit("EXE NAME NOT SET")
+        self.exe_name_status_label.setReadOnly(True)
+        self.exe_name_status_label.setFont(QFont("Rubik UI", 13))
+        self.exe_name_status_label.setStyleSheet("color: #be1a1a;")
+
+        output_layout.addWidget(self.output_path_status_label)
+        output_layout.addWidget(self.exe_name_status_label)
+
+        # =================================================
+        # Row 3: Output path + reset
+        # =================================================
+
+        output_entry_row = QWidget()
+        output_entry_layout = QHBoxLayout(output_entry_row)
+        output_entry_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.output_path_input = QLineEdit()
+        self.output_path_input.setReadOnly(True)
+        self.output_path_input.setPlaceholderText("No output folder selected...")
+        output_entry_layout.addWidget(self.output_path_input)
+
         def get_desktop_path():
             return os.path.join(os.path.expanduser("~"), "Desktop")
 
         def reset_output_to_desktop():
             desktop = get_desktop_path()
-            self.output_path_var.set(desktop)
+            self.output_path_input.setText(desktop)
             self.output_user_cleared = True
+            self.output_path = desktop
             self.state_ctrl.save_state()
             self.validator.update_build_button_state()
 
-        self.output_refresh_btn = ctk.CTkButton(
-            output_entry_row,
-            text="↺",
-            width=36,
-            height=32,
-            fg_color="#444444",
-            hover_color="#555555",
-            command=reset_output_to_desktop
-        )
-        self.output_refresh_btn.pack(side="left", padx=(8, 0))
+        self.output_refresh_btn = QPushButton("↺")
+        self.output_refresh_btn.setFixedSize(36, 32)
+        self.output_refresh_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #444444;
+            }
+            QPushButton:hover {
+                background-color: #555555;
+            }
+        """)
+        self.output_refresh_btn.clicked.connect(reset_output_to_desktop)
 
-        # -------- Row 3: EXE name + reset (TIGHT) --------
-        exe_row = ctk.CTkFrame(output_block, fg_color="transparent")
-        exe_row.pack(anchor="w", pady=(1, 0), fill="x")
+        output_entry_layout.addWidget(self.output_refresh_btn)
+        output_layout.addWidget(output_entry_row)
 
-        self.exe_entry = ctk.CTkEntry(
-            exe_row,
-            textvariable=self.exe_name_var,
-            width=360,
-            placeholder_text="Output file name (without .exe)"
-        )
-        self.exe_entry.pack(side="left")
+        # =================================================
+        # Row 4: EXE name + reset (INSIDE FRAME)
+        # =================================================
 
-        self.exe_entry_default_border = self.exe_entry.cget("border_color")
+        exe_row = QWidget()
+        exe_layout = QHBoxLayout(exe_row)
+        exe_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.exe_name_input = QLineEdit()
+        self.exe_name_input.setReadOnly(True)
+        self.exe_name_input.setPlaceholderText("Output file name (without .exe)")
+        exe_layout.addWidget(self.exe_name_input)
 
         def reset_exe_name_from_script():
             script = self.entry_script
@@ -522,145 +575,217 @@ class EXEBuilderApp(ctk.CTk):
             derived = os.path.splitext(os.path.basename(script))[0]
 
             self.exe_name_user_modified = False
-            self.exe_name_var.set(derived)
+            self.exe_name_input.setText(derived)
 
             self.state_ctrl.save_state()
             self.validator.update_build_button_state()
 
-        self.refresh_btn = ctk.CTkButton(
-            exe_row,
-            text="↺",
-            width=36,
-            height=32,
-            fg_color="#444444",
-            hover_color="#555555",
-            command=reset_exe_name_from_script
-        )
-        self.refresh_btn.pack(side="left", padx=(8, 0))
+        self.refresh_btn = QPushButton("↺")
+        self.refresh_btn.setFixedSize(36, 32)
+        self.refresh_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #444444;
+            }
+            QPushButton:hover {
+                background-color: #555555;
+            }
+        """)
+        self.refresh_btn.clicked.connect(reset_exe_name_from_script)
 
+        exe_layout.addWidget(self.refresh_btn)
+
+        # ✅ THIS is the key line (must be BEFORE adding frame to main_layout)
+        output_layout.addWidget(exe_row)
+
+        # =================================================
+        # ADD FRAME (ONLY ONCE, AT THE VERY END)
+        # =================================================
+
+        self.main_layout.addWidget(output_frame)
+                
+        
+        # -----------------------------
+        # CONNECT SIGNALS (PySide6)
+        # -----------------------------
+
+        self.exe_name_input.textChanged.connect(_on_exe_name_user_edit)
+        self.exe_name_input.textChanged.connect(on_exe_name_change)
+
+        self.script_path_input.textChanged.connect(on_script_path_change)
+
+        self.output_path_input.textChanged.connect(
+            lambda text: None if self._loading_state else self.validator.update_build_button_state()
+        )
+
+        self.exe_name_input.textChanged.connect(
+            lambda text: None if self._loading_state else self.validator.update_build_button_state()
+        )
+
+        self.icon_path_input.textChanged.connect(
+            lambda text: None if self._loading_state else self.validator.update_build_button_state()
+        )
+        
+
+        # Store default style (Qt doesn't expose border color directly like CTk)
+        self.exe_entry_default_style = self.exe_name_input.styleSheet()
+        
         # =============================================================
-        # Build Button
+        # Build FRAME
         # =============================================================
 
-        self.build_btn = ctk.CTkButton(
-            self,
-            text="Build EXE",
-            command=self.build_exe,
-            fg_color="#082e08",
-            hover_color="#082e08",
-            font=("Rubik UI", 16, "bold")
-        )
-        self.build_btn.pack(pady=(10, 8), anchor="w", padx=20)
+        build_frame = QFrame()
+        build_frame.setFrameShape(QFrame.StyledPanel)
+        build_frame.setFrameShadow(QFrame.Raised)
+        build_frame.setLineWidth(1)
 
-        # ---------------------------------------------------------
-        # Fonts
-        # ---------------------------------------------------------
+        build_layout = QVBoxLayout(build_frame)
+        build_layout.setContentsMargins(6, 6, 6, 6)
+        build_layout.setSpacing(6)
 
-        self.status_font_normal = ("Rubik UI", 15, "bold")
-        self.status_font_building = ("Rubik UI", 16, "bold")
+        # =================================================
+        # Row 1: Build button (centered)
+        # =================================================
 
-        self.status_label = ctk.CTkLabel(
-            self,
-            text="Ready",
-            font=self.status_font_normal
-        )
-        self.status_label.pack(pady=(6, 8), anchor="w", padx=20)
+        self.build_btn = QPushButton("Build EXE")
+        self.build_btn.clicked.connect(self.build_exe)
 
+        build_layout.addWidget(self.build_btn, alignment=Qt.AlignHCenter)
+
+        # =================================================
+        # Row 2: Status
+        # =================================================
+
+        self.status_label = QLineEdit("Ready")
+        self.status_label.setReadOnly(True)
+        
+        
+
+        build_layout.addWidget(self.status_label)
+
+        # =================================================
+        # ADD FRAME
+        # =================================================
+
+        self.main_layout.addWidget(build_frame)
 
         # ----------------------------------------------------
         # Initial validation pass
         # ----------------------------------------------------
-        
-        from tooltips import attach_tooltips
+
         attach_tooltips(self)
-        
+
         self.state_ctrl.load_state()
         self._loading_state = False
+        self.validator.validation_status_message()
         self.validator.update_build_button_state()
-        
+
         self.validation_controller = ValidationController(self)
         
+        for btns in [
+            self.open_python_site_btn,
+            self.apps_btn,
+            self.folder_btn,
+            self.interpreter_btn,
+            self.icon_btn,
+            self.ico_convert_btn,
+            self.build_btn,
+            self.output_btn
+            
+        ]:
+            
+            btns.setStyleSheet("background-color: #494949")
+            btns.setFixedHeight(35)
+            
+        for lines in [
+            self.script_folder_status_label,
+            self.output_path_status_label,
+            self.exe_name_status_label
+            
+            ]:
+                lines.setReadOnly(True)
+                lines.setFixedSize(225,35)
+                
+        self.python_status_label.setFixedSize(325,35)
+
+    # =============================================================
+    # Dependency Popup (PySide6)
+    # =============================================================
+
     def show_dependency_warning_popup(self, packages: list[str]):
         if not packages:
             return
 
-        self.popup = ctk.CTkToplevel(self)
-        self.popup.title("Dependency Notice")
-        self.popup.resizable(False, False)
-        self.popup.attributes("-topmost", True)
 
-        # Ensure geometry is up to date
-        self.update_idletasks()
 
-        # Position popup to the right of main window
-        x = self.winfo_x() + self.winfo_width() + 10
-        y = self.winfo_y() + 50
-        self.popup.geometry(f"+{x}+{y}")
+        self.popup = QDialog(self)
+        self.popup.setWindowTitle("Dependency Notice")
+        self.popup.setModal(False)
+        self.popup.setWindowFlag(Qt.WindowStaysOnTopHint, True)
 
-        frame = ctk.CTkFrame(self.popup)
-        frame.pack(fill="both", expand=True, padx=15, pady=15)
+        layout = QVBoxLayout(self.popup)
 
-        ctk.CTkLabel(
-            frame,
-            text="This script references the following external packages:",
-            font=ctk.CTkFont("Rubik UI",size=15, weight="bold"),
-            wraplength=320,
-            justify="left"
-        ).pack(anchor="w", pady=(0, 8))
+        label1 = QLabel(
+            "This script references the following external packages:"
+        )
+        label1.setWordWrap(True)
+        label1.setFont(QFont("Rubik UI", 13, QFont.Bold))
+        layout.addWidget(label1)
 
         pkg_text = ", ".join(packages)
 
-        ctk.CTkLabel(
-            frame,
-            text=pkg_text,
-            font=ctk.CTkFont("Rubik UI",size=15, weight="bold"),
-            wraplength=320,
-            justify="left"
-        ).pack(anchor="w", pady=(0, 12))
+        label2 = QLabel(pkg_text)
+        label2.setWordWrap(True)
+        label2.setFont(QFont("Rubik UI", 13, QFont.Bold))
+        layout.addWidget(label2)
 
-        ctk.CTkLabel(
-            frame,
-            text="Ensure they are installed in the selected Python environment. E.g. py -3.14 -m pip install <package-name>.",
-            font=("Rubik UI", 15, "bold"),
-            wraplength=320,
-            justify="left"
-        ).pack(anchor="w", pady=(0, 12))
+        label3 = QLabel(
+            "Ensure they are installed in the selected Python environment. "
+            "E.g. py -3.13 -m pip install <package-name>."
+        )
+        label3.setWordWrap(True)
+        label3.setFont(QFont("Rubik UI", 13, QFont.Bold))
+        layout.addWidget(label3)
 
-        ctk.CTkButton(
-            frame,
-            text="OK",
-            font=("Rubik UI", 15, "bold"),
-            command=self.popup.destroy,
-            width=80
-        ).pack(anchor="e")
+        ok_btn = QPushButton("OK")
+        ok_btn.setFixedWidth(80)
+        ok_btn.clicked.connect(self.popup.close)
+        layout.addWidget(ok_btn, alignment=Qt.AlignRight)
+
+        # Position to the right of main window
+        self.popup.adjustSize()
+        x = self.x() + self.width() + 10
+        y = self.y() + 50
+        self.popup.move(x, y)
+
+        self.popup.show()
 
     # -------------------------------------------------------------
-    #  Restore always-on-top when user returns to the app
+    # Restore always-on-top when user returns to the app
     # -------------------------------------------------------------
 
     def _restore_topmost(self, event=None):
-        # Restore always-on-top only when user returns to the app
-        self.attributes("-topmost", True)
-        
-    
+        self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+        self.show()
+
+
     # -------------------------------------------------------------
-    #  Build EXE
+    # Build EXE
     # -------------------------------------------------------------
 
     def build_exe(self):
+
+
 
         # ==================================================
         # Debug log (Desktop, user-visible)
         # ==================================================
 
-        from datetime import datetime
-        import os, time, subprocess
-        
-        
-
-        timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S") 
-        self.debug_log_path = os.path.join( os.path.expanduser("~"), "Desktop", f"EXE_BUILDER_DEBUG_{timestamp}.log" )
-
+        timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+        self.debug_log_path = os.path.join(
+            os.path.expanduser("~"),
+            "Desktop",
+            f"EXE_BUILDER_DEBUG_{timestamp}.log"
+        )
 
         with open(self.debug_log_path, "w", encoding="utf-8") as f:
             f.write("BUILD STARTED\n")
@@ -674,7 +799,7 @@ class EXEBuilderApp(ctk.CTk):
             f.write(f"PYTHON_INTERPRETER_PATH={repr(self.python_interpreter_path)}\n")
 
         # ==================================================
-        # CANCEL MODE — if build already running
+        # CANCEL MODE
         # ==================================================
 
         if self.building:
@@ -690,9 +815,9 @@ class EXEBuilderApp(ctk.CTk):
         # READ UI VALUES
         # ==================================================
 
-        script = self.script_path_var.get().strip()
-        outdir = self.output_path_var.get().strip()
-        icon = self.icon_path_var.get().strip()
+        script = self.script_path_input.text().strip()
+        outdir = self.output_path_input.text().strip()
+        icon = self.icon_path_input.text().strip()
 
         entry_point = self.entry_script
         project_root = self.project_root
@@ -708,7 +833,6 @@ class EXEBuilderApp(ctk.CTk):
         # Bundle validation
         # ==================================================
 
-        from bundle_validation import validate_bundle_inputs
         ok, error = validate_bundle_inputs(self)
 
         if not ok:
@@ -720,21 +844,17 @@ class EXEBuilderApp(ctk.CTk):
         # ==================================================
 
         self.building = True
-        self.build_btn.configure(
-            text="Cancel EXE",
-            fg_color="#d43c3c",
-            hover_color="#b22d2d",
-            command=self.build_exe
-        )
+        self.build_btn.setText("Cancel EXE")
+        self.build_btn.setStyleSheet("background-color: #d43c3c;")
+        self.build_btn.clicked.disconnect()
+        self.build_btn.clicked.connect(self.build_exe)
 
-        self.status_label.configure(font=self.status_font_building)
+        self.status_label.setFont(self.status_font_building)
+        self.status_label.setFixedWidth(425)
 
         if hasattr(self, "icon_clear_btn"):
-            self.icon_clear_btn.configure(
-                state="disabled",
-                fg_color="#2a2a2a",
-                hover_color="#2a2a2a"
-            )
+            self.icon_clear_btn.setEnabled(False)
+            self.icon_clear_btn.setStyleSheet("background-color: #2a2a2a;")
 
         self.build_start_time = time.time()
         self.state_ctrl.update_eta_loop()
@@ -751,11 +871,12 @@ class EXEBuilderApp(ctk.CTk):
             self.build_cancellation.abort_build("Invalid project folder.")
             return
 
-        exe_name = self.exe_name_var.get().strip()
+        exe_name = self.exe_name_input.text().strip()
         if not exe_name:
             self.build_cancellation.abort_build("Please enter an EXE name.")
             return
 
+        
         # ==================================================
         # Resolve PyInstaller (ALWAYS via Python interpreter)
         # ==================================================
@@ -785,8 +906,8 @@ class EXEBuilderApp(ctk.CTk):
 
         cmd_prefix = [python, "-m", "PyInstaller"]
 
-        self.status_label.configure(text="Using PyInstaller (python -m)")
-        self.update()
+        self.status_label.setText("Using PyInstaller (python -m)")
+        self.repaint()
 
         # ==================================================
         # Build paths
@@ -809,7 +930,7 @@ class EXEBuilderApp(ctk.CTk):
             "--noconfirm",
             "--collect-all=tkinter",
             "--collect-all=tk",
-            "--collect-all=qt_material",   # <-- ADD THIS
+            "--collect-all=qt_material",
             "--windowed",
             "--noconsole",
             "--hidden-import=pynput",
@@ -840,15 +961,13 @@ class EXEBuilderApp(ctk.CTk):
             os.path.join(outdir, final_exe_name + ".exe"),
             os.path.join(outdir, "build", final_exe_name),
             os.path.join(outdir, "spec", final_exe_name),
-        ]
-        
-        
+        ]   
 
         # ==================================================
         # Run PyInstaller (threaded)
         # ==================================================
 
-        self.status_label.configure(text="Building...")
+        self.status_label.setText("Building...")
 
         def run_build():
             try:
@@ -856,7 +975,6 @@ class EXEBuilderApp(ctk.CTk):
                     f.write("ENTERED run_build\n")
                     f.write("CMD: " + " ".join(cmd) + "\n")
 
-                # Launch ONCE
                 proc = subprocess.Popen(
                     cmd,
                     stdout=subprocess.PIPE,
@@ -865,7 +983,6 @@ class EXEBuilderApp(ctk.CTk):
                     creationflags=CREATE_NO_WINDOW
                 )
 
-                # Store reference for cancellation
                 self.build_process = proc
 
                 out, err = proc.communicate()
@@ -875,31 +992,23 @@ class EXEBuilderApp(ctk.CTk):
                     f.write(f"RETURN CODE: {ret}\n")
                     f.write("STDERR:\n" + (err or "<empty>") + "\n")
 
-                # If cancelled mid-build
                 if not self.building:
                     return
 
                 if ret == 0:
-                    self.after(0, lambda: self.status_label.configure(
-                        text="Build complete."
-                    ))
-                    self.last_build_seconds = int(
-                        time.time() - self.build_start_time
-                    )
+                    QTimer.singleShot(0, lambda: self.status_label.setText("Build complete."))
+                    self.last_build_seconds = int(time.time() - self.build_start_time)
                     self.state_ctrl.save_state()
-                    self.after(5000, self.iconify)
+                    QTimer.singleShot(5000, self.showMinimized)
                 else:
-                    self.after(0, lambda: self.status_label.configure(
-                        text="Build failed. See debug log."
-                    ))
+                    QTimer.singleShot(0, lambda: self.status_label.setText("Build failed. See debug log."))
 
             finally:
                 self.build_process = None
-                self.after(0, self.restore_build_ui)
+                QTimer.singleShot(0, self.restore_build_ui)
+
 
         threading.Thread(target=run_build, daemon=True).start()
-        
-
 
     # ==================================================
     # UI RESTORE: Build finished / aborted / cancelled
@@ -911,38 +1020,49 @@ class EXEBuilderApp(ctk.CTk):
         # -------------------------------
         # Restore Build button
         # -------------------------------
-        
-        self.build_btn.configure(
-            text="Build EXE",
-            fg_color="#3bbf3b",
-            hover_color="#2e9e2e",
-            command=self.build_exe
-        )
+
+        try:
+            self.build_btn.clicked.disconnect()
+        except:
+            pass
+
+        self.build_btn.setText("Build EXE")
+        self.build_btn.setStyleSheet("background-color: #3bbf3b;")
+        self.build_btn.clicked.connect(self.build_exe)
 
         # -------------------------------
         # Re-enable recovery buttons
         # -------------------------------
-        
+
         if hasattr(self, "output_refresh_btn"):
-            self.output_refresh_btn.configure(state="normal")
+            self.output_refresh_btn.setEnabled(True)
 
         if hasattr(self, "icon_clear_btn"):
-            self.icon_clear_btn.configure(state="normal")
+            self.icon_clear_btn.setEnabled(True)
 
         # -------------------------------
         # Re-apply validation policy
         # -------------------------------
-        
+
         self.validator.update_build_button_state()
-        self.status_label.configure(font=self.status_font_normal)
+       
 
     def set_status(self, text):
-        self.status_label.configure(text=text)
+        self.status_label.setText(text)
+
 
 # -------------------------------------------------------------
 # Launch
 # -------------------------------------------------------------
 
 if __name__ == "__main__":
-    app = EXEBuilderApp()
-    app.mainloop()
+
+    # ✅ FORCE valid default font (kills -1 propagation)
+    font = QFont("Rubik UI")
+    font.setPointSize(10)
+    QApplication.setFont(font)
+
+    app = QApplication(sys.argv)
+    window = EXEBuilderApp()
+    window.show()
+    sys.exit(app.exec())

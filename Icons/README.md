@@ -27,7 +27,7 @@ This tool is designed around the entire Windows EXE build workflow, not just inv
 
 
 * Windows 11
-* Python 3.11 3.12 3.13 or 3.14
+* Python 3.11 3.12 3.13 or 3.13
 * PyInstaller installed in the selected interpreter
 * Not tested or supported on other operating systems
 
@@ -41,7 +41,7 @@ This tool is designed around the entire Windows EXE build workflow, not just inv
 
 
 
-**Python 3.11 3.12 3.13 and 3.14 produced stable builds**
+**Python 3.11 3.12 3.13 and 3.13 produced stable builds**
 
 
 
@@ -80,7 +80,7 @@ This tool is designed around the entire Windows EXE build workflow, not just inv
 
 
 
-* **Determine whether third-party libraries are compatible with specific Python versions (e.g. 3.13 vs 3.14)**
+* **Determine whether third-party libraries are compatible with specific Python versions (e.g. 3.13 vs 3.13)**
 * **Fix broken or unsupported dependencies**
 * **Modify, downgrade, or patch Python packages**
 * **Automatically resolve PyInstaller-specific compatibility issues**
@@ -92,7 +92,7 @@ This tool is designed around the entire Windows EXE build workflow, not just inv
 
 
 * **Install a recent python (haven't tested it on earier versions before 3.11)**
-* **py -3.14 -m pip install pyinstaller**
+* **py -3.13 -m pip install pyinstaller**
 * **Clone this repository**
 * **In the GUI, select the Python interpreter that has PyInstaller installed, then start the build**
 * **Build the EXE for the EXE builder itself**

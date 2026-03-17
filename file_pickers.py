@@ -1,15 +1,11 @@
 import os
 import subprocess
-import os
-from tkinter import filedialog
-import customtkinter as ctk
+from PySide6.QtWidgets import QFileDialog, QDialog, QVBoxLayout, QPushButton, QLabel, QComboBox
 
 
 # -------------------------------------------------------------
-# File Pickers
+# File Pickers (Qt version)
 # -------------------------------------------------------------
-
-# This controller mediates file-based user input and applies guarded state changes to the app.
 
 class FilePickerController:
     def __init__(self, app):
@@ -17,33 +13,25 @@ class FilePickerController:
         app = EXEBuilderApp instance
         """
         self.app = app
-        
-    def _derive_exe_name_from_script(script_path):
+
+    def _derive_exe_name_from_script(self, script_path):
         return os.path.splitext(os.path.basename(script_path))[0]
 
     # ============================================================
-    # This is the open install apps opener the ui logic actually lives in main
+    # Open Installed Apps
     # ============================================================
 
     def open_installed_apps(self):
         """Open Windows Installed Apps (Programs and Features)."""
         try:
-            # Pause always-on-top while system window is open
-            self.app.attributes("-topmost", False)
-
             subprocess.Popen(["appwiz.cpl"], shell=True)
-
         except Exception as e:
             print("Failed to open Installed Apps:", e)
 
     # ============================================================
-    # Script selection
+    # Locate python installs
     # ============================================================
-    
-    # ============================================================
-    # This invokes cmd to find where python and hands it off to select python interpreter
-    # ============================================================
-    
+
     def _get_where_python_dirs(self):
         """Return a list of python.exe paths from `where python` (silent)."""
         try:
@@ -63,35 +51,43 @@ class FilePickerController:
             return paths
         except Exception:
             return []
-    
-    # ============================================================
-    # This selects the actual python interpreter
-    # ============================================================
 
+    # ============================================================
+    # Select python interpreter
+    # ============================================================
     def select_python_interpreter(self):
-        start_dir = self._resolve_python_start_dir()
+        start_dir = self._resolve_python_start_dir() or os.path.expanduser("~")
 
-        path = filedialog.askopenfilename(
-            title="Select Python Interpreter",
-            initialdir=start_dir,
-            filetypes=[("Python Interpreter", "python.exe")]
+        path, _ = QFileDialog.getOpenFileName(
+            self.app,
+            "Select Python Interpreter",
+            start_dir,
+            "Python Interpreter (python.exe)"
         )
 
         if not path:
             return
 
-        # Store on app (runtime)
+        # ✅ SINGLE SOURCE OF TRUTH
         self.app.python_interpreter_path = path
-        self.app.python_path_var.set(path)
-        
-        # Save last-used directory for next time
+
+        # optional alias (safe to keep if used elsewhere)
+        self.app.python_path = path
+
+        # ✅ UI update
+        if hasattr(self.app, "python_entry"):
+            self.app.python_entry.setText(path)
+
+        # remember last dir
         self.app.last_python_dir = os.path.dirname(path)
 
-        # Persist
-        self.app.state_ctrl.save_state()  
-        
-        self.app.validator.update_build_button_state()
-        
+        # persist
+        if hasattr(self.app, "state_ctrl"):
+            self.app.state_ctrl.save_state()
+
+        # refresh validation
+        if hasattr(self.app, "validator"):
+            self.app.validator.validation_status_message()
         
     # ============================================================
     # This is the state handling part of this trio that is invoked on python changing?
@@ -113,35 +109,39 @@ class FilePickerController:
 
         return None
     
-    #========================================================================================================================================
-    #========= This just opens the python file navigation after picking the folder, the Ui itself lives in main unless its multi file then it lives in script_picker
-    #========================================================================================================================================
-    
+    # ============================================================
+    # Select single script
+    # ============================================================
+
     def select_script(self):
-        path = filedialog.askopenfilename(
-            filetypes=[("Python Files", "*.py")]
+        path, _ = QFileDialog.getOpenFileName(
+            self.app,
+            "Select Python Script",
+            "",
+            "Python Files (*.py)"
         )
+
         if path:
             self.app.entry_script = path
             self.app.project_root = os.path.dirname(path)
-            self.app.script_path_var.set(path)
+            self.app.script_path = path  # Qt-safe attribute
             self.app.state_ctrl.save_state()
-    
-    #========================================================================================================================================
-    #========= This just opens the python folder navigation, the Ui itself lives in main unless its multi file then it lives in script_picker
-    #========================================================================================================================================
+
+    # ============================================================
+    # Select script folder
+    # ============================================================
 
     def select_script_folder(self):
 
         start_dir = None
 
-        # 1️⃣ Existing project root (best case)
-        if self.app.project_root and os.path.isdir(self.app.project_root):
+        # 1️⃣ Existing project root
+        if getattr(self.app, "project_root", None) and os.path.isdir(self.app.project_root):
             start_dir = self.app.project_root
 
         # 2️⃣ Last selected script path
-        elif self.app.script_path_var.get():
-            script = self.app.script_path_var.get()
+        elif getattr(self.app, "script_path", ""):
+            script = self.app.script_path
             if os.path.isfile(script):
                 start_dir = os.path.dirname(script)
 
@@ -149,7 +149,12 @@ class FilePickerController:
         if not start_dir:
             start_dir = os.path.join(os.path.expanduser("~"), "Desktop")
 
-        folder = filedialog.askdirectory(initialdir=start_dir)
+        folder = QFileDialog.getExistingDirectory(
+            self.app,
+            "Select Python Folder",
+            start_dir
+        )
+
         if not folder:
             return
 
@@ -167,164 +172,189 @@ class FilePickerController:
             self._apply_selected_entry(full_path)
             return
 
-        # Multi-file → popup
-        ScriptPickerPopup(
+        # Multi-file → popup (to be replaced later with Qt dialog)
+        popup = ScriptPickerPopup(
             parent=self.app,
             folder_path=folder,
             py_files=py_files,
             callback=self._apply_selected_entry
         )
-        
-    #========================================================================================================================================
-    #========= This just applies selected entry to state (if there was one for a multi file build) the actual ui logic lives in script picker
-    #========================================================================================================================================
-    
+        popup.exec()
+
+    # ============================================================
+    # Apply selected entry
+    # ============================================================
+
     def _apply_selected_entry(self, full_path):
         """Callback from ScriptPickerPopup"""
 
         # ------------------------------------
         # Capture previous state BEFORE change
         # ------------------------------------
-        
-        previous_script = self.app.entry_script
-        previous_exe_name = self.app.exe_name_var.get().strip()
+
+        previous_script = getattr(self.app, "entry_script", "")
+        previous_exe_name = getattr(self.app, "exe_name", "").strip()
 
         # ------------------------------------
         # Apply new script selection
         # ------------------------------------
-        
+
         self.app.entry_script = full_path
+        if hasattr(self.app, "script_path_input"):
+            self.app.script_path_input.setText(full_path)
         self.app.project_root = os.path.dirname(full_path)
-        self.app.script_path_var.set(full_path)
+        self.app.script_path = full_path
 
         # ------------------------------------
         # Auto-update EXE name ONLY if safe
         # ------------------------------------
-        
+
         old_derived = ""
         if previous_script:
             old_derived = os.path.splitext(os.path.basename(previous_script))[0]
 
         new_derived = os.path.splitext(os.path.basename(full_path))[0]
 
-        # Only update if:
-        # - EXE name was empty
-        # - OR EXE name still equals the old derived name
         if not previous_exe_name or previous_exe_name in {
             old_derived,
-            os.path.splitext(os.path.basename(full_path))[0]
+            new_derived
         }:
-            self.app.exe_name_var.set(new_derived)
+            self.app.exe_name = new_derived
+            
+            # ADD THIS
+            if hasattr(self.app, "exe_name_input"):
+                self.app.exe_name_input.setText(new_derived)
 
         # ------------------------------------
         # Persist + revalidate
         # ------------------------------------
-        
-        self.app.state_ctrl.save_state()
-        self.app.validator.update_build_button_state()
 
-    # ======================================================================================
-    # This just opens the select icon navigation its not thebutton itself that lives in main
-    # =======================================================================================
+        self.app.state_ctrl.save_state()
+        self.app.validator.validation_status_message()
+
+    # ============================================================
+    # Select icon
+    # ============================================================
 
     def select_icon(self):
-        path = filedialog.askopenfilename(
-            filetypes=[("ICON Files", "*.ico")]
+        path, _ = QFileDialog.getOpenFileName(
+            self.app,
+            "Select Icon",
+            "",
+            "ICON Files (*.ico)"
         )
-        if path:
-            self.app.icon_path_var.set(path)
-            self.app.state_ctrl.save_state()
 
-    # ==================================================================================================
-    # This just opens file navigation for the output folder its not the button itself that lives in main
-    #===================================================================================================
-    
+        if path:
+            self.app.icon_path = path
+
+            # ✅ update UI
+            if hasattr(self.app, "icon_path_input"):
+                self.app.icon_path_input.setText(path)
+
+            self.app.state_ctrl.save_state()
+            self.app.validator.validation_status_message()
+
+
+    # ============================================================
+    # Select output folder
+    # ============================================================
     def select_output_folder(self):
-        folder = filedialog.askdirectory()
+        folder = QFileDialog.getExistingDirectory(
+            self.app,
+            "Select Output Folder",
+            getattr(self.app, "last_output_dir", "")
+        )
+
         if not folder:
             return
 
-        self.app.output_path_var.set(folder)
+        # optional alias (if other parts still use it)
+        self.app.output_path = folder
+
+        # remember last location
+        self.app.last_output_dir = folder
+
+        if hasattr(self.app, "output_path_input"):
+            self.app.output_path_input.setText(folder)
 
         # Auto-derive exe name ONLY if empty
-        if not self.app.exe_name_var.get():
-            script = self.app.entry_script or self.app.script_path_var.get()
+        if not getattr(self.app, "exe_name", "").strip():
+            script = getattr(self.app, "entry_script", "") or getattr(self.app, "script_path", "")
             if script:
                 base = os.path.splitext(os.path.basename(script))[0]
-                self.app.exe_name_var.set(base)
+                self.app.exe_name = base
+
+                if hasattr(self.app, "exe_name_input"):
+                    self.app.exe_name_input.setText(base)
 
         self.app.state_ctrl.save_state()
-        self.app.validator.update_build_button_state()
-
+        self.app.validator.validation_status_message()
+    
 # -------------------------------------------------------------
-#  Popup: Choose Entry Script When Selecting a Folder
+#  Popup: Choose Entry Script (Qt version)
 # -------------------------------------------------------------
 
-class ScriptPickerPopup(ctk.CTkToplevel):
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QComboBox, QPushButton
+
+
+class ScriptPickerPopup(QDialog):
     def __init__(self, parent, folder_path, py_files, callback):
         super().__init__(parent)
-        
-        self.title("Select Entry Script")
-        self.geometry("325x125")
-        self.resizable(False, False)
-        
-        # -------------------------------------------------------------
-        #  Alignment: snap popup to the right side of main GUI
-        # -------------------------------------------------------------
-        
-        self.update_idletasks()
 
-        parent_x = parent.winfo_rootx()
-        parent_y = parent.winfo_rooty()
-        parent_w = parent.winfo_width()
-
-        popup_w = self.winfo_width()
-
-        # Align vertically with the parent
-        y = parent_y    # slight downward offset so it looks nice
-
-        # Snap to the right-hand side of the main window
-        x = parent_x + parent_w 
-
-        self.geometry(f"{popup_w}x200+{x}+{y}")
+        self.setWindowTitle("Select Entry Script")
+        self.setFixedSize(325, 200)
 
         self.folder_path = folder_path
         self.callback = callback
 
-        label = ctk.CTkLabel(
-            self,
-            text="Select the script that starts your program:",
-            font=("Rubik UI", 15, "bold"),
-            wraplength=300
-        )
-        label.pack(pady=(15, 10))
+        # -------------------------------------------------------------
+        # Position: snap to right side of parent
+        # -------------------------------------------------------------
 
-        # Dropdown containing all .py files
-        self.choice_var = ctk.StringVar(value=py_files[0])
+        parent_geom = parent.geometry()
+        x = parent_geom.x() + parent_geom.width()
+        y = parent_geom.y()
 
-        dropdown = ctk.CTkOptionMenu(
-            self,
-            values=py_files,
-            variable=self.choice_var,
-            width=260,
-            font=("Rubik UI", 14)
-        )
-        dropdown.pack(pady=10)
+        self.move(x, y)
 
-        confirm_btn = ctk.CTkButton(
-            self,
-            text="Confirm",
-            command=self.confirm,
-            width=160,
-            font=("Rubik UI", 15, "bold")
-        )
-        confirm_btn.pack(pady=15)
+        # -------------------------------------------------------------
+        # Layout
+        # -------------------------------------------------------------
+
+        layout = QVBoxLayout(self)
+
+        label = QLabel("Select the script that starts your program:")
+        label.setWordWrap(True)
+        label.setStyleSheet("""
+            font-family: "Rubik";
+            font-size: 13px;
+            font-weight: bold;
+        """)
+        layout.addWidget(label)
+
+        self.dropdown = QComboBox()
+        self.dropdown.addItems(py_files)
+        self.dropdown.setStyleSheet("""
+            font-family: "Rubik";
+            font-size: 13px;
+        """)
+        layout.addWidget(self.dropdown)
+
+        confirm_btn = QPushButton("Confirm")
+        confirm_btn.setFixedWidth(160)
+        confirm_btn.clicked.connect(self.confirm)
+        confirm_btn.setStyleSheet("""
+            font-family: "Rubik";
+            font-size: 13px;
+            font-weight: bold;
+        """)
+        layout.addWidget(confirm_btn)
 
     def confirm(self):
-        selected_file = self.choice_var.get()
+        selected_file = self.dropdown.currentText()
         full_path = os.path.join(self.folder_path, selected_file)
 
-        # Return the chosen file to the EXEBuilderApp
+        # Return selection
         self.callback(full_path)
 
-        self.destroy()
+        self.accept()

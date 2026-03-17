@@ -1,49 +1,45 @@
-import tkinter as tk
+from PySide6.QtCore import QObject, QEvent, QTimer, QPoint
+from PySide6.QtWidgets import QLabel, QWidget
+from PySide6.QtGui import Qt
 
 
 # -------------------------------------------------------------
-#  Simple tooltip class for CTk widgets
+#  Simple tooltip class for Qt widgets (qt_material compatible)
 # -------------------------------------------------------------
 
-class CtkTooltip:
+class QtTooltip(QObject):
     def __init__(self, widget, text, delay=500):
+        super().__init__(widget)
+
         self.widget = widget
         self.text = text
         self.delay = delay
+
         self.tip_window = None
-        self.after_id = None
-        
-        # Gather all actual hoverable child widgets
-        targets = [widget]
+        self.timer = QTimer()
+        self.timer.setSingleShot(True)
+        self.timer.timeout.connect(self.show)
 
-        for attr in ("_canvas", "_label", "_text_label", "_fg_label", "_border_frame"):
-            if hasattr(widget, attr):
-                obj = getattr(widget, attr)
-                if obj:
-                    targets.append(obj)
+        # Install event filter instead of Tk bindings
+        widget.installEventFilter(self)
 
-        if hasattr(widget, "_windows"):
-            for win in widget._windows:
-                targets.append(win)
+    def eventFilter(self, obj, event):
+        if obj == self.widget:
+            if event.type() == QEvent.Enter:
+                self.schedule()
+            elif event.type() == QEvent.Leave:
+                self.hide()
+            elif event.type() == QEvent.MouseButtonPress:
+                self.hide()
+        return super().eventFilter(obj, event)
 
-        # Apply bindings to all relevant sub-widgets
-        for t in targets:
-            try:
-                t.bind("<Enter>", self.schedule, add="+")
-                t.bind("<Leave>", self.hide, add="+")
-                t.bind("<Button-1>", self.hide, add="+")
-            except:
-                pass
-
-
-    def schedule(self, event=None):
-        if self.after_id:
-            self.widget.after_cancel(self.after_id)
-        self.after_id = self.widget.after(self.delay, self.show)
+    def schedule(self):
+        self.timer.stop()
+        self.timer.start(self.delay)
 
     def show(self):
-        # Global toggle
-        root = self.widget.winfo_toplevel()
+        # Global toggle (match your existing pattern)
+        root = self.widget.window()
         if hasattr(root, "tooltips_enabled"):
             if not root.tooltips_enabled:
                 return
@@ -51,43 +47,42 @@ class CtkTooltip:
         if self.tip_window:
             return
 
-        x = self.widget.winfo_rootx() + 40
-        y = self.widget.winfo_rooty() + 25
-
-        tw = tk.Toplevel(self.widget)
-        tw.wm_overrideredirect(True)
-        tw.wm_geometry(f"+{x}+{y}")
-        tw.lift()
-        tw.attributes("-topmost", True)
-
-        label = tk.Label(
-            tw,
-            text=self.text,
-            background="#1E1E1E",
-            foreground="white",
-            relief="solid",
-            borderwidth=1,
-            padx=6,
-            pady=4,
-            font=("Rubik UI", 14)
+        self.tip_window = QLabel(self.text, None)
+        self.tip_window.setWindowFlags(
+            Qt.ToolTip | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
         )
-        label.pack()
-        self.tip_window = tw
 
-    def hide(self, event=None):
-        if self.after_id:
-            try:
-                self.widget.after_cancel(self.after_id)
-            except:
-                pass
-            self.after_id = None
+        # Styling (qt_material-friendly)
+        self.tip_window.setStyleSheet("""
+            QLabel {
+                background-color: #1E1E1E;
+                color: white;
+                border: 1px solid #444;
+                padding: 6px;
+                border-radius: 4px;
+                font-family: "Rubik";
+                font-size: 13px;
+            }
+        """)
+
+        self.tip_window.adjustSize()
+
+        # Position relative to widget (same offsets as before)
+        pos = self.widget.mapToGlobal(QPoint(40, 25))
+        self.tip_window.move(pos)
+
+        self.tip_window.show()
+
+    def hide(self):
+        self.timer.stop()
 
         if self.tip_window:
-            self.tip_window.destroy()
+            self.tip_window.close()
             self.tip_window = None
 
+
 # -------------------------------------------------------------
-#  Tooltip wiring (UI → text mapping)
+#  Tooltip wiring (UI → text mapping) [Qt version]
 # -------------------------------------------------------------
 
 def attach_tooltips(app):
@@ -100,8 +95,8 @@ def attach_tooltips(app):
     # Title / global controls
     # -----------------------------
 
-    CtkTooltip(
-        app.tooltips_switch,
+    QtTooltip(
+        app.tooltips_checkbox,
         "Toggle all tooltips on or off.\n"
         "Turn this off once you’re familiar with the interface."
     )
@@ -110,12 +105,12 @@ def attach_tooltips(app):
     # Script picker
     # -----------------------------
 
-    CtkTooltip(
-        app.script_entry,
+    QtTooltip(
+        app.script_path_input,
         "File path to python script folder and file."
     )
 
-    CtkTooltip(
+    QtTooltip(
         app.apps_btn,
         "Opens Windows Installed Apps.\n"
         "Check or remove Python versions.\n"
@@ -123,13 +118,12 @@ def attach_tooltips(app):
         "Go to python.org for downloading specific releases."
     )
     
-    CtkTooltip(
+    QtTooltip(
         app.open_python_site_btn,
         "Direct link to python.org."
     )
-    
 
-    CtkTooltip(
+    QtTooltip(
         app.folder_btn,
         "Select a folder containing one or more Python files.\n"
         "If the folder contains only one .py file, it will be used automatically.\n"
@@ -141,13 +135,13 @@ def attach_tooltips(app):
     # Python interpreter
     # -----------------------------
 
-    CtkTooltip(
+    QtTooltip(
         app.interpreter_btn,
         "Select the Python interpreter used to build EXEs.\n"
         "This determines which Python installation PyInstaller runs under."
     )
 
-    CtkTooltip(
+    QtTooltip(
         app.python_entry,
         "Displays the full path to the Python interpreter.\n"
         "That will be used for building EXEs.\n"
@@ -159,29 +153,29 @@ def attach_tooltips(app):
     # Icon picker
     # -----------------------------
 
-    CtkTooltip(
+    QtTooltip(
         app.icon_btn,
         "Choose a .ico file to use as your EXE’s icon.\n"
         "Optional — PyInstaller uses a default icon otherwise."
     )
 
-    CtkTooltip(
+    QtTooltip(
         app.ico_convert_btn,
         "Opens 3 websites that convert PNG/JPG images into .ico files\n"
         "for use as custom EXE icons."
     )
 
-    CtkTooltip(
-        app.icon_entry,
+    QtTooltip(
+        app.icon_path_input,
         "File path to Icon if used."
     )
     
-    CtkTooltip(
+    QtTooltip(
         app.script_clear_btn,
         "Clear selected script/folder."
     ) 
 
-    CtkTooltip(
+    QtTooltip(
         app.icon_clear_btn,
         "Clear icon (build without an icon)."
     )
@@ -190,28 +184,28 @@ def attach_tooltips(app):
     # Output / EXE name
     # -----------------------------
 
-    CtkTooltip(
+    QtTooltip(
         app.output_btn,
         "The file path to the folder the EXE is to be built in."
     )
 
-    CtkTooltip(
-        app.output_entry,
+    QtTooltip(
+        app.output_path_input,
         "File path to the EXE output folder."
     )
 
-    CtkTooltip(
+    QtTooltip(
         app.output_refresh_btn,
         "Reset output folder to Desktop."
     )
 
-    CtkTooltip(
-        app.exe_entry,
+    QtTooltip(
+        app.exe_name_input,
         "Name of the generated EXE folder and file.\n"
         "Do not include .exe."
     )
 
-    CtkTooltip(
+    QtTooltip(
         app.refresh_btn,
         "Reset EXE name to match the entry script name.\n"
         "A python folder must be selected to for this to be ungreyed and resetable.\n"
@@ -221,8 +215,8 @@ def attach_tooltips(app):
     # Build
     # -----------------------------
 
-    CtkTooltip(
+    QtTooltip(
         app.build_btn,
-        "Builds your Python project into a standalone Windows EXE,Using PyInstaller.\n"
-        
+        "Builds your Python project into a standalone Windows EXE using PyInstaller."
     )
+

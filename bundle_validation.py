@@ -6,6 +6,7 @@ import subprocess
 INVALID_EXE_CHARS = set('<>:"/\\|?*')
 CREATE_NO_WINDOW = 0x08000000
 
+
 def validate_bundle_inputs(app):
     """
     Validate that the current app state is safe for running PyInstaller.
@@ -14,6 +15,7 @@ def validate_bundle_inputs(app):
         (True, None) if validation passes
         (False, "error message") if validation fails
     """
+
     # ---------------------------------------------------------
     # 1. Entry script
     # ---------------------------------------------------------
@@ -49,7 +51,6 @@ def validate_bundle_inputs(app):
             stderr=subprocess.PIPE,
             timeout=5,
             creationflags=CREATE_NO_WINDOW
-            
         )
     except Exception:
         return False, "Python interpreter could not be executed."
@@ -60,11 +61,8 @@ def validate_bundle_inputs(app):
     # ---------------------------------------------------------
     # 3. Output directory
     # ---------------------------------------------------------
-    
-    if not hasattr(app, "output_path_var"):
-        return False, "Output path is not initialised."
-    
-    output_dir = app.output_path_var.get().strip()
+
+    output_dir = getattr(app, "output_path", "").strip()
 
     if not output_dir:
         return False, "Output folder not set."
@@ -75,11 +73,8 @@ def validate_bundle_inputs(app):
     # ---------------------------------------------------------
     # 4. EXE name
     # ---------------------------------------------------------
-    
-    if not hasattr(app, "exe_name_var"):
-        return False, "EXE name field is not initialised."
 
-    exe_name = app.exe_name_var.get().strip()
+    exe_name = getattr(app, "exe_name", "").strip()
 
     if not exe_name:
         return False, "EXE name is empty."
@@ -96,12 +91,8 @@ def validate_bundle_inputs(app):
     # ---------------------------------------------------------
     # 5. Icon (optional)
     # ---------------------------------------------------------
-    
-    icon = ""
-    if hasattr(app, "icon_path_var"):
-        icon = app.icon_path_var.get().strip()
 
-    icon = app.icon_path_var.get().strip()
+    icon = getattr(app, "icon_path", "").strip()
 
     if icon:
         if not os.path.isfile(icon):
