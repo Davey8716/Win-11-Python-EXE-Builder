@@ -285,7 +285,7 @@ class EXEBuilderApp(QWidget):
         # --- Status ---
         self.python_status_label = QLineEdit("PYTHON INTERPRETER NOT SET")
         self.python_status_label.setReadOnly(True)
-        self.python_status_label.setFont(QFont("Rubik UI", 13))
+        self.python_status_label.setFont(QFont("Rubik UI", 11))
         self.python_status_label.setStyleSheet("color: #be1a1a;")
         interpreter_layout.addWidget(self.python_status_label)
 
@@ -339,7 +339,7 @@ class EXEBuilderApp(QWidget):
         # =================================================
 
         self.script_folder_status_label = QLineEdit("PYTHON FOLDER NOT SET")
-        self.script_folder_status_label.setFont(QFont("Rubik UI", 13))
+        self.script_folder_status_label.setFont(QFont("Rubik UI", 11))
         self.script_folder_status_label.setStyleSheet("color: #be1a1a;")
         self.script_folder_status_label.setReadOnly(True)
 
@@ -455,8 +455,9 @@ class EXEBuilderApp(QWidget):
         
         self.icon_path_input.setReadOnly(True)
         self.icon_path_input.setPlaceholderText("No icon selected...")
-        self.icon_path_input.setFixedWidth(360)
+        self.icon_path_input.setFixedWidth(425)
         icon_entry_layout.addWidget(self.icon_path_input)
+        icon_entry_layout.addStretch()
        
 
         def clear_icon():
@@ -528,12 +529,12 @@ class EXEBuilderApp(QWidget):
 
         self.output_path_status_label = QLineEdit("EXE OUTPUT PATH NOT SET")
         self.output_path_status_label.setReadOnly(True)
-        self.output_path_status_label.setFont(QFont("Rubik UI", 13))
+        self.output_path_status_label.setFont(QFont("Rubik UI", 11))
         self.output_path_status_label.setStyleSheet("color: #be1a1a;")
 
         self.exe_name_status_label = QLineEdit("EXE NAME NOT SET")
         self.exe_name_status_label.setReadOnly(True)
-        self.exe_name_status_label.setFont(QFont("Rubik UI", 13))
+        self.exe_name_status_label.setFont(QFont("Rubik UI", 11))
         self.exe_name_status_label.setStyleSheet("color: #be1a1a;")
 
         output_layout.addWidget(self.output_path_status_label)
@@ -673,9 +674,9 @@ class EXEBuilderApp(QWidget):
 
         self.build_btn = QPushButton("Build EXE")
         
-        font = QFont("Rubik UI", 15, QFont.Bold)
+        font = QFont("Rubik UI", 12, QFont.Bold)
         self.build_btn.setFont(font)
-        self.build_btn.setFixedSize(175, 40)
+        self.build_btn.setFixedSize(125, 35)
         self.build_btn.clicked.connect(self.build_exe)
 
         build_layout.addWidget(self.build_btn, alignment=Qt.AlignLeft)
@@ -743,9 +744,8 @@ class EXEBuilderApp(QWidget):
         if not packages:
             return
 
-
-
         self.popup = QDialog(self)
+        self.popup.setFixedSize(300,300)
         self.popup.setWindowTitle("Dependency Notice")
         self.popup.setModal(False)
         self.popup.setWindowFlag(Qt.WindowStaysOnTopHint, True)
@@ -756,14 +756,14 @@ class EXEBuilderApp(QWidget):
             "This script references the following external packages:"
         )
         label1.setWordWrap(True)
-        label1.setFont(QFont("Rubik UI", 13, QFont.Bold))
+        label1.setFont(QFont("Rubik UI", 11, QFont.Bold))
         layout.addWidget(label1)
 
         pkg_text = ", ".join(packages)
 
         label2 = QLabel(pkg_text)
         label2.setWordWrap(True)
-        label2.setFont(QFont("Rubik UI", 13, QFont.Bold))
+        label2.setFont(QFont("Rubik UI", 11, QFont.Bold))
         layout.addWidget(label2)
 
         label3 = QLabel(
@@ -771,7 +771,7 @@ class EXEBuilderApp(QWidget):
             "E.g. py -3.13 -m pip install <package-name>."
         )
         label3.setWordWrap(True)
-        label3.setFont(QFont("Rubik UI", 13, QFont.Bold))
+        label3.setFont(QFont("Rubik UI", 11, QFont.Bold))
         layout.addWidget(label3)
 
         ok_btn = QPushButton("OK")
@@ -1047,8 +1047,6 @@ class EXEBuilderApp(QWidget):
 
                 self.build_btn.clicked.connect(self.build_exe)
                                 
-                    
-
                 QTimer.singleShot(0, lambda: on_complete())  # ← SAFE
 
             finally:
@@ -1056,8 +1054,7 @@ class EXEBuilderApp(QWidget):
                 def finalize_ui():
                     self.build_process = None
                     self.restore_build_ui()
-                   
-                
+                    
                 QTimer.singleShot(0, lambda: finalize_ui())  # ← SAFE
 
 
@@ -1089,8 +1086,6 @@ class EXEBuilderApp(QWidget):
         for btn in locked_controls:
             btn.setEnabled(enabled)
             btn.setStyleSheet(normal_style if enabled else disabled_style)
-
-
 
     # ==================================================
     # UI RESTORE: Build finished / aborted / cancelled
@@ -1129,11 +1124,9 @@ class EXEBuilderApp(QWidget):
         # -------------------------------
 
         self.validator.update_build_button_state()
-       
 
     def set_status(self, text):
         self.status_label.setText(text)
-
 
 # -------------------------------------------------------------
 # Launch
@@ -1148,7 +1141,6 @@ if __name__ == "__main__":
 
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
-    
     
     palette = QPalette()   # ✅ MUST create instance
     
