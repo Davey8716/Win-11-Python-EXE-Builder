@@ -182,11 +182,9 @@ class EXEBuilderApp(QWidget):
         title_row.setFixedHeight(40)  # ⬅️ force compact height
 
         title_layout = QHBoxLayout(title_row)
-        title_layout.setContentsMargins(0,0,0,0)
+        title_layout.setContentsMargins(8,0,8,0)
         title_layout.setSpacing(2)
         
-
-
         # Toggle
         self.tooltips_checkbox = QCheckBox("Tooltips")
         self.tooltips_checkbox.setChecked(True)
@@ -589,7 +587,7 @@ class EXEBuilderApp(QWidget):
         exe_layout.setContentsMargins(3,3,3,3)
 
         self.exe_name_input = QLineEdit()
-        self.exe_name_input.setReadOnly(True)
+        # self.exe_name_input.setReadOnly(True)
         self.exe_name_input.setPlaceholderText("Output file name (without .exe)")
         exe_layout.addWidget(self.exe_name_input)
 
@@ -674,6 +672,10 @@ class EXEBuilderApp(QWidget):
         # =================================================
 
         self.build_btn = QPushButton("Build EXE")
+        
+        font = QFont("Rubik UI", 15, QFont.Bold)
+        self.build_btn.setFont(font)
+        self.build_btn.setFixedSize(175, 40)
         self.build_btn.clicked.connect(self.build_exe)
 
         build_layout.addWidget(self.build_btn, alignment=Qt.AlignLeft)
@@ -775,7 +777,7 @@ class EXEBuilderApp(QWidget):
         ok_btn = QPushButton("OK")
         ok_btn.setFixedWidth(80)
         ok_btn.clicked.connect(self.popup.close)
-        layout.addWidget(ok_btn, alignment=Qt.AlignRight)
+        layout.addWidget(ok_btn, alignment=Qt.AlignHCenter)
 
         # Position to the right of main window
         self.popup.adjustSize()
