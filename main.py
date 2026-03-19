@@ -25,7 +25,7 @@ from state_controller import StateController
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFont
 
-from PySide6.QtWidgets import QHBoxLayout, QComboBox
+from PySide6.QtWidgets import QHBoxLayout, QComboBox,QMessageBox
 
 CREATE_NO_WINDOW = 0x08000000
 
@@ -310,6 +310,33 @@ class EXEBuilderApp(QWidget):
         # header item (non-clickable)
         self.recent_folder_dropdown.addItem("Select Recent File")
         self.recent_folder_dropdown.setFont(QFont("Rubik UI", 12))
+        
+        self.delete_recent_folder = QPushButton("✖")
+        self.delete_recent_folder.setFixedSize(35, 35)
+        self.delete_recent_folder.setCursor(Qt.PointingHandCursor)
+
+        self.delete_recent_folder.setStyleSheet("""
+            QPushButton {
+                background-color: #2a2a2a;
+                border: 1px solid #3a3a3a;
+                border-radius: 5px;
+                color: #e0e0e0;
+                font-size: 14px;
+            }
+
+            QPushButton:hover {
+                background-color: #3a3a3a;
+            }
+
+            QPushButton:pressed {
+                background-color: #1f1f1f;
+            }
+
+            QPushButton:disabled {
+                background-color: #1a1a1a;
+                color: #555;
+            }
+        """)
 
                 
 
@@ -366,9 +393,11 @@ class EXEBuilderApp(QWidget):
 
         folder_row.addWidget(self.folder_btn)
         folder_row.addWidget(self.recent_folder_dropdown)
+        folder_row.addWidget(self.delete_recent_folder)
         folder_row.addStretch()
         
         self.recent_folder_dropdown.currentIndexChanged.connect(self.on_recent_file_selected)
+        self.delete_recent_folder.clicked.connect(self.confirm_delete_recent)
   
 
         python_layout.addLayout(folder_row)
@@ -1094,7 +1123,54 @@ class EXEBuilderApp(QWidget):
         # 🔑 USE SAME PIPELINE AS EVERYTHING ELSE
         if hasattr(self, "file_pickers"):
             self.file_pickers._apply_selected_entry(path)
-    
+            
+    def confirm_delete_recent(self):
+        full_path = getattr(self, "entry_script", "") or getattr(self, "script_path", "")
+
+        if not full_path:
+            return
+
+        reply = QMessageBox.question(
+            self,
+            "Delete Recent File",
+            f"Are you sure you want to remove:\n\n{full_path}",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+
+        if reply != QMessageBox.Yes:
+            return
+
+        if os.path.abspath(os.path.normpath(full_path)) == os.path.abspath(os.path.normpath(getattr(self, "entry_script", ""))):
+            self.script_path_input.clear()
+            self.entry_script = None
+            self.project_root = None
+            self.script_path = ""
+
+        state_path = self.state_ctrl._state_file_path()
+
+        try:
+            if os.path.isfile(state_path):
+                with open(state_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            else:
+                data = {}
+        except:
+            data = {}
+
+        lst = data.get("recent_scripts", [])
+
+        norm = os.path.abspath(os.path.normpath(full_path))
+        lst = [p for p in lst if os.path.abspath(os.path.normpath(p)) != norm]
+
+        data["recent_scripts"] = lst
+        self.state_data = data
+
+        with open(state_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
+
+        self.populate_recent_dropdown()
+        
             
 
     def closeEvent(self, event):
