@@ -2,6 +2,7 @@ import os
 import subprocess
 from PySide6.QtWidgets import QFileDialog, QDialog, QVBoxLayout, QPushButton, QLabel, QComboBox
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QComboBox, QPushButton
 
 
 # -------------------------------------------------------------
@@ -69,6 +70,9 @@ class FilePickerController:
         if not path:
             return
 
+        # 🔑 NORMALIZE HERE
+        path = os.path.normpath(path)
+
         # ✅ SINGLE SOURCE OF TRUTH
         self.app.python_interpreter_path = path
 
@@ -76,8 +80,8 @@ class FilePickerController:
         self.app.python_path = path
 
         # ✅ UI update
-        if hasattr(self.app, "python_entry"):
-            self.app.python_entry.setText(path)
+        if hasattr(self.app, "python_entry_input"):
+            self.app.python_entry_input.setText(path)
 
         # remember last dir
         self.app.last_python_dir = os.path.dirname(path)
@@ -89,16 +93,14 @@ class FilePickerController:
         # refresh validation
         if hasattr(self.app, "validator"):
             self.app.validator.validation_status_message()
-        
-    # ============================================================
-    # This is the state handling part of this trio that is invoked on python changing?
-    # ============================================================
-
+            
     def _resolve_python_start_dir(self):
         """Best directory to open the interpreter picker in."""
 
         # 1️⃣ Last-used interpreter directory (preferred)
         last_dir = getattr(self.app, "last_python_dir", "")
+        last_dir = os.path.normpath(last_dir) if last_dir else ""
+
         if last_dir and os.path.isdir(last_dir):
             return last_dir
 
@@ -106,10 +108,12 @@ class FilePickerController:
         candidates = self._get_where_python_dirs()
         for path in candidates:
             if "WindowsApps" not in path:
+                path = os.path.normpath(path)
                 return os.path.dirname(path)
 
         return None
-    
+
+
     # ============================================================
     # Select single script
     # ============================================================
@@ -123,10 +127,14 @@ class FilePickerController:
         )
 
         if path:
+            path = os.path.normpath(path)
+
             self.app.entry_script = path
             self.app.project_root = os.path.dirname(path)
             self.app.script_path = path  # Qt-safe attribute
+
             self.app.state_ctrl.save_state()
+
 
     # ============================================================
     # Select script folder
@@ -137,12 +145,14 @@ class FilePickerController:
         start_dir = None
 
         # 1️⃣ Existing project root
-        if getattr(self.app, "project_root", None) and os.path.isdir(self.app.project_root):
-            start_dir = self.app.project_root
+        if getattr(self.app, "project_root", None):
+            root = os.path.normpath(self.app.project_root)
+            if os.path.isdir(root):
+                start_dir = root
 
         # 2️⃣ Last selected script path
         elif getattr(self.app, "script_path", ""):
-            script = self.app.script_path
+            script = os.path.normpath(self.app.script_path)
             if os.path.isfile(script):
                 start_dir = os.path.dirname(script)
 
@@ -159,6 +169,8 @@ class FilePickerController:
         if not folder:
             return
 
+        folder = os.path.normpath(folder)
+
         py_files = [
             f for f in os.listdir(folder)
             if f.endswith(".py") and os.path.isfile(os.path.join(folder, f))
@@ -170,10 +182,11 @@ class FilePickerController:
         # Single-file shortcut
         if len(py_files) == 1:
             full_path = os.path.join(folder, py_files[0])
+            full_path = os.path.normpath(full_path)
             self._apply_selected_entry(full_path)
             return
 
-        # Multi-file → popup (to be replaced later with Qt dialog)
+        # Multi-file → popup
         popup = ScriptPickerPopup(
             parent=self.app,
             folder_path=folder,
@@ -185,9 +198,11 @@ class FilePickerController:
     # ============================================================
     # Apply selected entry
     # ============================================================
-
     def _apply_selected_entry(self, full_path):
         """Callback from ScriptPickerPopup"""
+
+        # 🔑 NORMALIZE
+        full_path = os.path.normpath(full_path)
 
         # ------------------------------------
         # Capture previous state BEFORE change
@@ -201,8 +216,10 @@ class FilePickerController:
         # ------------------------------------
 
         self.app.entry_script = full_path
+
         if hasattr(self.app, "script_path_input"):
             self.app.script_path_input.setText(full_path)
+
         self.app.project_root = os.path.dirname(full_path)
         self.app.script_path = full_path
 
@@ -212,6 +229,7 @@ class FilePickerController:
 
         old_derived = ""
         if previous_script:
+            previous_script = os.path.normpath(previous_script)
             old_derived = os.path.splitext(os.path.basename(previous_script))[0]
 
         new_derived = os.path.splitext(os.path.basename(full_path))[0]
@@ -221,8 +239,7 @@ class FilePickerController:
             new_derived
         }:
             self.app.exe_name = new_derived
-            
-            # ADD THIS
+
             if hasattr(self.app, "exe_name_input"):
                 self.app.exe_name_input.setText(new_derived)
 
@@ -232,6 +249,7 @@ class FilePickerController:
 
         self.app.state_ctrl.save_state()
         self.app.validator.validation_status_message()
+        
 
     # ============================================================
     # Select icon
@@ -246,6 +264,9 @@ class FilePickerController:
         )
 
         if path:
+            # 🔑 NORMALIZE
+            path = os.path.normpath(path)
+
             self.app.icon_path = path
 
             # ✅ update UI
@@ -254,7 +275,6 @@ class FilePickerController:
 
             self.app.state_ctrl.save_state()
             self.app.validator.validation_status_message()
-
 
     # ============================================================
     # Select output folder
@@ -269,7 +289,10 @@ class FilePickerController:
         if not folder:
             return
 
-        # optional alias (if other parts still use it)
+        # 🔑 NORMALIZE
+        folder = os.path.normpath(folder)
+
+        # optional alias
         self.app.output_path = folder
 
         # remember last location
@@ -282,6 +305,7 @@ class FilePickerController:
         if not getattr(self.app, "exe_name", "").strip():
             script = getattr(self.app, "entry_script", "") or getattr(self.app, "script_path", "")
             if script:
+                script = os.path.normpath(script)
                 base = os.path.splitext(os.path.basename(script))[0]
                 self.app.exe_name = base
 
@@ -291,11 +315,7 @@ class FilePickerController:
         self.app.state_ctrl.save_state()
         self.app.validator.validation_status_message()
     
-# -------------------------------------------------------------
-#  Popup: Choose Entry Script (Qt version)
-# -------------------------------------------------------------
 
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QComboBox, QPushButton
 
 
 class ScriptPickerPopup(QDialog):
@@ -303,9 +323,11 @@ class ScriptPickerPopup(QDialog):
         super().__init__(parent)
 
         self.setWindowTitle("Select Entry Script")
-        self.setFixedSize(325, 200)
+        self.setFixedSize(300, 200)
 
-        self.folder_path = folder_path
+        # 🔑 NORMALIZE
+        self.folder_path = os.path.normpath(folder_path)
+
         self.callback = callback
 
         # -------------------------------------------------------------
@@ -324,7 +346,7 @@ class ScriptPickerPopup(QDialog):
 
         layout = QVBoxLayout(self)
 
-        label = QLabel("Select the script that starts your program:")
+        label = QLabel("Select the script\nthat starts your program:")
         label.setWordWrap(True)
         label.setStyleSheet("""
             font-family: "Rubik";
@@ -339,10 +361,10 @@ class ScriptPickerPopup(QDialog):
             font-family: "Rubik";
             font-size: 13px;
         """)
-        layout.addWidget(self.dropdown, alignment =Qt.AlignHCenter)
+        layout.addWidget(self.dropdown, alignment=Qt.AlignHCenter)
 
         confirm_btn = QPushButton("Confirm")
-        confirm_btn.setFixedWidth(160)
+        confirm_btn.setFixedWidth(120)
         confirm_btn.clicked.connect(self.confirm)
         confirm_btn.setStyleSheet("""
             font-family: "Rubik";
@@ -353,7 +375,11 @@ class ScriptPickerPopup(QDialog):
 
     def confirm(self):
         selected_file = self.dropdown.currentText()
+
         full_path = os.path.join(self.folder_path, selected_file)
+
+        # 🔑 NORMALIZE
+        full_path = os.path.normpath(full_path)
 
         # Return selection
         self.callback(full_path)

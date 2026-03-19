@@ -142,7 +142,7 @@ def attach_tooltips(app):
     )
 
     QtTooltip(
-        app.python_entry,
+        app.python_entry_input,
         "Displays the full path to the Python interpreter.\n"
         "That will be used for building EXEs.\n"
         "This is read only.\n"

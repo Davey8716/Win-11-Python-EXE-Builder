@@ -61,15 +61,18 @@ class EXEBuilderApp(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.state_ctrl = StateController(self)
+        self._last_advisory_script = None
         self._eta_running = False
+        self._loading_state = True
 
         self.entry_script = None
         self.project_root = None
         self.exe_name_user_modified = False
         self.python_interpreter_path = ""
         self.last_python_dir = ""
-
+        
+        self.validation_controller = ValidationController(self)
+        self.state_ctrl = StateController(self)
         self.validator = ValidationController(self)
         self.activation_controller = ActivationController(self)
         self.file_pickers = FilePickerController(self)
@@ -98,7 +101,6 @@ class EXEBuilderApp(QWidget):
         # ---------------------------------------------------------
 
         self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
-
         self.building = False
         self.build_process = None
         self.current_build_paths = []
@@ -107,111 +109,89 @@ class EXEBuilderApp(QWidget):
         self.build_counter = 0
 
         self.setWindowTitle("")
-        self.setFixedSize(500, 750)
+        self.setFixedSize(500, 770)
 
-        # --------------------
-        # VARIABLES
-        # --------------------
+        if not hasattr(self, "tooltips_enabled"):
+            self.tooltips_enabled = True
 
-        self.tooltips_enabled = True
-        self.script_path = ""
-        self.icon_path = ""
-        self.output_path = ""
-        self.python_path = ""
-        self.exe_name = ""
+        if not hasattr(self, "dependency_notice_enabled"):
+            self.dependency_notice_enabled = True
 
-        self._loading_state = True
-        self.script_user_cleared = False
-        self.python_user_cleared = False
-        self.icon_user_cleared = False
-        self.output_user_cleared = False
-        self.exe_name_user_cleared = False
+        if not hasattr(self, "script_path"):
+            self.script_path = ""
 
-        self._was_build_ready = False
-        self._dependency_popup_shown = False
-        
-        
+        if not hasattr(self, "icon_path"):
+            self.icon_path = ""
 
+        if not hasattr(self, "output_path"):
+            self.output_path = ""
 
-        # =============================================================
-        # EXE name ownership tracking (USER intent only)
-        # =============================================================
+        if not hasattr(self, "python_path"):
+            self.python_path = ""
 
-        def _on_exe_name_user_edit(text):
-            if self._loading_state:
-                return
-            self.exe_name_user_modified = True
-
-
-        # =============================================================
-        # EXE name cleared by USER
-        # =============================================================
-
-        def on_exe_name_change(text):
-            if self._loading_state:
-                return
-
-            value = text.strip()
-            if not value:
-                self.exe_name_user_cleared = True
-                self.state_ctrl.save_state()
-
-            self.validator.update_build_button_state()
-
-
-        def on_script_path_change(text):
-            if self._loading_state:
-                return
-
-            value = text.strip()
-
-            if not value:
-                self.entry_script = None
-                self.project_root = None
-                self.script_user_cleared = True
-                self.state_ctrl.save_state()
-
-            self.validator.update_build_button_state()
-
-
+        if not hasattr(self, "exe_name"):
+            self.exe_name = ""
         # =============================================================
         # Title + Tooltip Toggle
         # =============================================================
-
+        
         title_row = QWidget(self)
-        title_row.setFixedHeight(40)  # ⬅️ force compact height
+        title_row.setFixedHeight(40)
+
+        toggles_row = QWidget(self)
+        toggles_row.setFixedHeight(70)
 
         title_layout = QHBoxLayout(title_row)
-        title_layout.setContentsMargins(8,0,8,0)
+        title_layout.setContentsMargins(8, 0, 8, 0)
         title_layout.setSpacing(2)
-        
-        # Toggle
+
+        toggles_layout = QVBoxLayout(toggles_row)
+        toggles_layout.setContentsMargins(8, 0, 8, 0)
+        toggles_layout.setSpacing(2)
+
         self.tooltips_checkbox = QCheckBox("Tooltips")
-        self.tooltips_checkbox.setChecked(True)
-        self.tooltips_checkbox.setFont(QFont("Rubik UI", 11, QFont.Bold))  # ⬅️ smaller font
-        self.tooltips_checkbox.setFixedHeight(30)  # ⬅️ tighter
+        self.dependency_notice = QCheckBox("Dependency Notice")
 
-        def on_tooltips_toggle(state):
-            self.tooltips_enabled = bool(state)
-            self.state_ctrl.save_state()
+        for checkbox in [
+            self.tooltips_checkbox,
+            self.dependency_notice
+            
+        ]:
+            checkbox.setFont(QFont("Rubik Ui",11, QFont.Bold))
+            checkbox.setChecked(True)
+            checkbox.setFixedSize(185,35)
+            
 
-        self.tooltips_checkbox.stateChanged.connect(on_tooltips_toggle)
-        title_layout.addWidget(self.tooltips_checkbox)
+        title_label = QLabel(" Win 11 → Python → EXE Builder")
+        title_label.setFont(QFont("Rubik UI", 12, QFont.Bold))
+        title_label.setFixedSize(290,35)
+
+
+        toggles_layout.addWidget(self.tooltips_checkbox)
+        toggles_layout.addWidget(self.dependency_notice)
+        toggles_layout.setAlignment(Qt.AlignLeft)
+        toggles_layout.setContentsMargins(3,3,3,3)
+        
+        toggles_layout.addStretch()
+
+        title_layout.addWidget(title_label)
+        title_layout.setContentsMargins(3,3,3,3)
         title_layout.addStretch()
 
-
-        # Title
-        title_label = QLabel(" Win 11 → Python → EXE Builder")
-        title_label.setFont(QFont("Rubik UI", 12, QFont.Bold))  # ⬅️ smaller
-        title_label.setFixedHeight(30)  # ⬅️ tighter
-        title_layout.addWidget(title_label)
-
-
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(1,1,1,1)
+        self.main_layout.setContentsMargins(1, 1, 1, 1)
         self.main_layout.setSpacing(2)
 
         self.main_layout.addWidget(title_row)
+        self.main_layout.addWidget(toggles_row)
+        
+        
+        
+        
+        # =============================================================
+   
+
+
 
 
         # =============================================================
@@ -251,11 +231,9 @@ class EXEBuilderApp(QWidget):
         apps_layout.setContentsMargins(1,1,1,1)
 
         self.apps_btn = QPushButton("Open Installed Apps")
-        self.apps_btn.setFixedWidth(160)
         self.apps_btn.clicked.connect(self.file_pickers.open_installed_apps)
 
         self.open_python_site_btn = QPushButton("Python.org")
-        self.open_python_site_btn.setFixedWidth(120)
         self.open_python_site_btn.clicked.connect(open_python_site)
 
         apps_layout.addWidget(self.apps_btn)
@@ -263,20 +241,19 @@ class EXEBuilderApp(QWidget):
         apps_layout.addStretch()
 
         combined_layout.addWidget(apps_row)
-
+    
         # =================================================
         # Interpreter (VERTICAL stack)
         # =================================================
 
         interpreter_container = QWidget()
         interpreter_layout = QVBoxLayout(interpreter_container)
-        interpreter_layout.setContentsMargins(3,3,3,3)
-        interpreter_layout.setSpacing(3)
+        interpreter_layout.setContentsMargins(1,1,1,1)
+        interpreter_layout.setSpacing(1)
 
 
         # --- Button ---
         self.interpreter_btn = QPushButton("Select Python Interpreter")
-        self.interpreter_btn.setFixedWidth(180)
         self.interpreter_btn.clicked.connect(
             self.file_pickers.select_python_interpreter
         )
@@ -290,24 +267,19 @@ class EXEBuilderApp(QWidget):
         interpreter_layout.addWidget(self.python_status_label)
 
         # --- Path ---
-        self.python_entry = QLineEdit()
-        self.python_entry.setReadOnly(True)
-        self.python_entry.setPlaceholderText("No Python interpreter selected...")
-        interpreter_layout.addWidget(self.python_entry)
+        self.python_entry_input = QLineEdit()
+        self.python_entry_input.setPlaceholderText("No Python interpreter selected...")
+        interpreter_layout.addWidget(self.python_entry_input)
 
         # add interpreter block into frame
         combined_layout.addWidget(interpreter_container)
-
-        # # IMPORTANT: this keeps everything sitting correctly under apps
-        # combined_layout.addStretch()
 
         # =================================================
         # ADD FRAME (only once)
         # =================================================
 
         row2_layout.addWidget(combined_frame)
-        
-        # ✅ ADD THIS RIGHT HERE
+
         self.main_layout.addWidget(row2)
 
         # ---------------------------------
@@ -329,7 +301,6 @@ class EXEBuilderApp(QWidget):
         # =================================================
 
         self.folder_btn = QPushButton("Select Python Folder")
-        self.folder_btn.setFixedWidth(160)
         self.folder_btn.clicked.connect(self.file_pickers.select_script_folder)
 
         python_layout.addWidget(self.folder_btn, alignment=Qt.AlignLeft)
@@ -344,7 +315,8 @@ class EXEBuilderApp(QWidget):
         self.script_folder_status_label.setReadOnly(True)
 
         python_layout.addWidget(self.script_folder_status_label)
-
+        
+     
         # =================================================
         # Row 3: Path + reset (side-by-side)
         # =================================================
@@ -356,32 +328,27 @@ class EXEBuilderApp(QWidget):
 
 
         self.script_path_input = QLineEdit()
-        self.script_path_input.setReadOnly(True)
+    
         self.script_path_input.setPlaceholderText("Select script or folder...")
         script_layout.addWidget(self.script_path_input)
 
         def clear_script_path():
             self.script_path_input.clear()
-            self.script_user_cleared = True
             self.entry_script = None
             self.project_root = None
             self.script_path = ""
             self.state_ctrl.save_state()
             self.validator.update_build_button_state()
+            
+      
 
-        self.script_clear_btn = QPushButton("↺")
-        self.script_clear_btn.setFixedSize(36, 32)
-        self.script_clear_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #444444;
-            }
-            QPushButton:hover {
-                background-color: #555555;
-            }
-        """)
+        self.script_clear_btn = QPushButton("")
         self.script_clear_btn.clicked.connect(clear_script_path)
+        
+   
 
         script_layout.addWidget(self.script_clear_btn)
+        script_layout.setContentsMargins(1,1,1,1)
 
         python_layout.addWidget(script_row)
 
@@ -390,7 +357,65 @@ class EXEBuilderApp(QWidget):
         # =================================================
 
         self.main_layout.addWidget(python_frame)
-       
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
         # =============================================================
         # Icon Picker
@@ -412,8 +437,8 @@ class EXEBuilderApp(QWidget):
         icon_frame.setLineWidth(1)
 
         icon_frame_layout = QVBoxLayout(icon_frame)
-        icon_frame_layout.setContentsMargins(6, 6, 6, 6)
-        icon_frame_layout.setSpacing(3)
+        icon_frame_layout.setContentsMargins(1,1,1,1)
+        icon_frame_layout.setSpacing(1)
 
 
         icon_block = QWidget()
@@ -427,65 +452,112 @@ class EXEBuilderApp(QWidget):
         icon_btn_row = QWidget()
         icon_btn_layout = QHBoxLayout(icon_btn_row)
         icon_btn_layout.setContentsMargins(1,1,1,1)
-        icon_btn_layout.setSpacing(3)
+        icon_btn_layout.setSpacing(1)
 
         self.icon_btn = QPushButton("Select Icon (optional)")
-        self.icon_btn.setFixedWidth(160)
+
         self.icon_btn.clicked.connect(self.file_pickers.select_icon)
         icon_btn_layout.addWidget(self.icon_btn)
 
         self.ico_convert_btn = QPushButton("Open ICO Converters")
-        self.ico_convert_btn.setFixedWidth(160)
         self.ico_convert_btn.clicked.connect(open_icon_sites)
         icon_btn_layout.addWidget(self.ico_convert_btn)
 
         icon_btn_layout.addStretch()
+        icon_btn_layout.setSpacing(5)
         icon_block_layout.addWidget(icon_btn_row)
 
         # -------- Row 2: entry + clear --------
 
         icon_entry_row = QWidget()
         icon_entry_layout = QHBoxLayout(icon_entry_row)
-        icon_entry_layout.setContentsMargins(3,3,3,3)
-        icon_entry_layout.setSpacing(3)
-
-     # ← ADD THIS
+        icon_entry_layout.setContentsMargins(1,1,1,1)
+        icon_entry_layout.setSpacing(1)
 
         self.icon_path_input = QLineEdit()
-        
-        self.icon_path_input.setReadOnly(True)
         self.icon_path_input.setPlaceholderText("No icon selected...")
-        self.icon_path_input.setFixedWidth(425)
-        icon_entry_layout.addWidget(self.icon_path_input)
-        icon_entry_layout.addStretch()
-       
+
 
         def clear_icon():
             self.icon_path_input.clear()
-            self.icon_user_cleared = True
             self.icon_path = ""
             self.state_ctrl.save_state()
             self.validator.update_build_button_state()
 
-        self.icon_clear_btn = QPushButton("↺")
-        self.icon_clear_btn.setFixedSize(36, 32)
-        self.icon_clear_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #444444;
-            }
-            QPushButton:hover {
-                background-color: #555555;
-            }
-        """)
+        self.icon_clear_btn = QPushButton("")
         self.icon_clear_btn.clicked.connect(clear_icon)
-
+        
+        
+        icon_entry_layout.addWidget(self.icon_path_input)
         icon_entry_layout.addWidget(self.icon_clear_btn)
-        
-        
-        icon_block_layout.addWidget(icon_entry_row, alignment= Qt.AlignLeft)
+  
+        icon_block_layout.addWidget(icon_entry_row)
 
         icon_frame_layout.addWidget(icon_block)
         self.main_layout.addWidget(icon_frame)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         # =============================================================
         # Output Folder
@@ -495,9 +567,6 @@ class EXEBuilderApp(QWidget):
         output_block_layout = QVBoxLayout(output_block)
         output_block_layout.setContentsMargins(3,3,3,3)
         output_block_layout.setSpacing(3)
-
-
-        # -------- Row 1: button + status stack --------
 
         # =============================================================
         # Output FRAME (structured vertical)
@@ -509,16 +578,14 @@ class EXEBuilderApp(QWidget):
         output_frame.setLineWidth(1)
 
         output_layout = QVBoxLayout(output_frame)
-        output_layout.setContentsMargins(6, 6, 6, 6)
+        output_layout.setContentsMargins(3,3,3,3)
         output_layout.setSpacing(3)
-
 
         # =================================================
         # Row 1: Select Output Folder button
         # =================================================
 
         self.output_btn = QPushButton("Select Output Folder")
-        self.output_btn.setFixedWidth(160)
         self.output_btn.clicked.connect(self.file_pickers.select_output_folder)
 
         output_layout.addWidget(self.output_btn, alignment=Qt.AlignLeft)
@@ -528,15 +595,8 @@ class EXEBuilderApp(QWidget):
         # =================================================
 
         self.output_path_status_label = QLineEdit("EXE OUTPUT PATH NOT SET")
-        self.output_path_status_label.setReadOnly(True)
-        self.output_path_status_label.setFont(QFont("Rubik UI", 11))
-        self.output_path_status_label.setStyleSheet("color: #be1a1a;")
-
         self.exe_name_status_label = QLineEdit("EXE NAME NOT SET")
-        self.exe_name_status_label.setReadOnly(True)
-        self.exe_name_status_label.setFont(QFont("Rubik UI", 11))
-        self.exe_name_status_label.setStyleSheet("color: #be1a1a;")
-
+    
         output_layout.addWidget(self.output_path_status_label)
         output_layout.addWidget(self.exe_name_status_label)
 
@@ -549,7 +609,6 @@ class EXEBuilderApp(QWidget):
         output_entry_layout.setContentsMargins(1,1,1,1)
 
         self.output_path_input = QLineEdit()
-        self.output_path_input.setReadOnly(True)
         self.output_path_input.setPlaceholderText("No output folder selected...")
         output_entry_layout.addWidget(self.output_path_input)
 
@@ -559,21 +618,11 @@ class EXEBuilderApp(QWidget):
         def reset_output_to_desktop():
             desktop = get_desktop_path()
             self.output_path_input.setText(desktop)
-            self.output_user_cleared = True
             self.output_path = desktop
             self.state_ctrl.save_state()
             self.validator.update_build_button_state()
 
-        self.output_refresh_btn = QPushButton("↺")
-        self.output_refresh_btn.setFixedSize(36, 32)
-        self.output_refresh_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #444444;
-            }
-            QPushButton:hover {
-                background-color: #555555;
-            }
-        """)
+        self.output_refresh_btn = QPushButton("")
         self.output_refresh_btn.clicked.connect(reset_output_to_desktop)
 
         output_entry_layout.addWidget(self.output_refresh_btn)
@@ -585,10 +634,9 @@ class EXEBuilderApp(QWidget):
 
         exe_row = QWidget()
         exe_layout = QHBoxLayout(exe_row)
-        exe_layout.setContentsMargins(3,3,3,3)
+        exe_layout.setContentsMargins(1,1,1,1)
 
         self.exe_name_input = QLineEdit()
-        # self.exe_name_input.setReadOnly(True)
         self.exe_name_input.setPlaceholderText("Output file name (without .exe)")
         exe_layout.addWidget(self.exe_name_input)
 
@@ -605,21 +653,10 @@ class EXEBuilderApp(QWidget):
             self.state_ctrl.save_state()
             self.validator.update_build_button_state()
 
-        self.refresh_btn = QPushButton("↺")
-        self.refresh_btn.setFixedSize(36, 32)
-        self.refresh_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #444444;
-            }
-            QPushButton:hover {
-                background-color: #555555;
-            }
-        """)
+        self.refresh_btn = QPushButton("")
         self.refresh_btn.clicked.connect(reset_exe_name_from_script)
-
+        
         exe_layout.addWidget(self.refresh_btn)
-
-        # ✅ THIS is the key line (must be BEFORE adding frame to main_layout)
         output_layout.addWidget(exe_row)
 
         # =================================================
@@ -627,8 +664,132 @@ class EXEBuilderApp(QWidget):
         # =================================================
 
         self.main_layout.addWidget(output_frame)
+        
+        
+        
+        
+        
+
+     # EXE name ownership tracking (USER intent only)
+        # =============================================================
+
+        def _on_exe_name_user_edit(text):
+            if self._loading_state:
+                return
+            self.exe_name_user_modified = True
+
+
+        # =============================================================
+        # EXE name cleared by USER
+        # =============================================================
+
+        def on_exe_name_change(text):
+            if self._loading_state:
+                return
+
+            value = text.strip()
+            if not value:
+                self.state_ctrl.save_state()
+
+            self.validator.update_build_button_state()
+
+
+        def on_script_path_change(text):
+            if getattr(self, "_loading_state", False):
+                return
+
+            value = text.strip()
+
+            if not value:
+                self.entry_script = None
+                self.project_root = None
+
+                # ✅ clear dependent fields
+                if hasattr(self, "output_path_input"):
+                    self.output_path_input.clear()
+                self.output_path = ""
+
+                if hasattr(self, "exe_name_input"):
+                    self.exe_name_input.clear()
+                self.exe_name = ""
+
+                self.state_ctrl.save_state()
+
+            self.validator.update_build_button_state()
+
+        def on_dependency_toggle(state):
+            self.dependency_notice_enabled = bool(state)
+
+            # -------------------------
+            # ON → show popup
+            # -------------------------
+            if self.dependency_notice_enabled:
+                script = self.script_path
+
+                if script and os.path.isfile(script):
+                    packages = self.validator.run_dependency_advisory(script)
+
+                    if packages:
+                        self.show_dependency_warning_popup(packages)
+
+            # -------------------------
+            # OFF → close popup
+            # -------------------------
+            else:
+                if hasattr(self, "popup") and self.popup:
+                    self.popup.close()
+
+            self.state_ctrl.save_state()
                 
         
+        def on_tooltips_toggle(state):
+            self.tooltips_enabled = bool(state)
+            self.state_ctrl.save_state()
+
+        self.dependency_notice.stateChanged.connect(on_dependency_toggle)
+        self.tooltips_checkbox.stateChanged.connect(on_tooltips_toggle)
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
         # -----------------------------
         # CONNECT SIGNALS (PySide6)
         # -----------------------------
@@ -639,17 +800,16 @@ class EXEBuilderApp(QWidget):
         self.script_path_input.textChanged.connect(on_script_path_change)
 
         self.output_path_input.textChanged.connect(
-            lambda text: None if self._loading_state else self.validator.update_build_button_state()
+            lambda text: None if getattr(self, "_loading_state", False) else self.validator.update_build_button_state()
         )
 
         self.exe_name_input.textChanged.connect(
-            lambda text: None if self._loading_state else self.validator.update_build_button_state()
+            lambda text: None if getattr(self, "_loading_state", False) else self.validator.update_build_button_state()
         )
 
         self.icon_path_input.textChanged.connect(
-            lambda text: None if self._loading_state else self.validator.update_build_button_state()
+            lambda text: None if getattr(self, "_loading_state", False) else self.validator.update_build_button_state()
         )
-        
 
         # Store default style (Qt doesn't expose border color directly like CTk)
         self.exe_entry_default_style = self.exe_name_input.styleSheet()
@@ -686,10 +846,8 @@ class EXEBuilderApp(QWidget):
         # =================================================
 
         self.status_label = QLineEdit("Ready")
+        self.status_label.setFont(QFont("Rubik UI", 11))
         self.status_label.setReadOnly(True)
-        
-        
-
         build_layout.addWidget(self.status_label)
 
         # =================================================
@@ -709,8 +867,31 @@ class EXEBuilderApp(QWidget):
         self.validator.validation_status_message()
         self.validator.update_build_button_state()
 
-        self.validation_controller = ValidationController(self)
+        for refresh_btns in [
+            self.refresh_btn,
+            self.output_refresh_btn,
+            self.icon_clear_btn,
+            self.script_clear_btn
+            
+        ]:
+            refresh_btns.setText("🔃")
+            refresh_btns.setFixedSize(35,35)
+            
+            
         
+        for output_paths in [
+            self.python_entry_input,
+            self.script_path_input,
+            self.icon_path_input,
+            self.output_path_input,
+            self.exe_name_input,
+        ]:
+            output_paths.setReadOnly(True)
+            output_paths.setFont(QFont("Rubik UI", 10))
+    
+        self.exe_name_input.setReadOnly(False)
+
+
         for btns in [
             self.open_python_site_btn,
             self.apps_btn,
@@ -723,34 +904,45 @@ class EXEBuilderApp(QWidget):
         ]:
             
             btns.setStyleSheet("background-color: #494949")
-            btns.setFixedHeight(35)
+            btns.setFont(QFont("Rubik UI", 11,))
+            btns.setFixedSize(180,35)
             
-        for lines in [
+        for labels in [
             self.script_folder_status_label,
             self.output_path_status_label,
             self.exe_name_status_label
             
             ]:
-                lines.setReadOnly(True)
-                lines.setFixedSize(225,35)
+                labels.setReadOnly(True)
+                labels.setFixedSize(200,35)
+                labels.setFont(QFont("Rubik Ui", 11))
+    
                 
-        self.python_status_label.setFixedSize(325,35)
+        self.python_status_label.setFixedSize(250,35)
+    
+
+    def closeEvent(self, event):
+        self.state_ctrl.save_state()
 
     # =============================================================
     # Dependency Popup (PySide6)
     # =============================================================
 
-    def show_dependency_warning_popup(self, packages: list[str]):
+    def build_dependency_popup(self, packages: list[str]):
         if not packages:
-            return
+            return None
 
-        self.popup = QDialog(self)
-        self.popup.setFixedSize(300,300)
-        self.popup.setWindowTitle("Dependency Notice")
-        self.popup.setModal(False)
-        self.popup.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+        # close existing popup
+        if hasattr(self, "popup") and self.popup:
+            self.popup.close()
 
-        layout = QVBoxLayout(self.popup)
+        popup = QDialog(self)
+        popup.setFixedSize(300, 300)
+        popup.setWindowTitle("Dependency Notice")
+        popup.setModal(False)
+        popup.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+
+        layout = QVBoxLayout(popup)
 
         label1 = QLabel(
             "This script references the following external packages:"
@@ -776,17 +968,30 @@ class EXEBuilderApp(QWidget):
 
         ok_btn = QPushButton("OK")
         ok_btn.setFixedWidth(80)
-        ok_btn.clicked.connect(self.popup.close)
+        ok_btn.clicked.connect(popup.close)
         layout.addWidget(ok_btn, alignment=Qt.AlignHCenter)
 
-        # Position to the right of main window
-        self.popup.adjustSize()
+        # Position
+        popup.adjustSize()
         x = self.x() + self.width() + 10
         y = self.y() + 50
-        self.popup.move(x, y)
+        popup.move(x, y)
 
-        self.popup.show()
+        self.popup = popup
+        return popup
+    
+    def show_dependency_warning_popup(self, packages: list[str]):
+        if not getattr(self, "dependency_notice_enabled", True):
+            if hasattr(self, "popup") and self.popup:
+                self.popup.close()
+            return
 
+        popup = self.build_dependency_popup(packages)
+
+        if popup:
+            popup.show()
+
+        
     # -------------------------------------------------------------
     # Restore always-on-top when user returns to the app
     # -------------------------------------------------------------
@@ -844,10 +1049,14 @@ class EXEBuilderApp(QWidget):
         # ==================================================
         # READ UI VALUES
         # ==================================================
-
+        
         script = self.script_path_input.text().strip()
         outdir = self.output_path_input.text().strip()
         icon = self.icon_path_input.text().strip()
+
+        script = os.path.normpath(script) if script else ""
+        outdir = os.path.normpath(outdir) if outdir else ""
+        icon = os.path.normpath(icon) if icon else ""
 
         entry_point = self.entry_script
         project_root = self.project_root
@@ -879,6 +1088,7 @@ class EXEBuilderApp(QWidget):
         self.build_btn.clicked.disconnect()
         self.build_btn.clicked.connect(self.build_exe)
         self.status_label.setFixedWidth(425)
+        
 
 
         self.build_start_time = time.time()
@@ -1064,7 +1274,9 @@ class EXEBuilderApp(QWidget):
             args=(cmd,),
             daemon=True
         ).start()
-         
+        
+        self.set_controls_enabled(True)
+        self.validator.update_build_button_state()
             
     def ui_safe(self, fn):
         QTimer.singleShot(0, fn)
@@ -1072,8 +1284,6 @@ class EXEBuilderApp(QWidget):
 
 
     def set_controls_enabled(self, enabled: bool):
-        disabled_style = "background-color: #2a2a2a;"
-        normal_style = "background-color: #444444;"
 
         # 🔒 LOCK DURING BUILD
         locked_controls = [
@@ -1085,7 +1295,9 @@ class EXEBuilderApp(QWidget):
 
         for btn in locked_controls:
             btn.setEnabled(enabled)
-            btn.setStyleSheet(normal_style if enabled else disabled_style)
+            
+            
+
 
     # ==================================================
     # UI RESTORE: Build finished / aborted / cancelled
@@ -1112,6 +1324,8 @@ class EXEBuilderApp(QWidget):
         # -------------------------------
         # Re-enable recovery buttons
         # -------------------------------
+        
+        
 
         if hasattr(self, "output_refresh_btn"):
             self.output_refresh_btn.setEnabled(True)
@@ -1122,8 +1336,9 @@ class EXEBuilderApp(QWidget):
         # -------------------------------
         # Re-apply validation policy
         # -------------------------------
+        # 🔑 FORCE validation AFTER unlock
+        QTimer.singleShot(0, self.validator.update_build_button_state)
 
-        self.validator.update_build_button_state()
 
     def set_status(self, text):
         self.status_label.setText(text)
@@ -1169,6 +1384,15 @@ if __name__ == "__main__":
         color: #e0e0e0;
         font-family: "Rubik UI";
     }
+    /* -----------------------------
+    CHECK BOXES(CONTRAST GREY)
+    ----------------------------- */
+    QCheckBox {
+        background-color: #1c1c1c;
+        border: 1px solid #1c1c1c;
+        border-radius: 3px;
+    }
+    
 
     /* -----------------------------
     FRAMES (FORCE CONSISTENT GREY)

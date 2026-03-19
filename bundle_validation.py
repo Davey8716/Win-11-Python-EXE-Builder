@@ -6,7 +6,6 @@ import subprocess
 INVALID_EXE_CHARS = set('<>:"/\\|?*')
 CREATE_NO_WINDOW = 0x08000000
 
-
 def validate_bundle_inputs(app):
     """
     Validate that the current app state is safe for running PyInstaller.
@@ -19,8 +18,8 @@ def validate_bundle_inputs(app):
     # ---------------------------------------------------------
     # 1. Entry script
     # ---------------------------------------------------------
-
-    entry = getattr(app, "entry_script", "").strip()
+    entry = getattr(app, "entry_script", "") or ""
+    entry = os.path.normpath(entry) if entry else ""
 
     if not entry:
         return False, "No entry script selected."
@@ -34,7 +33,6 @@ def validate_bundle_inputs(app):
     # ---------------------------------------------------------
     # 2. Python interpreter
     # ---------------------------------------------------------
-
     python = getattr(app, "python_interpreter_path", "").strip()
 
     if not python:
@@ -43,7 +41,6 @@ def validate_bundle_inputs(app):
     if not os.path.isfile(python):
         return False, "Python interpreter path is invalid."
 
-    # Verify interpreter actually runs
     try:
         result = subprocess.run(
             [python, "--version"],
@@ -61,8 +58,8 @@ def validate_bundle_inputs(app):
     # ---------------------------------------------------------
     # 3. Output directory
     # ---------------------------------------------------------
-
-    output_dir = getattr(app, "output_path", "").strip()
+    output_dir = getattr(app, "output_path", "") or ""
+    output_dir = os.path.normpath(output_dir) if output_dir else ""
 
     if not output_dir:
         return False, "Output folder not set."
@@ -73,7 +70,6 @@ def validate_bundle_inputs(app):
     # ---------------------------------------------------------
     # 4. EXE name
     # ---------------------------------------------------------
-
     exe_name = getattr(app, "exe_name", "").strip()
 
     if not exe_name:
@@ -91,8 +87,8 @@ def validate_bundle_inputs(app):
     # ---------------------------------------------------------
     # 5. Icon (optional)
     # ---------------------------------------------------------
-
-    icon = getattr(app, "icon_path", "").strip()
+    icon = getattr(app, "icon_path", "") or ""
+    icon = os.path.normpath(icon) if icon else ""
 
     if icon:
         if not os.path.isfile(icon):
@@ -104,5 +100,4 @@ def validate_bundle_inputs(app):
     # ---------------------------------------------------------
     # All checks passed
     # ---------------------------------------------------------
-
     return True, None

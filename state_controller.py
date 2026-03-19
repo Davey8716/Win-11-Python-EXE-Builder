@@ -2,6 +2,7 @@ import os
 import json
 import time
 import sys
+from pathlib import Path
 from PySide6.QtCore import QTimer
 
 
@@ -16,7 +17,7 @@ class StateController:
         else:
             base_dir = os.path.abspath(".")
         return os.path.join(base_dir, "exe_builder_state.json")
-
+    
     # ============================================================
     # ETA time estimator
     # ============================================================
@@ -51,7 +52,7 @@ class StateController:
         try:
             with open(state_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-
+                
             # -------------------------
             # Tooltips
             # -------------------------
@@ -60,15 +61,25 @@ class StateController:
             self.app.tooltips_checkbox.setChecked(tooltips)
 
             # -------------------------
-            # Core paths (NO _var)
+            # Dependency Notice
             # -------------------------
-            script = data.get("last_script_path", "")
-            icon = data.get("last_icon_path", "")
-            output = data.get("last_output_folder", "")
+            dependency = data.get("dependency_notice_enabled", True)
+            self.app.dependency_notice_enabled = dependency
+            self.app.dependency_notice.setChecked(dependency)
+
+            # -------------------------
+            # Core paths (NORMALIZED)
+            # -------------------------
+            def _norm(p):
+                return os.path.normpath(p) if p else ""
+
+            script = _norm(data.get("last_script_path", ""))
+            icon = _norm(data.get("last_icon_path", ""))
+            output = _norm(data.get("last_output_folder", ""))
 
             self.app.script_path = script if os.path.isfile(script) else ""
             self.app.icon_path = icon if os.path.isfile(icon) else ""
-            self.app.output_path = output
+            self.app.output_path = output if os.path.isdir(output) else ""
 
             # -------------------------
             # Build info
@@ -90,7 +101,7 @@ class StateController:
             # -------------------------
             # Python interpreter
             # -------------------------
-            python_path = data.get("python_interpreter_path", "")
+            python_path = _norm(data.get("python_interpreter_path", ""))
             if python_path and os.path.isfile(python_path):
                 self.app.python_interpreter_path = python_path
                 
@@ -98,8 +109,8 @@ class StateController:
             # Push into UI (CRITICAL)
             # -------------------------
             if python_path and os.path.isfile(python_path):
-                if hasattr(self.app, "python_entry"):
-                    self.app.python_entry.setText(python_path)
+                if hasattr(self.app, "python_entry_input"):
+                    self.app.python_entry_input.setText(python_path)
                     
             # -------------------------
             # Push script into UI
@@ -131,23 +142,41 @@ class StateController:
 
         except Exception as e:
             print("State load error:", e)
+            
+            # -------------------------
+            # PUSH ALL STATE → UI (ALWAYS)
+            # -------------------------
 
-    # ============================================================
-    # SAVE
-    # ============================================================
+            if hasattr(self.app, "exe_name_input"):
+                self.app.exe_name_input.setText(self.app.exe_name or "")
+
+            if hasattr(self.app, "icon_path_input"):
+                self.app.icon_path_input.setText(self.app.icon_path or "")
+
+            if hasattr(self.app, "script_path_input"):
+                self.app.script_path_input.setText(self.app.script_path or "")
+
+            # 🔑 ONLY validate if not loading
+            if hasattr(self.app, "validator") and not self.app._loading_state:
+                self.app.validator.update_build_button_state()
+    
 
     def save_state(self):
+        def _norm(p):
+            return os.path.normpath(p) if p else ""
+
         data = {
-            "last_script_path": self.app.script_path,
-            "last_icon_path": self.app.icon_path,
-            "last_output_folder": self.app.output_path,
+            "last_script_path": _norm(self.app.script_path),
+            "last_icon_path": _norm(self.app.icon_path),
+            "last_output_folder": _norm(self.app.output_path),
             "last_build_seconds": self.app.last_build_seconds,
             "build_counter": self.app.build_counter,
             "last_exe_name": self.app.exe_name,
             "icon_user_cleared": getattr(self.app, "icon_user_cleared", False),
             "script_user_cleared": getattr(self.app, "script_user_cleared", False),
-            "python_interpreter_path": getattr(self.app, "python_interpreter_path", ""),
+            "python_interpreter_path": _norm(getattr(self.app, "python_interpreter_path", "")),
             "tooltips_enabled": getattr(self.app, "tooltips_enabled", True),
+            "dependency_notice_enabled": getattr(self.app, "dependency_notice_enabled", True),
             "recent_scripts": []
         }
 

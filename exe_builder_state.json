@@ -1,13 +1,14 @@
 {
-    "last_script_path": "C:/Users/davey/Desktop/Projects/Win-11-Python-EXE-Builder\\main.py",
-    "last_icon_path": "C:/Users/davey/Desktop/Projects/Win-11-Python-EXE-Builder/Icons/Exe_Icon.ico",
-    "last_output_folder": "C:/Users/davey/Desktop/Projects/Win-11-Python-EXE-Builder",
-    "last_build_seconds": 63,
-    "build_counter": 2,
-    "last_exe_name": "main",
-    "icon_user_cleared": true,
-    "script_user_cleared": true,
-    "python_interpreter_path": "C:/Users/davey/AppData/Local/Programs/Python/Python313/python.exe",
+    "last_script_path": "",
+    "last_icon_path": "",
+    "last_output_folder": "",
+    "last_build_seconds": 45,
+    "build_counter": 0,
+    "last_exe_name": "",
+    "icon_user_cleared": false,
+    "script_user_cleared": false,
+    "python_interpreter_path": "C:\\Users\\davey\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
     "tooltips_enabled": true,
+    "dependency_notice_enabled": false,
     "recent_scripts": []
 }
