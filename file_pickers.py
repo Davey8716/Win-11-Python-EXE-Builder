@@ -288,6 +288,10 @@ class FilePickerController:
             # ✅ update UI
             if hasattr(self.app, "icon_path_input"):
                 self.app.icon_path_input.setText(path)
+                
+            self.app.add_recent_icon(path)
+            self.app.populate_recent_icons_dropdown()
+
 
             self.app.state_ctrl.save_state()
             self.app.validator.validation_status_message()

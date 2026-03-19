@@ -211,12 +211,22 @@ class ValidationController:
         outdir = os.path.normpath(outdir) if outdir else ""
         desktop = os.path.join(os.path.expanduser("~"), "Desktop")
         
+        # 🔑 FORCE sync icon from UI (single source of truth)
+        if hasattr(self.app, "icon_path_input"):
+            ui_icon = self.app.icon_path_input.text().strip()
+            self.app.icon_path = os.path.normpath(ui_icon) if ui_icon else ""
+
+        
         # -------------------------------
         # ICON CLEAR BUTTON STATE
         # -------------------------------
 
         if hasattr(self.app, "icon_clear_btn"):
             icon_path = getattr(self.app, "icon_path", "").strip()
+
+            # 🔑 fallback to QLineEdit text if state is empty
+            if not icon_path and hasattr(self.app, "icon_path_input"):
+                icon_path = self.app.icon_path_input.text().strip()
 
             if icon_path:
                 # ACTIVE (icon exists → can clear)
@@ -272,7 +282,8 @@ class ValidationController:
                         color: #777777;
                     }
                 """)
-
+                
+      
         # --------------------------------
         # OUTPUT refresh button
         # --------------------------------

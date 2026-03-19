@@ -1,10 +1,10 @@
 {
-    "last_script_path": "",
-    "last_icon_path": "",
+    "last_script_path": "C:\\Users\\davey\\Desktop\\Projects\\Pal_Nagger\\main.py",
+    "last_icon_path": "C:\\Users\\davey\\Desktop\\Projects\\Win-11-Python-EXE-Builder\\Icons\\Exe_Icon.ico",
     "last_output_folder": "",
     "last_build_seconds": 45,
     "build_counter": 26,
-    "last_exe_name": "",
+    "last_exe_name": "main",
     "icon_user_cleared": false,
     "script_user_cleared": false,
     "python_interpreter_path": "C:\\Users\\davey\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
@@ -13,11 +13,12 @@
     "recent_scripts": [
         "C:\\Users\\davey\\Desktop\\Projects\\Pal_Nagger\\main.py",
         "C:\\Users\\davey\\Desktop\\Projects\\Pinger_App\\main.py",
-        "C:\\Users\\davey\\Desktop\\Projects\\Win-11-Python-EXE-Builder\\file_pickers.py",
         "C:\\Users\\davey\\Desktop\\Projects\\Windows_Utility\\main_utility_gui.py",
         "C:\\Users\\davey\\Desktop\\Projects\\Energy_Saver_App\\main.py",
-        "C:\\Users\\davey\\Desktop\\Projects\\Youtube_Downloader\\Youtube_Downloader\\main.py",
         "C:\\Users\\davey\\Desktop\\Projects\\Folder_Creator\\main.py",
         "C:\\Users\\davey\\Desktop\\Projects\\Text Editor\\main.py"
+    ],
+    "recent_icons": [
+        "C:\\Users\\davey\\Desktop\\Projects\\Win-11-Python-EXE-Builder\\Icons\\Exe_Icon.ico"
     ]
 }

@@ -160,6 +160,11 @@ class StateController:
             "recent_scripts",
             existing_data.get("recent_scripts", [])
         )
+        
+        recent_icons = getattr(self.app, "state_data", {}).get(
+            "recent_icons",
+            existing_data.get("recent_icons", [])
+        )
 
         data = {
             "last_script_path": _norm(self.app.script_path),
@@ -176,6 +181,7 @@ class StateController:
             "tooltips_enabled": getattr(self.app, "tooltips_enabled", True),
             "dependency_notice_enabled": getattr(self.app, "dependency_notice_enabled", True),
             "recent_scripts": recent_scripts,
+            "recent_icons": recent_icons,
         }
 
         self.app.state_data = data

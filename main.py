@@ -538,43 +538,119 @@ class EXEBuilderApp(QWidget):
         icon_frame_layout.setContentsMargins(1,1,1,1)
         icon_frame_layout.setSpacing(1)
 
-
         icon_block = QWidget()
         icon_block_layout = QVBoxLayout(icon_block)
         icon_block_layout.setContentsMargins(1,1,1,1)
-        icon_block_layout.setSpacing(1)
+        icon_block_layout.setSpacing(3)
 
 
-        # -------- Row 1: buttons --------
+        # -------- Row 1: Select Icon + Recent Dropdown + Delete --------
 
-        icon_btn_row = QWidget()
-        icon_btn_layout = QHBoxLayout(icon_btn_row)
-        icon_btn_layout.setContentsMargins(1,1,1,1)
-        icon_btn_layout.setSpacing(1)
+        icon_row1 = QWidget()
+        icon_row1_layout = QHBoxLayout(icon_row1)
+        icon_row1_layout.setContentsMargins(1,1,1,1)
+        icon_row1_layout.setSpacing(5)
 
         self.icon_btn = QPushButton("Select Icon (optional)")
-
         self.icon_btn.clicked.connect(self.file_pickers.select_icon)
-        icon_btn_layout.addWidget(self.icon_btn)
+
+        self.select_recent_icons = QComboBox()
+        self.select_recent_icons.setFixedSize(180,35)
+        self.select_recent_icons.setFont(QFont("Rubik UI", 11))
+
+        # header
+        self.select_recent_icons.addItem("Select Recent Icon")
+
+        model = self.select_recent_icons.model()
+        item = model.item(0)
+        item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
+
+        # placeholder behavior
+        self.select_recent_icons.setEditable(True)
+        self.select_recent_icons.lineEdit().setFont(QFont("Rubik UI", 12))
+        self.select_recent_icons.lineEdit().setReadOnly(True)
+
+        self.select_recent_icons.setStyleSheet("""
+            QComboBox {
+                background-color: #121212;
+                color: #e0e0e0;
+                border: 1px solid #2a2a2a;
+                padding: 4px;
+            }
+
+            QComboBox::drop-down {
+                border: none;
+                background: #121212;
+            }
+
+            QComboBox QAbstractItemView {
+                background-color: #121212;
+                color: #e0e0e0;
+                selection-background-color: #2a2a2a;
+            }
+        """)
+
+        self.delete_recent_icons = QPushButton("✖")
+        self.delete_recent_icons.setFixedSize(35,35)
+        self.delete_recent_icons.setEnabled(True)
+
+        self.delete_recent_icons.setStyleSheet("""
+            QPushButton {
+                background-color: #2a2a2a;
+                border: 1px solid #3a3a3a;
+                border-radius: 5px;
+                color: #e0e0e0;
+                font-size: 14px;
+            }
+
+            QPushButton:hover {
+                background-color: #3a3a3a;
+            }
+
+            QPushButton:pressed {
+                background-color: #1f1f1f;
+            }
+
+            QPushButton:disabled {
+                background-color: #1a1a1a;
+                color: #555;
+            }
+        """)
+
+        icon_row1_layout.addWidget(self.icon_btn)
+        icon_row1_layout.addWidget(self.select_recent_icons)
+        icon_row1_layout.addWidget(self.delete_recent_icons)
+        icon_row1_layout.addStretch()
+
+        icon_block_layout.addWidget(icon_row1)
+
+
+
+        # -------- Row 2: ICO Converter (below) --------
+
+        icon_row2 = QWidget()
+        icon_row2_layout = QHBoxLayout(icon_row2)
+        icon_row2_layout.setContentsMargins(1,1,1,1)
+        icon_row2_layout.setSpacing(5)
 
         self.ico_convert_btn = QPushButton("Open ICO Converters")
         self.ico_convert_btn.clicked.connect(open_icon_sites)
-        icon_btn_layout.addWidget(self.ico_convert_btn)
 
-        icon_btn_layout.addStretch()
-        icon_btn_layout.setSpacing(5)
-        icon_block_layout.addWidget(icon_btn_row)
+        icon_row2_layout.addWidget(self.ico_convert_btn)
+        icon_row2_layout.addStretch()
 
-        # -------- Row 2: entry + clear --------
+        icon_block_layout.addWidget(icon_row2)
+
+
+        # -------- Row 3: Entry + Clear --------
 
         icon_entry_row = QWidget()
         icon_entry_layout = QHBoxLayout(icon_entry_row)
         icon_entry_layout.setContentsMargins(1,1,1,1)
-        icon_entry_layout.setSpacing(1)
+        icon_entry_layout.setSpacing(5)
 
         self.icon_path_input = QLineEdit()
         self.icon_path_input.setPlaceholderText("No icon selected...")
-
 
         def clear_icon():
             self.icon_path_input.clear()
@@ -584,17 +660,21 @@ class EXEBuilderApp(QWidget):
 
         self.icon_clear_btn = QPushButton("")
         self.icon_clear_btn.clicked.connect(clear_icon)
-        
-        
+
         icon_entry_layout.addWidget(self.icon_path_input)
         icon_entry_layout.addWidget(self.icon_clear_btn)
-  
+
         icon_block_layout.addWidget(icon_entry_row)
+        
+        self.select_recent_icons.currentIndexChanged.connect(self.on_recent_icon_selected)
+        self.select_recent_icons.currentIndexChanged.connect(self.update_delete_recent_icon_button)
+        self.delete_recent_icons.clicked.connect(self.confirm_delete_recent_icon)
+
+
+        # -------- Final --------
 
         icon_frame_layout.addWidget(icon_block)
         self.main_layout.addWidget(icon_frame)
-
-
 
 
 
@@ -1108,7 +1188,7 @@ class EXEBuilderApp(QWidget):
         self.recent_folder_dropdown.blockSignals(False)
                 
     def on_recent_file_selected(self, index):
-        if index < 0:
+        if index <=0:
             return
 
         path = self.recent_folder_dropdown.currentData()
@@ -1170,8 +1250,291 @@ class EXEBuilderApp(QWidget):
             json.dump(data, f, indent=4)
 
         self.populate_recent_dropdown()
+    
+    def update_delete_recent_icon_button(self, index):
+        if index > 0 and self.select_recent_icons.currentData():
+            self.delete_recent_icons.setEnabled(True)
+        else:
+            self.delete_recent_icons.setEnabled(False)
         
+    def on_recent_icon_selected(self, index):
+        if index <=0:
+            return
+
+        path = self.select_recent_icons.currentData()
+
+        if not path:
+            return
+
+        path = os.path.abspath(os.path.normpath(path))
+
+        # 🔑 update state
+        self.icon_path = path
+
+        # 🔑 update UI
+        if hasattr(self, "icon_path_input"):
+            self.icon_path_input.setText(path)
+
+        # 🔑 FORCE full UI + button refresh (this was missing)
+        if hasattr(self, "validator"):
+            self.validator.update_build_button_state()
+
+        # 🔑 persist AFTER state is correct
+        if hasattr(self, "state_ctrl"):
+            self.state_ctrl.save_state()
             
+            
+        # 🔑 CRITICAL: reset dropdown back to header
+        self.select_recent_icons.setCurrentIndex(0)
+        
+    def confirm_delete_recent_icon(self):
+        full_path = getattr(self, "icon_path", "").strip()
+
+        if not full_path:
+            return
+
+        from PySide6.QtWidgets import QMessageBox
+        import os, json
+
+        reply = QMessageBox.question(
+            self,
+            "Delete Recent Icon",
+            f"Are you sure you want to remove:\n\n{full_path}",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+
+        if reply != QMessageBox.Yes:
+            return
+
+        # ---------------------------
+        # REMOVE FROM STATE FILE
+        # ---------------------------
+
+        state_path = self.state_ctrl._state_file_path()
+
+        try:
+            if os.path.isfile(state_path):
+                with open(state_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            else:
+                data = {}
+        except:
+            data = {}
+
+        icons = data.get("recent_icons", [])
+
+        norm_target = os.path.abspath(os.path.normpath(full_path))
+
+        icons = [
+            p for p in icons
+            if os.path.abspath(os.path.normpath(p)) != norm_target
+        ]
+
+        data["recent_icons"] = icons
+
+        with open(state_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
+
+        # ---------------------------
+        # CLEAR CURRENT ICON IF MATCH
+        # ---------------------------
+
+        current = os.path.abspath(os.path.normpath(getattr(self, "icon_path", "")))
+
+        if current == norm_target:
+            self.icon_path_input.clear()
+            self.icon_path = ""
+
+        # ---------------------------
+        # REFRESH UI
+        # ---------------------------
+
+        self.populate_recent_icons_dropdown()
+        self.validator.validation_status_message()
+        
+    def add_recent_icon(self, path):
+        ap = os.path.abspath(os.path.normpath(path)) if path else ""
+        if not ap:
+            return
+
+        state_path = self.state_ctrl._state_file_path()
+
+        try:
+            if os.path.isfile(state_path):
+                with open(state_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            else:
+                data = {}
+        except:
+            data = {}
+
+        lst = data.get("recent_icons", [])
+
+        if ap in lst:
+            lst.remove(ap)
+
+        lst.insert(0, ap)
+        lst = lst[:10]
+
+        data["recent_icons"] = lst
+
+        try:
+            with open(state_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=4)
+        except Exception as e:
+            print("Recent icons save error:", e)
+
+        self.state_data = data
+        
+    def populate_recent_icons_dropdown(self):
+        def _abs(p):
+            return os.path.abspath(os.path.normpath(p)) if p else ""
+    
+        self.select_recent_icons.blockSignals(True)
+        self.select_recent_icons.clear()
+        
+        # 🔑 HEADER (non-clickable)
+        self.select_recent_icons.addItem("Select Recent Icon")
+        model = self.select_recent_icons.model()
+        item = model.item(0)
+        item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
+
+        state_path = self.state_ctrl._state_file_path()
+
+        try:
+            if os.path.isfile(state_path):
+                with open(state_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            else:
+                data = {}
+        except:
+            data = {}
+
+        paths = data.get("recent_icons", [])
+
+        seen = set()
+
+        for p in paths:
+            ap = _abs(p)
+
+            if not ap:
+                continue
+            if not os.path.isfile(ap):
+                continue
+            if ap in seen:
+                continue
+
+            seen.add(ap)
+
+            name = os.path.basename(ap)
+
+            # 🔑 FULL PATH IN DATA
+            self.select_recent_icons.addItem(name, ap)
+
+        self.select_recent_icons.blockSignals(False)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def closeEvent(self, event):
         self.state_ctrl.save_state()
