@@ -1,19 +1,11 @@
 import ctypes
-from PySide6.QtCore import QObject, Signal
 
-
-class ActivationController(QObject):
-    activate_signal = Signal()
-
+class ActivationController:
     def __init__(self, app):
         """
         app = EXEBuilderApp instance
         """
-        super().__init__()
         self.app = app
-
-        # Connect signal → UI-safe slot
-        self.activate_signal.connect(self.bring_to_front)
 
     # ============================================================
     # Listen for activation + bring window to front
@@ -24,17 +16,12 @@ class ActivationController(QObject):
             ctypes.windll.kernel32.WaitForSingleObject(
                 self.app.activate_event, -1
             )
-
-            # Emit signal instead of Tk .after()
-            self.activate_signal.emit()
+            self.app.after(0, self.bring_to_front)
 
     def bring_to_front(self):
         try:
-            window = self.app
-
-            window.show()
-            window.raise_()
-            window.activateWindow()
-
+            self.app.deiconify()
+            self.app.lift()
+            self.app.focus_force()
         except Exception:
             pass
