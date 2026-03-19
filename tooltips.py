@@ -130,6 +130,11 @@ def attach_tooltips(app):
         "If multiple .py files are found, a popup will appear.\n"
         "allowing you to choose the main entry script."
     )
+    
+    QtTooltip(
+        app.recent_folder_dropdown,
+        "Select a recent python main file from this drop down list."
+    )
 
     # -----------------------------
     # Python interpreter

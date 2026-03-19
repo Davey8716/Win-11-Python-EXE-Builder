@@ -5,7 +5,6 @@ import sys
 from pathlib import Path
 from PySide6.QtCore import QTimer
 
-
 class StateController:
     def __init__(self, app):
         self.app = app
@@ -38,97 +37,66 @@ class StateController:
 
         QTimer.singleShot(500, self.update_eta_loop)
         
-
     # ============================================================
     # LOAD
     # ============================================================
-
     def load_state(self):
         state_path = self._state_file_path()
 
         if not os.path.isfile(state_path):
+            self.app.state_data = {"recent_scripts": []}
             return
+
+        blocked_widgets = []
 
         try:
             with open(state_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                
-            # -------------------------
-            # Tooltips
-            # -------------------------
-            tooltips = data.get("tooltips_enabled", True)
-            self.app.tooltips_enabled = tooltips
-            self.app.tooltips_checkbox.setChecked(tooltips)
 
-            # -------------------------
-            # Dependency Notice
-            # -------------------------
-            dependency = data.get("dependency_notice_enabled", True)
-            self.app.dependency_notice_enabled = dependency
-            self.app.dependency_notice.setChecked(dependency)
-
-            # -------------------------
-            # Core paths (NORMALIZED)
-            # -------------------------
             def _norm(p):
                 return os.path.normpath(p) if p else ""
 
-            script = _norm(data.get("last_script_path", ""))
-            icon = _norm(data.get("last_icon_path", ""))
-            output = _norm(data.get("last_output_folder", ""))
-
-            self.app.script_path = script if os.path.isfile(script) else ""
-            self.app.icon_path = icon if os.path.isfile(icon) else ""
-            self.app.output_path = output if os.path.isdir(output) else ""
+            # keep full raw state in memory
+            self.app.state_data = data
 
             # -------------------------
-            # Build info
+            # Block UI signals during hydrate
             # -------------------------
-            self.app.last_build_seconds = data.get("last_build_seconds", 45)
-            self.app.build_counter = data.get("build_counter", 0)
+            for name in (
+                "tooltips_checkbox",
+                "dependency_notice",
+                "script_path_input",
+                "icon_path_input",
+                "output_path_input",
+                "exe_name_input",
+                "python_entry_input",
+            ):
+                widget = getattr(self.app, name, None)
+                if widget is not None:
+                    widget.blockSignals(True)
+                    blocked_widgets.append(widget)
+
+            # -------------------------
+            # Rehydrate app state FIRST
+            # -------------------------
+            self.app.tooltips_enabled = data.get("tooltips_enabled", True)
+            self.app.dependency_notice_enabled = data.get("dependency_notice_enabled", True)
+
+            self.app.script_path = _norm(data.get("last_script_path", ""))
+            self.app.icon_path = _norm(data.get("last_icon_path", ""))
+            self.app.output_path = _norm(data.get("last_output_folder", ""))
+            self.app.python_interpreter_path = _norm(data.get("python_interpreter_path", ""))
+            self.app.python_path = self.app.python_interpreter_path
             self.app.exe_name = data.get("last_exe_name", "")
 
-            # -------------------------
-            # Flags
-            # -------------------------
+            self.app.last_build_seconds = data.get("last_build_seconds", 45)
+            self.app.build_counter = data.get("build_counter", 0)
+
             self.app.icon_user_cleared = data.get("icon_user_cleared", False)
             self.app.script_user_cleared = data.get("script_user_cleared", False)
-            
-            if self.app.output_path:
-                if hasattr(self.app, "output_path_input"):
-                    self.app.output_path_input.setText(self.app.output_path)
 
-            # -------------------------
-            # Python interpreter
-            # -------------------------
-            python_path = _norm(data.get("python_interpreter_path", ""))
-            if python_path and os.path.isfile(python_path):
-                self.app.python_interpreter_path = python_path
-                
-            # -------------------------
-            # Push into UI (CRITICAL)
-            # -------------------------
-            if python_path and os.path.isfile(python_path):
-                if hasattr(self.app, "python_entry_input"):
-                    self.app.python_entry_input.setText(python_path)
-                    
-            # -------------------------
-            # Push script into UI
-            # -------------------------
-            if self.app.script_path:
-                if hasattr(self.app, "script_path_input"):
-                    self.app.script_path_input.setText(self.app.script_path)
-                    
-            if self.app.exe_name:
-                if hasattr(self.app, "exe_name_input"):
-                    self.app.exe_name_input.setText(self.app.exe_name)
-                    
-            # -------------------------
-            # Push icon into UI
-            # -------------------------
-            if self.app.icon_path:
-                if hasattr(self.app, "icon_path_input"):
-                    self.app.icon_path_input.setText(self.app.icon_path)
+            if self.app.python_interpreter_path:
+                self.app.last_python_dir = os.path.dirname(self.app.python_interpreter_path)
 
             # -------------------------
             # Runtime rehydrate
@@ -140,30 +108,58 @@ class StateController:
                 self.app.entry_script = None
                 self.app.project_root = None
 
-        except Exception as e:
-            print("State load error:", e)
-            
             # -------------------------
-            # PUSH ALL STATE → UI (ALWAYS)
+            # Sync state -> UI
             # -------------------------
+            if hasattr(self.app, "tooltips_checkbox"):
+                self.app.tooltips_checkbox.setChecked(self.app.tooltips_enabled)
 
-            if hasattr(self.app, "exe_name_input"):
-                self.app.exe_name_input.setText(self.app.exe_name or "")
-
-            if hasattr(self.app, "icon_path_input"):
-                self.app.icon_path_input.setText(self.app.icon_path or "")
+            if hasattr(self.app, "dependency_notice"):
+                self.app.dependency_notice.setChecked(self.app.dependency_notice_enabled)
 
             if hasattr(self.app, "script_path_input"):
-                self.app.script_path_input.setText(self.app.script_path or "")
+                self.app.script_path_input.setText(self.app.script_path)
 
-            # 🔑 ONLY validate if not loading
-            if hasattr(self.app, "validator") and not self.app._loading_state:
-                self.app.validator.update_build_button_state()
+            if hasattr(self.app, "icon_path_input"):
+                self.app.icon_path_input.setText(self.app.icon_path)
+
+            if hasattr(self.app, "output_path_input"):
+                self.app.output_path_input.setText(self.app.output_path)
+
+            if hasattr(self.app, "exe_name_input"):
+                self.app.exe_name_input.setText(self.app.exe_name)
+
+            if hasattr(self.app, "python_entry_input"):
+                self.app.python_entry_input.setText(self.app.python_interpreter_path)
+
+        except Exception as e:
+            self.app.state_data = {"recent_scripts": []}
+            print("State load error:", e)
+
+        finally:
+            for widget in blocked_widgets:
+                widget.blockSignals(False)
     
-
     def save_state(self):
         def _norm(p):
             return os.path.normpath(p) if p else ""
+
+        state_path = self._state_file_path()
+
+        # preserve existing recent scripts from memory/file
+        existing_data = {}
+
+        try:
+            if os.path.isfile(state_path):
+                with open(state_path, "r", encoding="utf-8") as f:
+                    existing_data = json.load(f)
+        except Exception:
+            existing_data = {}
+
+        recent_scripts = getattr(self.app, "state_data", {}).get(
+            "recent_scripts",
+            existing_data.get("recent_scripts", [])
+        )
 
         data = {
             "last_script_path": _norm(self.app.script_path),
@@ -174,13 +170,15 @@ class StateController:
             "last_exe_name": self.app.exe_name,
             "icon_user_cleared": getattr(self.app, "icon_user_cleared", False),
             "script_user_cleared": getattr(self.app, "script_user_cleared", False),
-            "python_interpreter_path": _norm(getattr(self.app, "python_interpreter_path", "")),
+            "python_interpreter_path": _norm(
+                getattr(self.app, "python_interpreter_path", "")
+            ),
             "tooltips_enabled": getattr(self.app, "tooltips_enabled", True),
             "dependency_notice_enabled": getattr(self.app, "dependency_notice_enabled", True),
-            "recent_scripts": []
+            "recent_scripts": recent_scripts,
         }
 
-        state_path = self._state_file_path()
+        self.app.state_data = data
 
         try:
             with open(state_path, "w", encoding="utf-8") as f:

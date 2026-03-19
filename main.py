@@ -5,6 +5,7 @@ import time
 import webbrowser
 import ctypes
 import threading
+import json
 
 from datetime import datetime
 from ctypes import wintypes
@@ -23,6 +24,8 @@ from file_pickers import FilePickerController
 from state_controller import StateController
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFont
+
+from PySide6.QtWidgets import QHBoxLayout, QComboBox
 
 CREATE_NO_WINDOW = 0x08000000
 
@@ -68,8 +71,6 @@ class EXEBuilderApp(QWidget):
         self.entry_script = None
         self.project_root = None
         self.exe_name_user_modified = False
-        self.python_interpreter_path = ""
-        self.last_python_dir = ""
         
         self.validation_controller = ValidationController(self)
         self.state_ctrl = StateController(self)
@@ -295,15 +296,75 @@ class EXEBuilderApp(QWidget):
         python_layout.setContentsMargins(3,3,3,3)
         python_layout.setSpacing(3)
 
+        # =================================================
+        # Row 1: Select folder button + recent dropdown
+        # =================================================
 
-        # =================================================
-        # Row 1: Select folder button
-        # =================================================
 
         self.folder_btn = QPushButton("Select Python Folder")
         self.folder_btn.clicked.connect(self.file_pickers.select_script_folder)
 
-        python_layout.addWidget(self.folder_btn, alignment=Qt.AlignLeft)
+        self.recent_folder_dropdown = QComboBox()
+        self.recent_folder_dropdown.setFixedSize(150, 35)
+
+        # header item (non-clickable)
+        self.recent_folder_dropdown.addItem("Select Recent File")
+
+        model = self.recent_folder_dropdown.model()
+        item = model.item(0)
+        item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
+
+        # keep header visible initially
+        self.recent_folder_dropdown.setCurrentIndex(0)
+
+        # make it look like placeholder but still behave normally
+        self.recent_folder_dropdown.setEditable(True)
+        self.recent_folder_dropdown.lineEdit().setReadOnly(True)
+
+
+        self.recent_folder_dropdown.setCurrentIndex(-1)
+        if self.recent_folder_dropdown.setEnabled(True):
+            self.recent_folder_dropdown.setStyleSheet("""
+                QComboBox {
+                    background-color: #121212;
+                    color: #e0e0e0;
+                    border: 1px solid #2a2a2a;
+                    padding: 4px;
+                }
+
+                QComboBox::drop-down {
+                    border: none;
+                    background: #121212;
+                }
+
+                QComboBox QAbstractItemView {
+                    background-color: #121212;
+                    color: #e0e0e0;
+                    selection-background-color: #2a2a2a;
+                }
+
+                QComboBox:disabled {
+                    background-color: #1e1e1e;
+                    color: #777;
+                }
+            """)
+
+            
+
+        
+        folder_row = QHBoxLayout()
+        folder_row.setContentsMargins(0, 0, 0, 0)
+        folder_row.setSpacing(5)
+
+        folder_row.addWidget(self.folder_btn)
+        folder_row.addWidget(self.recent_folder_dropdown)
+        folder_row.addStretch()
+        
+        self.recent_folder_dropdown.currentIndexChanged.connect(self.on_recent_file_selected)
+  
+
+        python_layout.addLayout(folder_row)
+                
 
         # =================================================
         # Row 2: Status
@@ -666,11 +727,10 @@ class EXEBuilderApp(QWidget):
         self.main_layout.addWidget(output_frame)
         
         
-        
-        
-        
 
-     # EXE name ownership tracking (USER intent only)
+                
+
+        # EXE name ownership tracking (USER intent only)
         # =============================================================
 
         def _on_exe_name_user_edit(text):
@@ -863,6 +923,7 @@ class EXEBuilderApp(QWidget):
         attach_tooltips(self)
 
         self.state_ctrl.load_state()
+        self.populate_recent_dropdown()
         self._loading_state = False
         self.validator.validation_status_message()
         self.validator.update_build_button_state()
@@ -876,9 +937,7 @@ class EXEBuilderApp(QWidget):
         ]:
             refresh_btns.setText("🔃")
             refresh_btns.setFixedSize(35,35)
-            
-            
-        
+
         for output_paths in [
             self.python_entry_input,
             self.script_path_input,
@@ -899,13 +958,16 @@ class EXEBuilderApp(QWidget):
             self.interpreter_btn,
             self.icon_btn,
             self.ico_convert_btn,
-            self.output_btn
+            self.output_btn,
+
             
         ]:
             
             btns.setStyleSheet("background-color: #494949")
             btns.setFont(QFont("Rubik UI", 11,))
             btns.setFixedSize(180,35)
+        
+        self.recent_folder_dropdown.setFixedSize(180,35)
             
         for labels in [
             self.script_folder_status_label,
@@ -919,7 +981,108 @@ class EXEBuilderApp(QWidget):
     
                 
         self.python_status_label.setFixedSize(250,35)
+        
+    def add_recent_script(self, path):
+        ap = os.path.abspath(os.path.normpath(path)) if path else ""
+        if not ap:
+            return
+
+        state_path = self.state_ctrl._state_file_path()
+
+        try:
+            if os.path.isfile(state_path):
+                with open(state_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            else:
+                data = {}
+        except:
+            data = {}
+
+        lst = data.get("recent_scripts", [])
+
+        if ap in lst:
+            lst.remove(ap)
+
+        lst.insert(0, ap)
+        lst = lst[:10]
+
+        data["recent_scripts"] = lst
+
+        try:
+            with open(state_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=4)
+        except Exception as e:
+            print("Recent scripts save error:", e)
+
+        # 🔑 IMPORTANT: keep in-memory copy synced
+        self.state_data = data
+        
+    def populate_recent_dropdown(self):
+        def _abs(p):
+            return os.path.abspath(os.path.normpath(p)) if p else ""
+
+        self.recent_folder_dropdown.blockSignals(True)
+        self.recent_folder_dropdown.clear()
+        
+        # 🔑 HEADER (non-clickable)
+        self.recent_folder_dropdown.addItem("Select Recent File")
+        model = self.recent_folder_dropdown.model()
+        item = model.item(0)
+        item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
+
+        # 🔑 ALWAYS READ FROM FILE (source of truth)
+        state_path = self.state_ctrl._state_file_path()
+
+        try:
+            if os.path.isfile(state_path):
+                with open(state_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            else:
+                data = {}
+        except:
+            data = {}
+
+        paths = data.get("recent_scripts", [])
+
+        seen = set()
+
+        for p in paths:
+            ap = _abs(p)
+
+            if not ap:
+                continue
+            if not os.path.isfile(ap):
+                continue
+            if ap in seen:
+                continue
+
+            seen.add(ap)
+
+            name = os.path.basename(ap)
+
+            # 🔑 IMPORTANT: store FULL PATH in item data
+            self.recent_folder_dropdown.addItem(name, ap)
+
+        self.recent_folder_dropdown.blockSignals(False)
+        
+    def on_recent_file_selected(self, index):
+        if index < 0:
+            return
+
+        path = self.recent_folder_dropdown.currentData()
+
+        if not path:
+            return
+
+        path = os.path.abspath(os.path.normpath(path))
+
+        print("Selected:", path)
+
+        # 🔑 USE SAME PIPELINE AS EVERYTHING ELSE
+        if hasattr(self, "file_pickers"):
+            self.file_pickers._apply_selected_entry(path)
     
+            
 
     def closeEvent(self, event):
         self.state_ctrl.save_state()
@@ -1083,6 +1246,8 @@ class EXEBuilderApp(QWidget):
         # ==================================================
 
         self.building = True
+        if hasattr(self, "script_clear_btn"):
+            self.script_clear_btn.setDisabled(True)
         self.build_btn.setText("Cancel EXE")
         self.build_btn.setStyleSheet("background-color: #d43c3c;")
         self.build_btn.clicked.disconnect()
@@ -1209,6 +1374,10 @@ class EXEBuilderApp(QWidget):
         self.set_controls_enabled(False)
         
         def run_build(cmd):
+            self.recent_folder_dropdown.setEnabled(False)
+            self.refresh_btn.setEnabled(False)
+            self.exe_name_input.setReadOnly(False)
+            
             try:
                 with open(self.debug_log_path, "a", encoding="utf-8") as f:
                     f.write("ENTERED run_build\n")
@@ -1245,7 +1414,11 @@ class EXEBuilderApp(QWidget):
                     else:
                         self.set_status("Build failed. See debug log.")
                 
+                
+                self.refresh_btn.setEnabled(True)
+                self.exe_name_input.setReadOnly(True)
                 self._eta_running = False
+                self.recent_folder_dropdown.setEnabled(True)
                 self.build_btn.setText("Build EXE")
                 self.build_btn.setStyleSheet("background-color: #3bbf3b;")
                 self.set_status("Build complete." if ret == 0 else "Build failed. See debug log.")

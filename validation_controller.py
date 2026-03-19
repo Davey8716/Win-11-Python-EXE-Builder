@@ -306,7 +306,16 @@ class ValidationController:
         # SCRIPT CLEAR button
         # --------------------------------
         if hasattr(self.app, "script_clear_btn"):
-            if script_ok:
+            if getattr(self.app, "building", False):
+                # 🔒 HARD LOCK during build
+                self.app.script_clear_btn.setEnabled(False)
+                self.app.script_clear_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color:#1F1F1F;
+                        color: #777777;
+                    }
+                """)
+            elif script_ok:
                 self.app.script_clear_btn.setEnabled(True)
                 self.app.script_clear_btn.setStyleSheet("""
                     QPushButton {
