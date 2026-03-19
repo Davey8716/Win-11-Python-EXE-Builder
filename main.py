@@ -309,10 +309,18 @@ class EXEBuilderApp(QWidget):
 
         # header item (non-clickable)
         self.recent_folder_dropdown.addItem("Select Recent File")
+        self.recent_folder_dropdown.setFont(QFont("Rubik UI", 12))
+
+                
 
         model = self.recent_folder_dropdown.model()
         item = model.item(0)
         item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
+        
+        self.recent_folder_dropdown.setEditable(True)
+        if self.recent_folder_dropdown.lineEdit():
+            self.recent_folder_dropdown.lineEdit().setFont(QFont("Rubik UI", 12))
+      
 
         # keep header visible initially
         self.recent_folder_dropdown.setCurrentIndex(0)
@@ -1028,8 +1036,9 @@ class EXEBuilderApp(QWidget):
         self.recent_folder_dropdown.addItem("Select Recent File")
         model = self.recent_folder_dropdown.model()
         item = model.item(0)
+        
         item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
-
+       
         # 🔑 ALWAYS READ FROM FILE (source of truth)
         state_path = self.state_ctrl._state_file_path()
 
@@ -1059,12 +1068,16 @@ class EXEBuilderApp(QWidget):
             seen.add(ap)
 
             name = os.path.basename(ap)
+            parent = os.path.basename(os.path.dirname(ap))
 
-            # 🔑 IMPORTANT: store FULL PATH in item data
-            self.recent_folder_dropdown.addItem(name, ap)
+            # 🔑 DISPLAY ONLY (no logic impact)
+            display = f"{parent}\\{name}" if parent else name
+
+            # 🔑 IMPORTANT: FULL PATH still stored
+            self.recent_folder_dropdown.addItem(display, ap)
 
         self.recent_folder_dropdown.blockSignals(False)
-        
+                
     def on_recent_file_selected(self, index):
         if index < 0:
             return

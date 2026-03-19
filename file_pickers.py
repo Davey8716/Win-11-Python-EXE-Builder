@@ -3,6 +3,7 @@ import subprocess
 from PySide6.QtWidgets import QFileDialog, QDialog, QVBoxLayout, QPushButton, QLabel, QComboBox
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QComboBox, QPushButton
+from pathlib import Path
 
 
 # -------------------------------------------------------------
@@ -126,14 +127,13 @@ class FilePickerController:
             "Python Files (*.py)"
         )
 
-        if path:
-            path = os.path.normpath(path)
+        if not path:
+            return
 
-            self.app.entry_script = path
-            self.app.project_root = os.path.dirname(path)
-            self.app.script_path = path  # Qt-safe attribute
+        path = os.path.normpath(path)
 
-            self.app.state_ctrl.save_state()
+        # 🔑 SINGLE SOURCE OF TRUTH
+        self._apply_selected_entry(path)
 
 
     # ============================================================
@@ -217,8 +217,21 @@ class FilePickerController:
 
         self.app.entry_script = full_path
 
+        # if hasattr(self.app, "script_path_input"):
+        #     self.app.script_path_input.setText(f"{os.path.basename(os.path.dirname(full_path))}\\{os.path.basename(full_path)}")
+        #     self.app.script_path_input.setCursorPosition(len(self.app.script_path_input.text()))
+
+        # self.app.project_root = os.path.dirname(full_path)
+        # self.app.script_path = full_path
+        
         if hasattr(self.app, "script_path_input"):
-            self.app.script_path_input.setText(full_path)
+            parent = os.path.basename(os.path.dirname(full_path))
+            name = os.path.basename(full_path)
+
+            display = os.path.normpath(full_path)
+
+            self.app.script_path_input.setText(display)
+            self.app.script_path_input.setCursorPosition(len(display))
 
         self.app.project_root = os.path.dirname(full_path)
         self.app.script_path = full_path
@@ -243,13 +256,16 @@ class FilePickerController:
             if hasattr(self.app, "exe_name_input"):
                 self.app.exe_name_input.setText(new_derived)
 
+      
         # ------------------------------------
         # Persist + revalidate
         # ------------------------------------
 
+        self.app.add_recent_script(full_path)
+        self.app.populate_recent_dropdown()
+
         self.app.state_ctrl.save_state()
         self.app.validator.validation_status_message()
-        
 
     # ============================================================
     # Select icon
