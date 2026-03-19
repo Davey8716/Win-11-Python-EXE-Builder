@@ -1,13 +1,25 @@
 {
-    "last_script_path": "C:/Users/davey/Desktop/Projects/Windows_Utility\\main_utility_gui.py",
+    "last_script_path": "C:\\Users\\davey\\Desktop\\Projects\\Audio_Book_Tts\\main.py",
     "last_icon_path": "",
-    "last_output_folder": "C:/Users/davey/Desktop",
-    "last_build_seconds": 22,
-    "build_counter": 2,
-    "last_exe_name": "main_utility_gui",
+    "last_output_folder": "",
+    "last_build_seconds": 45,
+    "build_counter": 26,
+    "last_exe_name": "main",
     "icon_user_cleared": false,
-    "script_user_cleared": true,
-    "python_interpreter_path": "C:/Users/davey/AppData/Local/Programs/Python/Python314/python.exe",
-    "tooltips_enabled": true,
-    "recent_scripts": []
+    "script_user_cleared": false,
+    "python_interpreter_path": "C:\\Users\\davey\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+    "tooltips_enabled": false,
+    "dependency_notice_enabled": false,
+    "recent_scripts": [
+        "C:\\Users\\davey\\Desktop\\Projects\\Audio_Book_Tts\\main.py",
+        "C:\\Users\\davey\\Desktop\\Projects\\Pal_Nagger\\main.py",
+        "C:\\Users\\davey\\Desktop\\Projects\\Win-11-Python-EXE-Builder\\file_pickers.py",
+        "C:\\Users\\davey\\Desktop\\Projects\\Pinger_App\\main.py",
+        "C:\\Users\\davey\\Desktop\\Projects\\Win-11-Python-EXE-Builder\\main.py",
+        "C:\\Users\\davey\\Desktop\\Projects\\Windows_Utility\\main_utility_gui.py",
+        "C:\\Users\\davey\\Desktop\\Projects\\Energy_Saver_App\\main.py",
+        "C:\\Users\\davey\\Desktop\\Projects\\Youtube_Downloader\\Youtube_Downloader\\main.py",
+        "C:\\Users\\davey\\Desktop\\Projects\\Folder_Creator\\main.py",
+        "C:\\Users\\davey\\Desktop\\Projects\\Text Editor\\main.py"
+    ]
 }

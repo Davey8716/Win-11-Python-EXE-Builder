@@ -1,8 +1,7 @@
-
-
 import os
 import psutil
 import send2trash
+
 
 class BuildCancellation:
     def __init__(self, app, ui):
@@ -20,7 +19,7 @@ class BuildCancellation:
                 os.remove(path)
             except Exception as e:
                 print("Spec cleanup failed:", e)
-                
+
     def cancel_build(self):
         self.ui.set_status("Cancelling build...")
 
@@ -49,7 +48,8 @@ class BuildCancellation:
 
         # Trash PyInstaller build folder
         build_root = os.path.join(
-            self.app.output_path_var.get(), "build"
+            getattr(self.app, "output_path", ""),
+            "build"
         )
 
         if os.path.exists(build_root):
@@ -68,6 +68,7 @@ class BuildCancellation:
         self.ui.restore_build_ui()
         self.ui.set_status("Build cancelled.")
         
+
     def abort_build(self, message):
         try:
             with open(self.app.debug_log_path, "a", encoding="utf-8") as f:

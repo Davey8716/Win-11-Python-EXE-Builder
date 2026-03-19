@@ -1,7 +1,7 @@
 import os
 import sys
 import ast
-
+from PySide6.QtCore import QTimer
 
 
 class ValidationController:
@@ -14,16 +14,18 @@ class ValidationController:
     # ==================================================
     # Can we build again?
     # =================================================
-
-    # ----------------------------------------------------
-    # Validation helpers
-    # ----------------------------------------------------
-
+    
     def inputs_are_valid(self):
-        script = self.app.script_path_var.get().strip()
-        outdir = self.app.output_path_var.get().strip()
-        exe_name = self.app.exe_name_var.get().strip()
+        script = self.app.script_path_input.text().strip()
+        outdir = self.app.output_path_input.text().strip()
+        exe_name = self.app.exe_name_input.text().strip()
         python = getattr(self.app, "python_interpreter_path", "").strip()
+        
+        # 🔑 NORMALIZE
+        script = os.path.normpath(script) if script else ""
+        outdir = os.path.normpath(outdir) if outdir else ""
+        python = os.path.normpath(python) if python else ""
+
 
         if not python or not os.path.isfile(python):
             return False
@@ -38,13 +40,19 @@ class ValidationController:
             return False
 
         return True
-
+    
     def validation_status_message(self):
-
-        script = self.app.script_path_var.get().strip()
-        outdir = self.app.output_path_var.get().strip()
-        exe_name = self.app.exe_name_var.get().strip()
+        script = self.app.script_path_input.text().strip()
+        outdir = self.app.output_path_input.text().strip()
+        exe_name = self.app.exe_name_input.text().strip()
+                
         python = getattr(self.app, "python_interpreter_path", "")
+        
+        
+        # 🔑 NORMALIZE
+        script = os.path.normpath(script) if script else ""
+        outdir = os.path.normpath(outdir) if outdir else ""
+        python = os.path.normpath(python) if python else ""
 
         # --------------------------------
         # Resolve script folder validity
@@ -60,73 +68,44 @@ class ValidationController:
         else:
             folder_ok = False
 
+
         # --------------------------------
         # INLINE PYTHON STATUS (button row)
         # --------------------------------
-        
+
         if hasattr(self.app, "python_status_label"):
             if python and os.path.isfile(python):
-                self.app.python_status_label.configure(
-                    text="PYTHON INTERPRETER SET",
-                    text_color="#3bbf3b"
-                )
+                self.app.python_status_label.setText("PYTHON INTERPRETER SET")
+                self.app.python_status_label.setStyleSheet("color: #3bbf3b;")
             else:
-                self.app.python_status_label.configure(
-                    text="PYTHON INTERPRETER NOT SET",
-                    text_color="#be1a1a"
-                )
+                self.app.python_status_label.setText("PYTHON INTERPRETER NOT SET")
+                self.app.python_status_label.setStyleSheet("color: #be1a1a;")
                 
         # --------------------------------
         # INLINE: Python folder
         # --------------------------------
-        
+
         if hasattr(self.app, "script_folder_status_label"):
             if folder_ok:
-                self.app.script_folder_status_label.configure(
-                    text="PYTHON FOLDER SET",
-                    text_color="#3bbf3b"
-                )
+                self.app.script_folder_status_label.setText("PYTHON FOLDER SET")
+                self.app.script_folder_status_label.setStyleSheet("color: #3bbf3b;")
             else:
-                self.app.script_folder_status_label.configure(
-                    text="PYTHON FOLDER NOT SET",
-                    text_color="#be1a1a"
-                )
+                self.app.script_folder_status_label.setText("PYTHON FOLDER NOT SET")
+                self.app.script_folder_status_label.setStyleSheet("color: #be1a1a;")
                 
         # --------------------------------
         # INLINE: Output path
         # --------------------------------
+        
+        state = {}
 
-        if hasattr(self.app, "output_path_status_label"):
-            outdir = self.app.output_path_var.get().strip()
-
-            if outdir and os.path.isdir(outdir):
-                self.app.output_path_status_label.configure(
-                    text="EXE OUTPUT PATH SET",
-                    text_color="#3bbf3b"
-            )
-            else:
-                self.app.output_path_status_label.configure(
-                    text="EXE OUTPUT PATH NOT SET",
-                    text_color="#be1a1a"
-            )
+        state["output_ok"] = bool(outdir and os.path.isdir(outdir))
 
         # --------------------------------
         # INLINE: EXE name
         # --------------------------------
 
-        if hasattr(self.app, "exe_name_status_label"):
-            exe_name = self.app.exe_name_var.get().strip()
-
-            if exe_name:
-                self.app.exe_name_status_label.configure(
-                    text="EXE NAME SET",
-                    text_color="#3bbf3b"
-                )
-            else:
-                self.app.exe_name_status_label.configure(
-                    text="EXE NAME NOT SET",
-                    text_color="#be1a1a"
-                )
+        state["exe_ok"] = bool(exe_name)
 
         # --------------------------------
         # BUILD READINESS
@@ -136,180 +115,317 @@ class ValidationController:
         outdir_ok = outdir and os.path.isdir(outdir)
         exe_ok = bool(exe_name)
         python_ok = python and os.path.isfile(python)
-        
+
         is_ready = bool(script_ok and outdir_ok and exe_ok and python_ok)
-        
+
+        state["is_ready"] = is_ready
+        state["script_ok"] = script_ok
+        state["outdir_ok"] = outdir_ok
+        state["exe_ok"] = exe_ok
+        state["python_ok"] = python_ok
+
         # Reset popup eligibility when leaving READY state
         if not is_ready:
             self.app._dependency_popup_shown = False
 
-        
         # ==========================================================
         # Dependency advisory — fire ONCE when NOT READY → READY
         # ==========================================================
+        if is_ready:
+            current_script = script
 
-        if is_ready and not self.app._was_build_ready:
-            external_packages = self.run_dependency_advisory(script)
+            script_changed = current_script != self.app._last_advisory_script
 
-            if external_packages and not self.app._dependency_popup_shown:
-                self.app._dependency_popup_shown = True
+            if script_changed:
+                external_packages = self.run_dependency_advisory(current_script)
 
-                # MUST be scheduled on main thread
-                self.app.after(
-                    0,
-                    lambda packages=external_packages:
-                        self.app.show_dependency_warning_popup(packages)
-                )
+                if (
+                    external_packages
+                    and getattr(self.app, "dependency_notice_enabled", True)
+                ):
+                    QTimer.singleShot(
+                        0,
+                        lambda: self.app.show_dependency_warning_popup(external_packages)
+                    )
+
+                self.app._last_advisory_script = current_script
+                state["external_packages"] = external_packages
+            else:
+                state["external_packages"] = []
+        else:
+            self.app._last_advisory_script = None
+            state["external_packages"] = []
 
         # Track previous state
         self.app._was_build_ready = is_ready
-
-
-        if script_ok and outdir_ok and exe_ok and python_ok:
-            script_name = os.path.basename(script)
-            return f"✅ READY TO BUILD — {script_name}"
-        else:
-            return "❌ NOT READY TO BUILD"
-
-
-    def update_build_button_state(self):
-        # UI not ready yet
-        if not hasattr(self.app, "status_label") or not hasattr(self.app, "build_btn"):
-            return
-
-        if self.app.building:
-            return
-
-        # -------------------------------
-        # Grey / un-grey EXE name entry
-        # -------------------------------
         
-        if hasattr(self.app, "exe_entry"):
-            exe_name = self.app.exe_name_var.get().strip()
+        # --------------------------------
+        # STATUS TEXT
+        # --------------------------------
 
-            if not exe_name:
-                self.app.exe_entry.configure(
-                    text_color="#888888",
-                    border_color="#888888"
-                )
+        state["status_text"] = (
+            f"READY TO BUILD — {os.path.basename(script)}"
+            if is_ready else
+            "NOT READY TO BUILD"
+        )
+
+        # --------------------------------
+        # APPLY STATUS TO UI (MATCH QLINEEDIT STYLE)
+        # --------------------------------
+
+        if hasattr(self.app, "status_label"):
+            self.app.status_label.setText(state["status_text"])
+
+            if is_ready:
+                self.app.status_label.setStyleSheet("""
+                    QLineEdit {
+                        background-color: #202020;
+                        color: #3bbf3b;
+                        border: 1px solid #3a3a3a;
+                    }
+                """)
             else:
-                self.app.exe_entry.configure(
-                    text_color="white",
-                    border_color=self.app.exe_entry_default_border
-                )
-                
+                self.app.status_label.setStyleSheet("""
+                    QLineEdit {
+                        background-color: #202020;
+                        color: #be1a1a;
+                        border: 1px solid #3a3a3a;
+                    }
+                """)
+
+        return state
+    
+        # --------------------------------
+    def update_build_button_state(self):
+        state = self.validation_status_message()
+        is_ready = state["is_ready"]
+
+        script = self.app.script_path_input.text().strip()
+        
+        
+        script_ok = bool(script and os.path.isfile(script))
+
+        outdir = self.app.output_path_input.text().strip()
+        
+        script = os.path.normpath(script) if script else ""
+        outdir = os.path.normpath(outdir) if outdir else ""
+        desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+        
         # -------------------------------
-        # Enable / disable revert button
-        # -------------------------------
-
-        if hasattr(self.app, "refresh_btn"):
-            script = self.app.entry_script or self.app.script_path_var.get().strip()
-            exe_name = self.app.exe_name_var.get().strip()
-
-            can_revert = False
-            if script and os.path.isfile(script):
-                derived = os.path.splitext(os.path.basename(script))[0]
-                can_revert = (exe_name != derived)
-
-            self.app.refresh_btn.configure(
-                state="normal" if can_revert else "disabled",
-                fg_color="#444444" if can_revert else "#2a2a2a",
-                hover_color="#555555" if can_revert else "#2a2a2a"
-            )
-
-        # -------------------------------
-        # Enable / disable output revert button
-        # -------------------------------
-
-        if hasattr(self.app, "output_refresh_btn"):
-            outdir = self.app.output_path_var.get().strip()
-            desktop = os.path.join(os.path.expanduser("~"), "Desktop")
-
-            can_revert_output = not outdir or os.path.normpath(outdir) != os.path.normpath(desktop)
-
-            if can_revert_output:
-                self.app.output_refresh_btn.configure(
-                    state="normal",
-                    fg_color="#444444",
-                    hover_color="#555555"
-                )
-            else:
-                self.app.output_refresh_btn.configure(
-                    state="disabled",
-                    fg_color="#2a2a2a",
-                    hover_color="#2a2a2a"
-                )
-                
-        # -------------------------------
-        # Enable / disable script clear button
-        # -------------------------------
-
-        if hasattr(self.app, "script_clear_btn"):
-            has_script = bool(self.app.script_path_var.get().strip())
-
-        if has_script:
-            self.app.script_clear_btn.configure(
-                state="normal",
-                fg_color="#444444",
-                hover_color="#555555"
-            )
-        else:
-            self.app.script_clear_btn.configure(
-                state="disabled",
-                fg_color="#2a2a2a",
-                hover_color="#2a2a2a"
-            )
-
-        # -------------------------------
-        # Enable / disable icon clear button
+        # ICON CLEAR BUTTON STATE
         # -------------------------------
 
         if hasattr(self.app, "icon_clear_btn"):
-            has_icon = bool(self.app.icon_path_var.get().strip())
+            icon_path = getattr(self.app, "icon_path", "").strip()
 
-            if has_icon:
-                self.app.icon_clear_btn.configure(
-                    state="normal",
-                    fg_color="#444444",
-                    hover_color="#555555"
-                )   
+            if icon_path:
+                # ACTIVE (icon exists → can clear)
+                self.app.icon_clear_btn.setEnabled(True)
+                self.app.icon_clear_btn.setText("🔃")
+                self.app.icon_clear_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #444444;
+                    }
+                    QPushButton:hover {
+                        background-color: #555555;
+                    }
+                """)
             else:
-                self.app.icon_clear_btn.configure(
-                    state="disabled",
-                    fg_color="#2a2a2a",
-                    hover_color="#2a2a2a"
-                )
+                # DISABLED (no icon → nothing to clear)
+                self.app.icon_clear_btn.setEnabled(False)
+                self.app.icon_clear_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color:#1F1F1F;
+                        color: #777777;
+                    }
+                """)
 
+       
+        # --------------------------------
+        # EXE name refresh button
+        # --------------------------------
+        if hasattr(self.app, "refresh_btn"):
+            exe_name = self.app.exe_name_input.text().strip()
+
+            can_refresh = (
+                script_ok and
+                exe_name and
+                exe_name != "main"
+            )
+
+            if can_refresh:
+                self.app.refresh_btn.setEnabled(True)
+                self.app.refresh_btn.setText("🔃")
+                self.app.refresh_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #444444;
+                    }
+                    QPushButton:hover {
+                        background-color: #555555;
+                    }
+                """)
+            else:
+                self.app.refresh_btn.setEnabled(False)
+                self.app.refresh_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color:#1F1F1F;
+                        color: #777777;
+                    }
+                """)
+
+        # --------------------------------
+        # OUTPUT refresh button
+        # --------------------------------
+        if hasattr(self.app, "output_refresh_btn"):
+            can_revert_output = (
+                script_ok and
+                bool(outdir) and
+                os.path.normpath(outdir) != os.path.normpath(desktop)
+            )
+
+            if can_revert_output:
+                self.app.output_refresh_btn.setEnabled(True)
+                self.app.output_refresh_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #444444;
+                    }
+                    QPushButton:hover {
+                        background-color: #555555;
+                    }
+                """)
+            else:
+                self.app.output_refresh_btn.setEnabled(False)
+                self.app.output_refresh_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color:#1F1F1F;
+                        color: #777777;
+                    }
+                """)
+
+        # --------------------------------
+        # SCRIPT CLEAR button
+        # --------------------------------
+        if hasattr(self.app, "script_clear_btn"):
+            if getattr(self.app, "building", False):
+                # 🔒 HARD LOCK during build
+                self.app.script_clear_btn.setEnabled(False)
+                self.app.script_clear_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color:#1F1F1F;
+                        color: #777777;
+                    }
+                """)
+            elif script_ok:
+                self.app.script_clear_btn.setEnabled(True)
+                self.app.script_clear_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #444444;
+                    }
+                    QPushButton:hover {
+                        background-color: #555555;
+                    }
+                """)
+            else:
+                self.app.script_clear_btn.setEnabled(False)
+                self.app.script_clear_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color:#1F1F1F;
+                        color: #777777;
+                    }
+                """)
+                
+        # --------------------------------
+        # BUILD BUTTON
+        # --------------------------------
+        if hasattr(self.app, "build_btn"):
+            self.app.build_btn.setEnabled(is_ready)
+
+            if is_ready:
+                self.app.build_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #3bbf3b;
+                    }
+                    QPushButton:hover {
+                        background-color: #2e9e2e;
+                    }
+                """)
+            else:
+                self.app.build_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #be1a1a;
+                        color: #777777;
+                    }
+                """)
+
+        # --------------------------------
+        # HARD RESET when script removed
+        # --------------------------------
+        if not script_ok:
+            if hasattr(self.app, "output_path_input"):
+                self.app.output_path_input.clear()
+
+            if hasattr(self.app, "exe_name_input"):
+                self.app.exe_name_input.clear()
+
+
+        # --------------------------------
+        # INLINE: Output path status
+        # --------------------------------
+        if hasattr(self.app, "output_path_status_label"):
+            if outdir and os.path.isdir(outdir):
+                self.app.output_path_status_label.setText("OUTPUT PATH SET")
+                self.app.output_path_status_label.setStyleSheet("color: #3bbf3b;")
+            else:
+                self.app.output_path_status_label.setText("OUTPUT PATH NOT SET")
+                self.app.output_path_status_label.setStyleSheet("color: #be1a1a;")
+
+        # --------------------------------
+        # INLINE: EXE name status
+        # --------------------------------
+        exe_name = self.app.exe_name_input.text().strip()
+
+        if hasattr(self.app, "exe_name_status_label"):
+            if exe_name:
+                self.app.exe_name_status_label.setText("EXE NAME SET")
+                self.app.exe_name_status_label.setStyleSheet("color: #3bbf3b;")
+            else:
+                self.app.exe_name_status_label.setText("EXE NAME NOT SET")
+                self.app.exe_name_status_label.setStyleSheet("color: #be1a1a;")
+                
+
+
+   
+                                    
         # -------------------------------
-        # Existing logic (unchanged)
+        # Icon clear state
         # -------------------------------
         
-        message = self.validation_status_message()
-        self.app.status_label.configure(text=message)
+        state = {}
 
-        if self.inputs_are_valid():
+        icon_path = getattr(self.app, "icon_path", "").strip()
+        state["has_icon"] = bool(icon_path)
 
-            self.app.build_btn.configure(
-                state="normal",
-                fg_color="#3bbf3b",
-                hover_color="#2e9e2e"
-            )
-        else:
-            self.app.build_btn.configure(
-                state="disabled",
-                fg_color="#555555",
-                hover_color="#555555"
-            )
-            
-    
-    def extract_imports_from_file(self,py_file: str) -> set[str]:
+        # -------------------------------
+        # Validation state
+        # -------------------------------
+
+        validation = self.validation_status_message()
+        state.update(validation)
+
+        # Build button state
+        state["can_build"] = self.inputs_are_valid()
+
+        return state
+
+
+    def extract_imports_from_file(self, py_file: str) -> set[str]:
         imports = set()
 
         try:
             with open(py_file, "r", encoding="utf-8") as f:
                 tree = ast.parse(f.read(), filename=py_file)
         except Exception:
-            return imports  # fail silently, advisory only
+            return imports  # advisory only
 
         for node in ast.walk(tree):
             if isinstance(node, ast.Import):
@@ -320,17 +436,17 @@ class ValidationController:
                     imports.add(node.module.split(".")[0])
 
         return imports
-    
-    def filter_external_imports(self,imports: set[str]) -> list[str]:
+
+
+    def filter_external_imports(self, imports: set[str]) -> list[str]:
         stdlib = set(sys.stdlib_module_names)
         return sorted(i for i in imports if i not in stdlib)
 
-    
+
     def run_dependency_advisory(self, entry_file: str) -> list[str]:
         imports = self.extract_imports_from_file(entry_file)
         external = self.filter_external_imports(imports)
         return external
-
 
 
 
