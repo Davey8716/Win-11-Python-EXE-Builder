@@ -1,29 +1,37 @@
 {
     "last_script_path": "C:\\Users\\davey\\Desktop\\Projects\\Energy_Saver_App\\main.py",
-    "last_icon_path": "",
+    "last_icon_path": "C:\\Users\\davey\\Desktop\\Projects\\Energy_Saver_App\\Icons\\energyleaf.ico",
     "last_output_folder": "C:\\Users\\davey\\Desktop",
     "last_build_seconds": 45,
-    "build_counter": 39,
+    "build_counter": 62,
     "last_exe_name": "main",
     "icon_user_cleared": false,
     "script_user_cleared": false,
-    "python_interpreter_path": "C:\\Users\\davey\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+    "python_interpreter_path": "C:\\Users\\davey\\AppData\\Local\\Programs\\Python\\Python314\\python.exe",
     "tooltips_enabled": false,
     "dependency_notice_enabled": false,
     "recent_scripts": [
         "C:\\Users\\davey\\Desktop\\Projects\\Energy_Saver_App\\main.py",
+        "C:\\Users\\davey\\Desktop\\Projects\\Pinger_App\\main.py",
         "C:\\Users\\davey\\Desktop\\Projects\\Pal_Greeter\\greeter_gui.py",
         "C:\\Users\\davey\\Desktop\\Projects\\Windows_Utility\\main_utility_gui.py",
         "C:\\Users\\davey\\Desktop\\Projects\\Youtube_Downloader\\main.py",
         "C:\\Users\\davey\\Desktop\\Projects\\Audio_Book_Tts\\main.py",
         "C:\\Users\\davey\\Desktop\\Projects\\Win-11-Python-EXE-Builder\\main.py",
-        "C:\\Users\\davey\\Desktop\\Projects\\Pinger_App\\main.py",
         "C:\\Users\\davey\\Desktop\\Projects\\Folder_Creator\\main.py",
         "C:\\Users\\davey\\Desktop\\Projects\\Text Editor\\main.py",
         "C:\\Users\\davey\\Desktop\\Projects\\Pal_Nagger\\main.py"
     ],
     "recent_icons": [
+        "C:\\Users\\davey\\Desktop\\Projects\\Energy_Saver_App\\Icons\\energyleaf.ico",
         "C:\\Users\\davey\\Desktop\\Projects\\Pinger_App\\Icons\\ping.ico",
-        "C:\\Users\\davey\\Desktop\\Projects\\Win-11-Python-EXE-Builder\\Icons\\Exe_Icon.ico"
+        "C:\\Users\\davey\\Desktop\\Projects\\Audio_Book_Tts\\Icon\\audio_book_icon.ico",
+        "C:\\Users\\davey\\Desktop\\Projects\\Folder_Creator\\Icons\\folder_icon.ico",
+        "C:\\Users\\davey\\Desktop\\Projects\\Windows_Utility\\Icons\\windows_utility_ico.ico",
+        "C:\\Users\\davey\\Desktop\\Projects\\Youtube_Downloader\\Icons\\youtube_icon.ico",
+        "C:\\Users\\davey\\Desktop\\Projects\\Win-11-Python-EXE-Builder\\Icons\\Exe_Icon.ico",
+        "C:\\Users\\davey\\Desktop\\Projects\\Text Editor\\Icons\\Text Editor.ico.ico",
+        "C:\\Users\\davey\\Desktop\\Projects\\Pal_Greeter\\Icons\\greeter_icon.ico",
+        "C:\\Users\\davey\\Desktop\\Projects\\Pal_Nagger\\Icons\\NaggerIcon.ico"
     ]
 }

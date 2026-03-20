@@ -254,6 +254,31 @@ class FilePickerController:
 
         self.app.state_ctrl.save_state()
         self.app.validator.validation_status_message()
+        
+    def _apply_selected_icon(self, full_path):
+    # 🔑 NORMALIZE
+        full_path = os.path.normpath(full_path)
+
+        # ------------------------------------
+        # Apply new icon selection
+        # ------------------------------------
+
+        self.app.icon_path = full_path
+
+        if hasattr(self.app, "icon_path_input"):
+            display = os.path.normpath(full_path)
+            self.app.icon_path_input.setText(display)
+            self.app.icon_path_input.setCursorPosition(len(display))
+
+        # ------------------------------------
+        # Persist + revalidate (MATCH SCRIPT)
+        # ------------------------------------
+
+        self.app.recent_controller.add_recent_icon(full_path)
+        self.app.recent_controller.populate_recent_icons_dropdown()
+
+        self.app.state_ctrl.save_state()
+        self.app.validator.validation_status_message()
 
     # ============================================================
     # Select icon

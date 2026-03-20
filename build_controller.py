@@ -220,7 +220,8 @@ class BuildController:
             app.recent_folder_dropdown.setEnabled(False)
             app.refresh_btn.setEnabled(False)
             app.exe_name_input.setReadOnly(False)
-            
+            app.icon_clear_btn.setEnabled(False)
+           
             try:
                 with open(app.debug_log_path, "a", encoding="utf-8") as f:
                     f.write("ENTERED run_build\n")
@@ -256,8 +257,8 @@ class BuildController:
                         QTimer.singleShot(5000, app.showMinimized)
                     else:
                         app.set_status("Build failed. See debug log.")
-                
-                
+                        
+                app.icon_clear_btn.setEnabled(True)
                 app.refresh_btn.setEnabled(True)
                 app.exe_name_input.setReadOnly(True)
                 app._eta_running = False

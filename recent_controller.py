@@ -54,7 +54,6 @@ class RecentController:
         app.recent_folder_dropdown.addItem("Select Recent File")
         model = app.recent_folder_dropdown.model()
         item = model.item(0)
-        
         item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
        
         state_path = app.state_ctrl._state_file_path()
@@ -157,17 +156,24 @@ class RecentController:
             json.dump(data, f, indent=4)
 
         self.populate_recent_dropdown()
+        app.validator.validation_status_message()
+        
+        
+    #========================================
+    #================================ Icons
+    #========================================
     
-    def update_delete_recent_icon_button(self, index):
-        app = self.app
-        if index > 0 and app.select_recent_icons.currentData():
-            app.delete_recent_icons.setEnabled(True)
-        else:
-            app.delete_recent_icons.setEnabled(False)
+    
+    # def update_delete_recent_icon_button(self, index):
+    #     app = self.app
+    #     if index > 0 and app.select_recent_icons.currentData():
+    #         app.delete_recent_icons.setEnabled(True)
+    #     else:
+    #         app.delete_recent_icons.setEnabled(False)
         
     def on_recent_icon_selected(self, index):
         app = self.app
-        if index <=0:
+        if index <= 0:
             return
 
         path = app.select_recent_icons.currentData()
@@ -177,22 +183,14 @@ class RecentController:
 
         path = os.path.abspath(os.path.normpath(path))
 
-        app.icon_path = path
+        print("Selected:", path)
 
-        if hasattr(app, "icon_path_input"):
-            app.icon_path_input.setText(path)
-
-        if hasattr(app, "validator"):
-            app.validator.update_build_button_state()
-
-        if hasattr(app, "state_ctrl"):
-            app.state_ctrl.save_state()
+        if hasattr(app, "file_pickers"):
+            app.file_pickers._apply_selected_icon(path)
             
-        app.select_recent_icons.setCurrentIndex(0)
-        
     def confirm_delete_recent_icon(self):
         app = self.app
-        full_path = getattr(app, "icon_path", "").strip()
+        full_path = getattr(app, "icon_path", "") or ""
 
         if not full_path:
             return
@@ -208,6 +206,10 @@ class RecentController:
         if reply != QMessageBox.Yes:
             return
 
+        if os.path.abspath(os.path.normpath(full_path)) == os.path.abspath(os.path.normpath(getattr(app, "icon_path", ""))):
+            app.icon_path_input.clear()
+            app.icon_path = ""
+
         state_path = app.state_ctrl._state_file_path()
 
         try:
@@ -219,25 +221,16 @@ class RecentController:
         except:
             data = {}
 
-        icons = data.get("recent_icons", [])
+        lst = data.get("recent_icons", [])
 
-        norm_target = os.path.abspath(os.path.normpath(full_path))
+        norm = os.path.abspath(os.path.normpath(full_path))
+        lst = [p for p in lst if os.path.abspath(os.path.normpath(p)) != norm]
 
-        icons = [
-            p for p in icons
-            if os.path.abspath(os.path.normpath(p)) != norm_target
-        ]
-
-        data["recent_icons"] = icons
+        data["recent_icons"] = lst
+        app.state_data = data
 
         with open(state_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4)
-
-        current = os.path.abspath(os.path.normpath(getattr(app, "icon_path", "")))
-
-        if current == norm_target:
-            app.icon_path_input.clear()
-            app.icon_path = ""
 
         self.populate_recent_icons_dropdown()
         app.validator.validation_status_message()
@@ -282,10 +275,10 @@ class RecentController:
 
         def _abs(p):
             return os.path.abspath(os.path.normpath(p)) if p else ""
-    
+
         app.select_recent_icons.blockSignals(True)
         app.select_recent_icons.clear()
-        
+
         app.select_recent_icons.addItem("Select Recent Icon")
         model = app.select_recent_icons.model()
         item = model.item(0)
@@ -311,7 +304,7 @@ class RecentController:
 
             if not ap:
                 continue
-            if not os.path.isfile(ap):
+            if not os.path.exists(ap):
                 continue
             if ap in seen:
                 continue
@@ -319,7 +312,10 @@ class RecentController:
             seen.add(ap)
 
             name = os.path.basename(ap)
+            parent = os.path.basename(os.path.dirname(ap))
 
-            app.select_recent_icons.addItem(name, ap)
+            display = f"{parent}\\{name}" if parent else name
+
+            app.select_recent_icons.addItem(display, ap)
 
         app.select_recent_icons.blockSignals(False)

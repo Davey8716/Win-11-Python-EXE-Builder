@@ -141,11 +141,15 @@ class ValidationController:
                 if (
                     external_packages
                     and getattr(self.app, "dependency_notice_enabled", True)
+                    and not getattr(self.app, "_dependency_popup_shown", False)
                 ):
                     QTimer.singleShot(
                         0,
                         lambda: self.app.ui_dependency_popup.show_dependency_warning_popup(external_packages)
                     )
+
+                    # 🔑 prevent re-trigger spam
+                    self.app._dependency_popup_shown = True
 
                 self.app._last_advisory_script = current_script
                 state["external_packages"] = external_packages
@@ -154,10 +158,11 @@ class ValidationController:
         else:
             self.app._last_advisory_script = None
             state["external_packages"] = []
+            self.app._dependency_popup_shown = False  # 🔑 reset when leaving READY
 
         # Track previous state
         self.app._was_build_ready = is_ready
-        
+                
         # --------------------------------
         # STATUS TEXT
         # --------------------------------
@@ -217,136 +222,87 @@ class ValidationController:
 
         
         # -------------------------------
-        # ICON CLEAR BUTTON STATE
+        # UNIFIED BUTTON STATE HANDLER
         # -------------------------------
 
+        def _set_btn(btn, enabled, active_style=True, text=None):
+            if text is not None:
+                btn.setText(text)
+
+            btn.setEnabled(enabled)
+
+            if enabled and active_style:
+                btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #444444;
+                    }
+                    QPushButton:hover {
+                        background-color: #555555;
+                    }
+                """)
+            else:
+                btn.setStyleSheet("""
+                    QPushButton {
+                        background-color:#1F1F1F;
+                        color: #777777;
+                    }
+                """)
+
+        building = getattr(self.app, "building", False)
+
+        # -------------------------------
+        # ICON CLEAR
+        # -------------------------------
         if hasattr(self.app, "icon_clear_btn"):
-            icon_path = getattr(self.app, "icon_path", "").strip()
-
-            # 🔑 fallback to QLineEdit text if state is empty
-            if not icon_path and hasattr(self.app, "icon_path_input"):
-                icon_path = self.app.icon_path_input.text().strip()
-
-            if icon_path:
-                # ACTIVE (icon exists → can clear)
-                self.app.icon_clear_btn.setEnabled(True)
-                self.app.icon_clear_btn.setText("🔃")
-                self.app.icon_clear_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #444444;
-                    }
-                    QPushButton:hover {
-                        background-color: #555555;
-                    }
-                """)
+            if building:
+                _set_btn(self.app.icon_clear_btn, False)
             else:
-                # DISABLED (no icon → nothing to clear)
-                self.app.icon_clear_btn.setEnabled(False)
-                self.app.icon_clear_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color:#1F1F1F;
-                        color: #777777;
-                    }
-                """)
+                icon_path = getattr(self.app, "icon_path", "").strip()
+                if not icon_path and hasattr(self.app, "icon_path_input"):
+                    icon_path = self.app.icon_path_input.text().strip()
 
-       
-        # --------------------------------
-        # EXE name refresh button
-        # --------------------------------
+                _set_btn(self.app.icon_clear_btn, bool(icon_path), text="🔃")
+
+        # -------------------------------
+        # EXE NAME REFRESH
+        # -------------------------------
         if hasattr(self.app, "refresh_btn"):
-            exe_name = self.app.exe_name_input.text().strip()
-
-            can_refresh = (
-                script_ok and
-                exe_name and
-                exe_name != "main"
-            )
-
-            if can_refresh:
-                self.app.refresh_btn.setEnabled(True)
-                self.app.refresh_btn.setText("🔃")
-                self.app.refresh_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #444444;
-                    }
-                    QPushButton:hover {
-                        background-color: #555555;
-                    }
-                """)
+            if building:
+                _set_btn(self.app.refresh_btn, False)
             else:
-                self.app.refresh_btn.setEnabled(False)
-                self.app.refresh_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color:#1F1F1F;
-                        color: #777777;
-                    }
-                """)
-                
-      
-        # --------------------------------
-        # OUTPUT refresh button
-        # --------------------------------
+                exe_name = self.app.exe_name_input.text().strip()
+                can_refresh = script_ok and exe_name and exe_name != "main"
+
+                _set_btn(self.app.refresh_btn, can_refresh, text="🔃")
+
+        # -------------------------------
+        # OUTPUT REFRESH
+        # -------------------------------
         if hasattr(self.app, "output_refresh_btn"):
-            can_revert_output = (
-                script_ok and
-                bool(outdir) and
-                os.path.normpath(outdir) != os.path.normpath(desktop)
-            )
-
-            if can_revert_output:
-                self.app.output_refresh_btn.setEnabled(True)
-                self.app.output_refresh_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #444444;
-                    }
-                    QPushButton:hover {
-                        background-color: #555555;
-                    }
-                """)
+            if building:
+                _set_btn(self.app.output_refresh_btn, False)
             else:
-                self.app.output_refresh_btn.setEnabled(False)
-                self.app.output_refresh_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color:#1F1F1F;
-                        color: #777777;
-                    }
-                """)
+                can_revert_output = (
+                    script_ok and
+                    bool(outdir) and
+                    os.path.normpath(outdir) != os.path.normpath(desktop)
+                )
 
-        # --------------------------------
-        # SCRIPT CLEAR button
-        # --------------------------------
+                _set_btn(self.app.output_refresh_btn, can_revert_output)
+
+        # -------------------------------
+        # SCRIPT CLEAR
+        # -------------------------------
         if hasattr(self.app, "script_clear_btn"):
-            if getattr(self.app, "building", False):
-                # 🔒 HARD LOCK during build
-                self.app.script_clear_btn.setEnabled(False)
-                self.app.script_clear_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color:#1F1F1F;
-                        color: #777777;
-                    }
-                """)
-            elif script_ok:
-                self.app.script_clear_btn.setEnabled(True)
-                self.app.script_clear_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #444444;
-                    }
-                    QPushButton:hover {
-                        background-color: #555555;
-                    }
-                """)
+            if building:
+                _set_btn(self.app.script_clear_btn, False)
             else:
-                self.app.script_clear_btn.setEnabled(False)
-                self.app.script_clear_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color:#1F1F1F;
-                        color: #777777;
-                    }
-                """)
-                
-        # --------------------------------
-        # BUILD BUTTON
-        # --------------------------------
+                _set_btn(self.app.script_clear_btn, script_ok)
+
+
+        # -------------------------------
+        # BUILD BUTTON (separate styling)
+        # -------------------------------
         if hasattr(self.app, "build_btn"):
             self.app.build_btn.setEnabled(is_ready)
 
@@ -366,6 +322,46 @@ class ValidationController:
                         color: #777777;
                     }
                 """)
+                
+        # -------------------------------
+        # EXE NAME REFRESH (🔃)
+        # -------------------------------
+        if hasattr(self.app, "refresh_btn"):
+            if building:
+                _set_btn(self.app.refresh_btn, False)
+            else:
+                exe_name = self.app.exe_name_input.text().strip()
+                can_refresh = (
+                    script_ok and
+                    exe_name and
+                    exe_name != "main"
+                )
+
+                _set_btn(self.app.refresh_btn, can_refresh, text="🔃")
+                
+        # -------------------------------
+        # EXE NAME FIELD (LOCK DURING BUILD)
+        # -------------------------------
+        if hasattr(self.app, "exe_name_input"):
+            if getattr(self.app, "building", False):
+                self.app.exe_name_input.setReadOnly(True)
+                self.app.exe_name_input.setStyleSheet("""
+                    QLineEdit {
+                        background-color: #202020;
+                        color: #777777;
+                        border: 1px solid #3a3a3a;
+                    }
+                """)
+            else:
+                self.app.exe_name_input.setReadOnly(False)
+                self.app.exe_name_input.setStyleSheet("""
+                    QLineEdit {
+                        background-color: #252525;
+                        color: #e0e0e0;
+                        border: 1px solid #3a3a3a;
+                    }
+                """)
+
 
         # --------------------------------
         # HARD RESET when script removed
@@ -376,7 +372,6 @@ class ValidationController:
 
             if hasattr(self.app, "exe_name_input"):
                 self.app.exe_name_input.clear()
-
 
         # --------------------------------
         # INLINE: Output path status
@@ -403,9 +398,6 @@ class ValidationController:
                 self.app.exe_name_status_label.setStyleSheet("color: #be1a1a;")
                 
 
-
-   
-                                    
         # -------------------------------
         # Icon clear state
         # -------------------------------
@@ -446,7 +438,6 @@ class ValidationController:
                     imports.add(node.module.split(".")[0])
 
         return imports
-
 
     def filter_external_imports(self, imports: set[str]) -> list[str]:
         stdlib = set(sys.stdlib_module_names)

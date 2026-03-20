@@ -285,54 +285,17 @@ class EXEBuilderApp(QWidget):
 
         self.recent_folder_dropdown = QComboBox()
         self.recent_folder_dropdown.setFixedSize(150, 35)
-
-        # header item (non-clickable)
-        self.recent_folder_dropdown.addItem("Select Recent File")
         self.recent_folder_dropdown.setFont(QFont("Rubik UI", 12))
+        self.recent_folder_dropdown.addItem("Select Recent File")
         
-        self.delete_recent_folder = QPushButton("✖")
-        self.delete_recent_folder.setFixedSize(35, 35)
-        self.delete_recent_folder.setCursor(Qt.PointingHandCursor)
-
-        self.delete_recent_folder.setStyleSheet("""
-            QPushButton {
-                background-color: #2a2a2a;
-                border: 1px solid #3a3a3a;
-                border-radius: 5px;
-                color: #e0e0e0;
-                font-size: 14px;
-            }
-
-            QPushButton:hover {
-                background-color: #3a3a3a;
-            }
-
-            QPushButton:pressed {
-                background-color: #1f1f1f;
-            }
-
-            QPushButton:disabled {
-                background-color: #1a1a1a;
-                color: #555;
-            }
-        """)
-
-
+        
         model = self.recent_folder_dropdown.model()
         item = model.item(0)
         item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
         
-        self.recent_folder_dropdown.setEditable(True)
-        if self.recent_folder_dropdown.lineEdit():
-            self.recent_folder_dropdown.lineEdit().setFont(QFont("Rubik UI", 12))
 
-        # keep header visible initially
-        self.recent_folder_dropdown.setCurrentIndex(0)
-
-        # make it look like placeholder but still behave normally
         self.recent_folder_dropdown.setEditable(True)
         self.recent_folder_dropdown.lineEdit().setReadOnly(True)
-
         self.recent_folder_dropdown.setCurrentIndex(-1)
         if self.recent_folder_dropdown.setEnabled(True):
             self.recent_folder_dropdown.setStyleSheet("""
@@ -359,6 +322,33 @@ class EXEBuilderApp(QWidget):
                     color: #777;
                 }
             """)
+            
+        self.delete_recent_folder = QPushButton("✖")
+        self.delete_recent_folder.setFixedSize(35, 35)
+        self.delete_recent_folder.setEnabled(True)
+        self.delete_recent_folder.setStyleSheet("""
+            QPushButton {
+                background-color: #2a2a2a;
+                border: 1px solid #3a3a3a;
+                border-radius: 5px;
+                color: #e0e0e0;
+                font-size: 14px;
+            }
+
+            QPushButton:hover {
+                background-color: #3a3a3a;
+            }
+
+            QPushButton:pressed {
+                background-color: #1f1f1f;
+            }
+
+            QPushButton:disabled {
+                background-color: #1a1a1a;
+                color: #555;
+            }
+        """)
+
 
         folder_row = QHBoxLayout()
         folder_row.setContentsMargins(0, 0, 0, 0)
@@ -371,7 +361,6 @@ class EXEBuilderApp(QWidget):
         
         self.recent_folder_dropdown.currentIndexChanged.connect(self.recent_controller.on_recent_file_selected)
         self.delete_recent_folder.clicked.connect(self.recent_controller.confirm_delete_recent)
-
         python_layout.addLayout(folder_row)
                 
         # =================================================
@@ -382,7 +371,6 @@ class EXEBuilderApp(QWidget):
         self.script_folder_status_label.setFont(QFont("Rubik UI", 11))
         self.script_folder_status_label.setStyleSheet("color: #be1a1a;")
         self.script_folder_status_label.setReadOnly(True)
-
         python_layout.addWidget(self.script_folder_status_label)
         
         # =================================================
@@ -398,7 +386,6 @@ class EXEBuilderApp(QWidget):
         self.script_path_input.setPlaceholderText("Select script or folder...")
         script_layout.addWidget(self.script_path_input)
 
-        
         self.script_clear_btn = QPushButton("")
         self.script_clear_btn.clicked.connect(self.ui_handlers.clear_script_path)
         
@@ -409,9 +396,8 @@ class EXEBuilderApp(QWidget):
         # =================================================
         # ADD FRAME
         # =================================================
-
         self.main_layout.addWidget(python_frame)
-    
+        
         # =============================================================
         # Icon Picker
         # =============================================================
@@ -443,9 +429,8 @@ class EXEBuilderApp(QWidget):
         self.select_recent_icons = QComboBox()
         self.select_recent_icons.setFixedSize(180,35)
         self.select_recent_icons.setFont(QFont("Rubik UI", 11))
-
-        # header
         self.select_recent_icons.addItem("Select Recent Icon")
+        self.recent_controller.populate_recent_icons_dropdown()
 
         model = self.select_recent_icons.model()
         item = model.item(0)
@@ -453,33 +438,32 @@ class EXEBuilderApp(QWidget):
 
         # placeholder behavior
         self.select_recent_icons.setEditable(True)
-        self.select_recent_icons.lineEdit().setFont(QFont("Rubik UI", 12))
         self.select_recent_icons.lineEdit().setReadOnly(True)
+        # self.select_recent_icons.setCurrentIndex(-1)
+        if self.select_recent_icons.setEnabled(True):
+            self.select_recent_icons.setStyleSheet("""
+                QComboBox {
+                    background-color: #121212;
+                    color: #e0e0e0;
+                    border: 1px solid #2a2a2a;
+                    padding: 4px;
+                }
 
-        self.select_recent_icons.setStyleSheet("""
-            QComboBox {
-                background-color: #121212;
-                color: #e0e0e0;
-                border: 1px solid #2a2a2a;
-                padding: 4px;
-            }
+                QComboBox::drop-down {
+                    border: none;
+                    background: #121212;
+                }
 
-            QComboBox::drop-down {
-                border: none;
-                background: #121212;
-            }
-
-            QComboBox QAbstractItemView {
-                background-color: #121212;
-                color: #e0e0e0;
-                selection-background-color: #2a2a2a;
-            }
-        """)
+                QComboBox QAbstractItemView {
+                    background-color: #121212;
+                    color: #e0e0e0;
+                    selection-background-color: #2a2a2a;
+                }
+            """)
 
         self.delete_recent_icons = QPushButton("✖")
         self.delete_recent_icons.setFixedSize(35,35)
         self.delete_recent_icons.setEnabled(True)
-
         self.delete_recent_icons.setStyleSheet("""
             QPushButton {
                 background-color: #2a2a2a;
@@ -543,7 +527,6 @@ class EXEBuilderApp(QWidget):
         icon_block_layout.addWidget(icon_entry_row)
         
         self.select_recent_icons.currentIndexChanged.connect(self.recent_controller.on_recent_icon_selected)
-        self.select_recent_icons.currentIndexChanged.connect(self.recent_controller.update_delete_recent_icon_button)
         self.delete_recent_icons.clicked.connect(self.recent_controller.confirm_delete_recent_icon)
 
         # -------- Final --------
@@ -638,30 +621,7 @@ class EXEBuilderApp(QWidget):
 
         self.main_layout.addWidget(output_frame)
 
-        self.dependency_notice.stateChanged.connect(self.ui_handlers.on_dependency_toggle)
-        self.tooltips_checkbox.stateChanged.connect(self.ui_handlers.on_tooltips_toggle)
         
-        # -----------------------------
-        # CONNECT SIGNALS (PySide6)
-        # -----------------------------
-
-        self.exe_name_input.textChanged.connect(self.ui_handlers._on_exe_name_user_edit)
-        self.exe_name_input.textChanged.connect(self.ui_handlers.on_exe_name_change)
-
-        self.script_path_input.textChanged.connect(self.ui_handlers.on_script_path_change)
-
-        self.output_path_input.textChanged.connect(
-            lambda text: None if getattr(self, "_loading_state", False) else self.validator.update_build_button_state()
-        )
-
-        self.exe_name_input.textChanged.connect(
-            lambda text: None if getattr(self, "_loading_state", False) else self.validator.update_build_button_state()
-        )
-
-        self.icon_path_input.textChanged.connect(
-            lambda text: None if getattr(self, "_loading_state", False) else self.validator.update_build_button_state()
-        )
-
         # Store default style (Qt doesn't expose border color directly like CTk)
         self.exe_entry_default_style = self.exe_name_input.styleSheet()
         
@@ -771,8 +731,26 @@ class EXEBuilderApp(QWidget):
                 
         self.python_status_label.setFixedSize(250,35)
         
+        self.dependency_notice.stateChanged.connect(self.ui_handlers.on_dependency_toggle)
+        self.tooltips_checkbox.stateChanged.connect(self.ui_handlers.on_tooltips_toggle)
+    
 
+        self.exe_name_input.textChanged.connect(self.ui_handlers._on_exe_name_user_edit)
+        self.exe_name_input.textChanged.connect(self.ui_handlers.on_exe_name_change)
 
+        self.script_path_input.textChanged.connect(self.ui_handlers.on_script_path_change)
+
+        self.output_path_input.textChanged.connect(
+            lambda text: None if getattr(self, "_loading_state", False) else self.validator.update_build_button_state()
+        )
+
+        self.exe_name_input.textChanged.connect(
+            lambda text: None if getattr(self, "_loading_state", False) else self.validator.update_build_button_state()
+        )
+
+        self.icon_path_input.textChanged.connect(
+            lambda text: None if getattr(self, "_loading_state", False) else self.validator.update_build_button_state()
+        )
 
 
     def set_status(self, text):

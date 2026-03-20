@@ -65,12 +65,19 @@ class DependencyPopup:
         return popup
 
     def show_dependency_warning_popup(self, packages: list[str]):
+    # 🔒 If disabled → force close
         if not getattr(self.app, "dependency_notice_enabled", True):
             if hasattr(self, "popup") and self.popup:
                 self.popup.close()
+                self.popup = None
             return
 
-        popup = self.build_dependency_popup(packages)
+        # 🔑 Always replace existing popup
+        if hasattr(self, "popup") and self.popup:
+            self.popup.close()
+            self.popup = None
 
-        if popup:
-            popup.show()
+        self.popup = self.build_dependency_popup(packages)
+
+        if self.popup:
+            self.popup.show()
