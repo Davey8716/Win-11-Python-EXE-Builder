@@ -229,7 +229,7 @@ class ValidationController:
             if text is not None:
                 btn.setText(text)
 
-            btn.setEnabled(enabled)
+            btn.setEnabled(bool(enabled))
 
             if enabled and active_style:
                 btn.setStyleSheet("""
@@ -284,8 +284,8 @@ class ValidationController:
             else:
                 can_revert_output = (
                     script_ok and
-                    bool(outdir) and
-                    os.path.normpath(outdir) != os.path.normpath(desktop)
+                        not outdir or
+                        os.path.normpath(outdir) != os.path.normpath(desktop)
                 )
 
                 _set_btn(self.app.output_refresh_btn, can_revert_output)
