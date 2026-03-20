@@ -249,8 +249,8 @@ class FilePickerController:
         # Persist + revalidate
         # ------------------------------------
 
-        self.app.add_recent_script(full_path)
-        self.app.populate_recent_dropdown()
+        self.app.recent_controller.add_recent_script(full_path)
+        self.app.recent_controller.populate_recent_dropdown()
 
         self.app.state_ctrl.save_state()
         self.app.validator.validation_status_message()
@@ -277,8 +277,8 @@ class FilePickerController:
             if hasattr(self.app, "icon_path_input"):
                 self.app.icon_path_input.setText(path)
                 
-            self.app.add_recent_icon(path)
-            self.app.populate_recent_icons_dropdown()
+            self.app.recent_controller.add_recent_icon(path)
+            self.app.recent_controller.populate_recent_icons_dropdown()
 
 
             self.app.state_ctrl.save_state()

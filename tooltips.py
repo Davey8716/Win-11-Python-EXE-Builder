@@ -92,11 +92,20 @@ def attach_tooltips(app):
     # -----------------------------
     # Title / global controls
     # -----------------------------
+    
+ 
 
     QtTooltip(
         app.tooltips_checkbox,
         "Toggle all tooltips on or off.\n"
         "Turn this off once you’re familiar with the interface."
+    )
+    
+    QtTooltip(
+        app.dependency_notice,
+        "Brings up the dependency notice.\n"
+        "Describes what packages are needed to be installed.\n"
+        "For a build to succeed."
     )
 
     # -----------------------------
@@ -132,6 +141,11 @@ def attach_tooltips(app):
     QtTooltip(
         app.recent_folder_dropdown,
         "Select a recent python main file from this drop down list."
+    )
+    
+    QtTooltip(
+        app.delete_recent_folder,
+        "deletes current file in the path line output."
     )
 
     # -----------------------------
@@ -171,6 +185,11 @@ def attach_tooltips(app):
     QtTooltip(
         app.icon_path_input,
         "File path to Icon if used."
+    )
+    
+    QtTooltip(
+        app.delete_recent_icons,
+            "deletes current icon in the path line output."
     )
     
     QtTooltip(
