@@ -1,12 +1,10 @@
 from PySide6.QtCore import QObject, QEvent, QTimer, QPoint
-from PySide6.QtWidgets import QLabel, QWidget
+from PySide6.QtWidgets import QLabel
 from PySide6.QtGui import Qt
-
 
 # -------------------------------------------------------------
 #  Simple tooltip class for Qt widgets (qt_material compatible)
 # -------------------------------------------------------------
-
 class QtTooltip(QObject):
     def __init__(self, widget, text, delay=500):
         super().__init__(widget)

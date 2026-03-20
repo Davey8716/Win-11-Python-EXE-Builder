@@ -2,7 +2,6 @@ import os
 import json
 import time
 import sys
-from pathlib import Path
 from PySide6.QtCore import QTimer
 
 class StateController:

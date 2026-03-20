@@ -2,7 +2,6 @@ import os
 import psutil
 import send2trash
 
-
 class BuildCancellation:
     def __init__(self, app, ui):
         """

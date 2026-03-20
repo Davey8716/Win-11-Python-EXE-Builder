@@ -1,7 +1,6 @@
 import ctypes
 from PySide6.QtCore import QObject, Signal
 
-
 class ActivationController(QObject):
     activate_signal = Signal()
 

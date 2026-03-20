@@ -1,4 +1,3 @@
-# bundle_validation.py
 
 import os
 import subprocess

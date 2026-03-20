@@ -11,21 +11,14 @@ from datetime import datetime
 from ctypes import wintypes
 from bundle_validation import validate_bundle_inputs
 from tooltips import attach_tooltips
-
-
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit, QDialog,QSizePolicy
-
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit, QDialog,QHBoxLayout, QComboBox,QMessageBox
 from validation_controller import ValidationController
 from activation_controller import ActivationController
-from PySide6.QtWidgets import QApplication
-from PySide6.QtGui import QPalette, QColor
+from PySide6.QtGui import QPalette, QColor,QFont
 from file_pickers import FilePickerController
 from state_controller import StateController
-from PySide6.QtCore import QTimer
-from PySide6.QtGui import QFont
 
-from PySide6.QtWidgets import QHBoxLayout, QComboBox,QMessageBox
 
 CREATE_NO_WINDOW = 0x08000000
 
@@ -186,14 +179,6 @@ class EXEBuilderApp(QWidget):
         self.main_layout.addWidget(title_row)
         self.main_layout.addWidget(toggles_row)
         
-        
-        
-        
-        # =============================================================
-   
-
-
-
 
         # =============================================================
         # Script / Buttons Section
@@ -208,7 +193,6 @@ class EXEBuilderApp(QWidget):
         row2_layout.setContentsMargins(1,1,1,1)
         row2_layout.setSpacing(1)
 
-        
         # -------------------------
         # Combined FRAME (apps + interpreter)
         # -------------------------
@@ -221,7 +205,6 @@ class EXEBuilderApp(QWidget):
         combined_layout = QVBoxLayout(combined_frame)
         combined_layout.setContentsMargins(1,1,1,1)
         combined_layout.setSpacing(1)
-
 
         # =================================================
         # Apps (ROW inside vertical stack)
@@ -252,7 +235,6 @@ class EXEBuilderApp(QWidget):
         interpreter_layout.setContentsMargins(1,1,1,1)
         interpreter_layout.setSpacing(1)
 
-
         # --- Button ---
         self.interpreter_btn = QPushButton("Select Python Interpreter")
         self.interpreter_btn.clicked.connect(
@@ -280,7 +262,6 @@ class EXEBuilderApp(QWidget):
         # =================================================
 
         row2_layout.addWidget(combined_frame)
-
         self.main_layout.addWidget(row2)
 
         # ---------------------------------
@@ -299,7 +280,6 @@ class EXEBuilderApp(QWidget):
         # =================================================
         # Row 1: Select folder button + recent dropdown
         # =================================================
-
 
         self.folder_btn = QPushButton("Select Python Folder")
         self.folder_btn.clicked.connect(self.file_pickers.select_script_folder)
@@ -338,7 +318,6 @@ class EXEBuilderApp(QWidget):
             }
         """)
 
-                
 
         model = self.recent_folder_dropdown.model()
         item = model.item(0)
@@ -347,7 +326,6 @@ class EXEBuilderApp(QWidget):
         self.recent_folder_dropdown.setEditable(True)
         if self.recent_folder_dropdown.lineEdit():
             self.recent_folder_dropdown.lineEdit().setFont(QFont("Rubik UI", 12))
-      
 
         # keep header visible initially
         self.recent_folder_dropdown.setCurrentIndex(0)
@@ -355,7 +333,6 @@ class EXEBuilderApp(QWidget):
         # make it look like placeholder but still behave normally
         self.recent_folder_dropdown.setEditable(True)
         self.recent_folder_dropdown.lineEdit().setReadOnly(True)
-
 
         self.recent_folder_dropdown.setCurrentIndex(-1)
         if self.recent_folder_dropdown.setEnabled(True):
@@ -384,9 +361,6 @@ class EXEBuilderApp(QWidget):
                 }
             """)
 
-            
-
-        
         folder_row = QHBoxLayout()
         folder_row.setContentsMargins(0, 0, 0, 0)
         folder_row.setSpacing(5)
@@ -398,11 +372,9 @@ class EXEBuilderApp(QWidget):
         
         self.recent_folder_dropdown.currentIndexChanged.connect(self.on_recent_file_selected)
         self.delete_recent_folder.clicked.connect(self.confirm_delete_recent)
-  
 
         python_layout.addLayout(folder_row)
                 
-
         # =================================================
         # Row 2: Status
         # =================================================
@@ -414,7 +386,6 @@ class EXEBuilderApp(QWidget):
 
         python_layout.addWidget(self.script_folder_status_label)
         
-     
         # =================================================
         # Row 3: Path + reset (side-by-side)
         # =================================================
@@ -424,9 +395,7 @@ class EXEBuilderApp(QWidget):
         script_layout.setContentsMargins(3,3,3,3)
         script_layout.setSpacing(3)
 
-
         self.script_path_input = QLineEdit()
-    
         self.script_path_input.setPlaceholderText("Select script or folder...")
         script_layout.addWidget(self.script_path_input)
 
@@ -438,16 +407,11 @@ class EXEBuilderApp(QWidget):
             self.state_ctrl.save_state()
             self.validator.update_build_button_state()
             
-      
-
         self.script_clear_btn = QPushButton("")
         self.script_clear_btn.clicked.connect(clear_script_path)
         
-   
-
         script_layout.addWidget(self.script_clear_btn)
         script_layout.setContentsMargins(1,1,1,1)
-
         python_layout.addWidget(script_row)
 
         # =================================================
@@ -456,65 +420,6 @@ class EXEBuilderApp(QWidget):
 
         self.main_layout.addWidget(python_frame)
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
         # =============================================================
         # Icon Picker
         # =============================================================
@@ -638,9 +543,7 @@ class EXEBuilderApp(QWidget):
 
         icon_row2_layout.addWidget(self.ico_convert_btn)
         icon_row2_layout.addStretch()
-
         icon_block_layout.addWidget(icon_row2)
-
 
         # -------- Row 3: Entry + Clear --------
 
@@ -670,72 +573,10 @@ class EXEBuilderApp(QWidget):
         self.select_recent_icons.currentIndexChanged.connect(self.update_delete_recent_icon_button)
         self.delete_recent_icons.clicked.connect(self.confirm_delete_recent_icon)
 
-
         # -------- Final --------
 
         icon_frame_layout.addWidget(icon_block)
         self.main_layout.addWidget(icon_frame)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         # =============================================================
         # Output Folder
@@ -765,7 +606,6 @@ class EXEBuilderApp(QWidget):
 
         self.output_btn = QPushButton("Select Output Folder")
         self.output_btn.clicked.connect(self.file_pickers.select_output_folder)
-
         output_layout.addWidget(self.output_btn, alignment=Qt.AlignLeft)
 
         # =================================================
@@ -843,10 +683,7 @@ class EXEBuilderApp(QWidget):
 
         self.main_layout.addWidget(output_frame)
         
-        
-
-                
-
+        # =============================================================
         # EXE name ownership tracking (USER intent only)
         # =============================================================
 
@@ -854,7 +691,6 @@ class EXEBuilderApp(QWidget):
             if self._loading_state:
                 return
             self.exe_name_user_modified = True
-
 
         # =============================================================
         # EXE name cleared by USER
@@ -869,7 +705,6 @@ class EXEBuilderApp(QWidget):
                 self.state_ctrl.save_state()
 
             self.validator.update_build_button_state()
-
 
         def on_script_path_change(text):
             if getattr(self, "_loading_state", False):
@@ -926,47 +761,6 @@ class EXEBuilderApp(QWidget):
         self.dependency_notice.stateChanged.connect(on_dependency_toggle)
         self.tooltips_checkbox.stateChanged.connect(on_tooltips_toggle)
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
         # -----------------------------
         # CONNECT SIGNALS (PySide6)
         # -----------------------------
@@ -1004,7 +798,6 @@ class EXEBuilderApp(QWidget):
         build_layout.setContentsMargins(6, 6, 6, 6)
         build_layout.setSpacing(3)
 
-
         # =================================================
         # Row 1: Build button (centered)
         # =================================================
@@ -1038,7 +831,7 @@ class EXEBuilderApp(QWidget):
         # ----------------------------------------------------
 
         attach_tooltips(self)
-
+        
         self.state_ctrl.load_state()
         self.populate_recent_dropdown()
         self._loading_state = False
@@ -1066,7 +859,6 @@ class EXEBuilderApp(QWidget):
             output_paths.setFont(QFont("Rubik UI", 10))
     
         self.exe_name_input.setReadOnly(False)
-
 
         for btns in [
             self.open_python_site_btn,
@@ -1293,9 +1085,7 @@ class EXEBuilderApp(QWidget):
         if not full_path:
             return
 
-        from PySide6.QtWidgets import QMessageBox
-        import os, json
-
+        
         reply = QMessageBox.question(
             self,
             "Delete Recent Icon",
@@ -1434,108 +1224,6 @@ class EXEBuilderApp(QWidget):
 
         self.select_recent_icons.blockSignals(False)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     def closeEvent(self, event):
         self.state_ctrl.save_state()
 
@@ -1606,7 +1294,6 @@ class EXEBuilderApp(QWidget):
         if popup:
             popup.show()
 
-        
     # -------------------------------------------------------------
     # Restore always-on-top when user returns to the app
     # -------------------------------------------------------------
@@ -1614,7 +1301,6 @@ class EXEBuilderApp(QWidget):
     def _restore_topmost(self, event=None):
         self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
         self.show()
-
 
     # -------------------------------------------------------------
     # Build EXE
@@ -1624,7 +1310,6 @@ class EXEBuilderApp(QWidget):
         self.building = False  # kill any previous loop instantly
         self._eta_running = True
         self.state_ctrl.update_eta_loop()
-
 
         # ==================================================
         # Debug log (Desktop, user-visible)
@@ -1706,8 +1391,6 @@ class EXEBuilderApp(QWidget):
         self.build_btn.clicked.connect(self.build_exe)
         self.status_label.setFixedWidth(425)
         
-
-
         self.build_start_time = time.time()
         self.state_ctrl.update_eta_loop()
 
@@ -1728,7 +1411,6 @@ class EXEBuilderApp(QWidget):
             self.build_cancellation.abort_build("Please enter an EXE name.")
             return
 
-        
         # ==================================================
         # Resolve PyInstaller (ALWAYS via Python interpreter)
         # ==================================================
@@ -1906,8 +1588,6 @@ class EXEBuilderApp(QWidget):
     def ui_safe(self, fn):
         QTimer.singleShot(0, fn)
 
-
-
     def set_controls_enabled(self, enabled: bool):
 
         # 🔒 LOCK DURING BUILD
@@ -1921,9 +1601,6 @@ class EXEBuilderApp(QWidget):
         for btn in locked_controls:
             btn.setEnabled(enabled)
             
-            
-
-
     # ==================================================
     # UI RESTORE: Build finished / aborted / cancelled
     # ==================================================
@@ -1950,8 +1627,6 @@ class EXEBuilderApp(QWidget):
         # Re-enable recovery buttons
         # -------------------------------
         
-        
-
         if hasattr(self, "output_refresh_btn"):
             self.output_refresh_btn.setEnabled(True)
 
@@ -2073,7 +1748,6 @@ if __name__ == "__main__":
         background-color: #3f3f3f;
     }
     """)
-    
     
     window = EXEBuilderApp()
     window.show()

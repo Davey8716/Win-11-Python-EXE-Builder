@@ -1,10 +1,7 @@
 import os
 import subprocess
-from PySide6.QtWidgets import QFileDialog, QDialog, QVBoxLayout, QPushButton, QLabel, QComboBox
+from PySide6.QtWidgets import QFileDialog, QDialog, QVBoxLayout, QPushButton, QLabel, QComboBox, QVBoxLayout, QPushButton
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QComboBox, QPushButton
-from pathlib import Path
-
 
 # -------------------------------------------------------------
 # File Pickers (Qt version)
@@ -114,7 +111,6 @@ class FilePickerController:
 
         return None
 
-
     # ============================================================
     # Select single script
     # ============================================================
@@ -134,7 +130,6 @@ class FilePickerController:
 
         # 🔑 SINGLE SOURCE OF TRUTH
         self._apply_selected_entry(path)
-
 
     # ============================================================
     # Select script folder
@@ -216,13 +211,6 @@ class FilePickerController:
         # ------------------------------------
 
         self.app.entry_script = full_path
-
-        # if hasattr(self.app, "script_path_input"):
-        #     self.app.script_path_input.setText(f"{os.path.basename(os.path.dirname(full_path))}\\{os.path.basename(full_path)}")
-        #     self.app.script_path_input.setCursorPosition(len(self.app.script_path_input.text()))
-
-        # self.app.project_root = os.path.dirname(full_path)
-        # self.app.script_path = full_path
         
         if hasattr(self.app, "script_path_input"):
             parent = os.path.basename(os.path.dirname(full_path))
@@ -335,9 +323,6 @@ class FilePickerController:
         self.app.state_ctrl.save_state()
         self.app.validator.validation_status_message()
     
-
-
-
 class ScriptPickerPopup(QDialog):
     def __init__(self, parent, folder_path, py_files, callback):
         super().__init__(parent)

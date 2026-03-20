@@ -3,7 +3,6 @@ import sys
 import ast
 from PySide6.QtCore import QTimer
 
-
 class ValidationController:
     def __init__(self, app):
         """
