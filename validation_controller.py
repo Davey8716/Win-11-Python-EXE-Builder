@@ -144,7 +144,7 @@ class ValidationController:
                 ):
                     QTimer.singleShot(
                         0,
-                        lambda: self.app.show_dependency_warning_popup(external_packages)
+                        lambda: self.app.ui_dependency_popup.show_dependency_warning_popup(external_packages)
                     )
 
                 self.app._last_advisory_script = current_script

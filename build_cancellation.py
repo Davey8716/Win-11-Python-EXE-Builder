@@ -64,7 +64,7 @@ class BuildCancellation:
         self.app.building = False
 
         # Restore UI baseline
-        self.ui.restore_build_ui()
+        self.app.build_ui_controller.restore_build_ui()
         self.ui.set_status("Build cancelled.")
         
 

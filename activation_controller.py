@@ -1,5 +1,6 @@
 import ctypes
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Signal,QTimer,Qt
+
 
 class ActivationController(QObject):
     activate_signal = Signal()
@@ -37,3 +38,15 @@ class ActivationController(QObject):
 
         except Exception:
             pass
+        
+    def ui_safe(self, fn):
+        QTimer.singleShot(0, fn)
+        
+    # -------------------------------------------------------------
+    # Restore always-on-top when user returns to the app
+    # -------------------------------------------------------------
+
+    def _restore_topmost(self, event=None):
+        window = self.app
+        self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+        self.show()

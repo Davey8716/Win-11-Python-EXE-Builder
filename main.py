@@ -1,27 +1,23 @@
 import sys
 import os
-import subprocess
-import time
-import webbrowser
 import ctypes
 import threading
-import json
 
-from datetime import datetime
+
 from ctypes import wintypes
-from bundle_validation import validate_bundle_inputs
+from build_controller import BuildController
 from tooltips import attach_tooltips
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit, QDialog,QHBoxLayout, QComboBox,QMessageBox
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit,QHBoxLayout, QComboBox
 from validation_controller import ValidationController
 from activation_controller import ActivationController
 from PySide6.QtGui import QPalette, QColor,QFont
 from file_pickers import FilePickerController
 from state_controller import StateController
-
-
-CREATE_NO_WINDOW = 0x08000000
-
+from recent_controller import RecentController
+from ui_handlers import UIHandlers
+from ui_dependency_popup import DependencyPopup
+from build_ui_controller import BuildUIController
 # Try to create a mutex
 mutex = ctypes.windll.kernel32.CreateMutexW(
     None,
@@ -65,6 +61,11 @@ class EXEBuilderApp(QWidget):
         self.project_root = None
         self.exe_name_user_modified = False
         
+        self.build_ui_controller = BuildUIController(self)
+        self.ui_dependency_popup = DependencyPopup(self)
+        self.recent_controller = RecentController(self)
+        self.ui_handlers = UIHandlers(self)
+        self.build_controller = BuildController(self)
         self.validation_controller = ValidationController(self)
         self.state_ctrl = StateController(self)
         self.validator = ValidationController(self)
@@ -103,7 +104,7 @@ class EXEBuilderApp(QWidget):
         self.build_counter = 0
 
         self.setWindowTitle("")
-        self.setFixedSize(500, 770)
+        self.setFixedSize(500, 790)
 
         if not hasattr(self, "tooltips_enabled"):
             self.tooltips_enabled = True
@@ -184,8 +185,6 @@ class EXEBuilderApp(QWidget):
         # Script / Buttons Section
         # =============================================================
 
-        def open_python_site():
-            webbrowser.open("https://www.python.org")
 
 
         row2 = QWidget(self)
@@ -218,7 +217,7 @@ class EXEBuilderApp(QWidget):
         self.apps_btn.clicked.connect(self.file_pickers.open_installed_apps)
 
         self.open_python_site_btn = QPushButton("Python.org")
-        self.open_python_site_btn.clicked.connect(open_python_site)
+        self.open_python_site_btn.clicked.connect(self.ui_handlers.open_python_site)
 
         apps_layout.addWidget(self.apps_btn)
         apps_layout.addWidget(self.open_python_site_btn)
@@ -370,8 +369,8 @@ class EXEBuilderApp(QWidget):
         folder_row.addWidget(self.delete_recent_folder)
         folder_row.addStretch()
         
-        self.recent_folder_dropdown.currentIndexChanged.connect(self.on_recent_file_selected)
-        self.delete_recent_folder.clicked.connect(self.confirm_delete_recent)
+        self.recent_folder_dropdown.currentIndexChanged.connect(self.recent_controller.on_recent_file_selected)
+        self.delete_recent_folder.clicked.connect(self.recent_controller.confirm_delete_recent)
 
         python_layout.addLayout(folder_row)
                 
@@ -399,16 +398,9 @@ class EXEBuilderApp(QWidget):
         self.script_path_input.setPlaceholderText("Select script or folder...")
         script_layout.addWidget(self.script_path_input)
 
-        def clear_script_path():
-            self.script_path_input.clear()
-            self.entry_script = None
-            self.project_root = None
-            self.script_path = ""
-            self.state_ctrl.save_state()
-            self.validator.update_build_button_state()
-            
+        
         self.script_clear_btn = QPushButton("")
-        self.script_clear_btn.clicked.connect(clear_script_path)
+        self.script_clear_btn.clicked.connect(self.ui_handlers.clear_script_path)
         
         script_layout.addWidget(self.script_clear_btn)
         script_layout.setContentsMargins(1,1,1,1)
@@ -424,16 +416,6 @@ class EXEBuilderApp(QWidget):
         # Icon Picker
         # =============================================================
 
-        def open_icon_sites():
-            urls = [
-                "https://convertico.com/",
-                "https://cloudconvert.com/png-to-ico",
-                "https://www.icoconverter.com/"
-            ]
-            for url in urls:
-                webbrowser.open(url)
-
-
         icon_frame = QFrame()
         icon_frame.setFrameShape(QFrame.StyledPanel)
         icon_frame.setFrameShadow(QFrame.Raised)
@@ -447,7 +429,6 @@ class EXEBuilderApp(QWidget):
         icon_block_layout = QVBoxLayout(icon_block)
         icon_block_layout.setContentsMargins(1,1,1,1)
         icon_block_layout.setSpacing(3)
-
 
         # -------- Row 1: Select Icon + Recent Dropdown + Delete --------
 
@@ -529,8 +510,6 @@ class EXEBuilderApp(QWidget):
 
         icon_block_layout.addWidget(icon_row1)
 
-
-
         # -------- Row 2: ICO Converter (below) --------
 
         icon_row2 = QWidget()
@@ -539,7 +518,7 @@ class EXEBuilderApp(QWidget):
         icon_row2_layout.setSpacing(5)
 
         self.ico_convert_btn = QPushButton("Open ICO Converters")
-        self.ico_convert_btn.clicked.connect(open_icon_sites)
+        self.ico_convert_btn.clicked.connect(self.ui_handlers.open_icon_sites)
 
         icon_row2_layout.addWidget(self.ico_convert_btn)
         icon_row2_layout.addStretch()
@@ -555,23 +534,17 @@ class EXEBuilderApp(QWidget):
         self.icon_path_input = QLineEdit()
         self.icon_path_input.setPlaceholderText("No icon selected...")
 
-        def clear_icon():
-            self.icon_path_input.clear()
-            self.icon_path = ""
-            self.state_ctrl.save_state()
-            self.validator.update_build_button_state()
-
         self.icon_clear_btn = QPushButton("")
-        self.icon_clear_btn.clicked.connect(clear_icon)
+        self.icon_clear_btn.clicked.connect(self.ui_handlers.clear_icon)
 
         icon_entry_layout.addWidget(self.icon_path_input)
         icon_entry_layout.addWidget(self.icon_clear_btn)
 
         icon_block_layout.addWidget(icon_entry_row)
         
-        self.select_recent_icons.currentIndexChanged.connect(self.on_recent_icon_selected)
-        self.select_recent_icons.currentIndexChanged.connect(self.update_delete_recent_icon_button)
-        self.delete_recent_icons.clicked.connect(self.confirm_delete_recent_icon)
+        self.select_recent_icons.currentIndexChanged.connect(self.recent_controller.on_recent_icon_selected)
+        self.select_recent_icons.currentIndexChanged.connect(self.recent_controller.update_delete_recent_icon_button)
+        self.delete_recent_icons.clicked.connect(self.recent_controller.confirm_delete_recent_icon)
 
         # -------- Final --------
 
@@ -630,18 +603,11 @@ class EXEBuilderApp(QWidget):
         self.output_path_input.setPlaceholderText("No output folder selected...")
         output_entry_layout.addWidget(self.output_path_input)
 
-        def get_desktop_path():
-            return os.path.join(os.path.expanduser("~"), "Desktop")
 
-        def reset_output_to_desktop():
-            desktop = get_desktop_path()
-            self.output_path_input.setText(desktop)
-            self.output_path = desktop
-            self.state_ctrl.save_state()
-            self.validator.update_build_button_state()
+        
 
         self.output_refresh_btn = QPushButton("")
-        self.output_refresh_btn.clicked.connect(reset_output_to_desktop)
+        self.output_refresh_btn.clicked.connect(self.ui_handlers.reset_output_to_desktop)
 
         output_entry_layout.addWidget(self.output_refresh_btn)
         output_layout.addWidget(output_entry_row)
@@ -658,21 +624,10 @@ class EXEBuilderApp(QWidget):
         self.exe_name_input.setPlaceholderText("Output file name (without .exe)")
         exe_layout.addWidget(self.exe_name_input)
 
-        def reset_exe_name_from_script():
-            script = self.entry_script
-            if not script or not os.path.isfile(script):
-                return
-
-            derived = os.path.splitext(os.path.basename(script))[0]
-
-            self.exe_name_user_modified = False
-            self.exe_name_input.setText(derived)
-
-            self.state_ctrl.save_state()
-            self.validator.update_build_button_state()
+        
 
         self.refresh_btn = QPushButton("")
-        self.refresh_btn.clicked.connect(reset_exe_name_from_script)
+        self.refresh_btn.clicked.connect(self.ui_handlers.reset_exe_name_from_script)
         
         exe_layout.addWidget(self.refresh_btn)
         output_layout.addWidget(exe_row)
@@ -682,93 +637,18 @@ class EXEBuilderApp(QWidget):
         # =================================================
 
         self.main_layout.addWidget(output_frame)
-        
-        # =============================================================
-        # EXE name ownership tracking (USER intent only)
-        # =============================================================
 
-        def _on_exe_name_user_edit(text):
-            if self._loading_state:
-                return
-            self.exe_name_user_modified = True
-
-        # =============================================================
-        # EXE name cleared by USER
-        # =============================================================
-
-        def on_exe_name_change(text):
-            if self._loading_state:
-                return
-
-            value = text.strip()
-            if not value:
-                self.state_ctrl.save_state()
-
-            self.validator.update_build_button_state()
-
-        def on_script_path_change(text):
-            if getattr(self, "_loading_state", False):
-                return
-
-            value = text.strip()
-
-            if not value:
-                self.entry_script = None
-                self.project_root = None
-
-                # ✅ clear dependent fields
-                if hasattr(self, "output_path_input"):
-                    self.output_path_input.clear()
-                self.output_path = ""
-
-                if hasattr(self, "exe_name_input"):
-                    self.exe_name_input.clear()
-                self.exe_name = ""
-
-                self.state_ctrl.save_state()
-
-            self.validator.update_build_button_state()
-
-        def on_dependency_toggle(state):
-            self.dependency_notice_enabled = bool(state)
-
-            # -------------------------
-            # ON → show popup
-            # -------------------------
-            if self.dependency_notice_enabled:
-                script = self.script_path
-
-                if script and os.path.isfile(script):
-                    packages = self.validator.run_dependency_advisory(script)
-
-                    if packages:
-                        self.show_dependency_warning_popup(packages)
-
-            # -------------------------
-            # OFF → close popup
-            # -------------------------
-            else:
-                if hasattr(self, "popup") and self.popup:
-                    self.popup.close()
-
-            self.state_ctrl.save_state()
-                
-        
-        def on_tooltips_toggle(state):
-            self.tooltips_enabled = bool(state)
-            self.state_ctrl.save_state()
-
-        self.dependency_notice.stateChanged.connect(on_dependency_toggle)
-        self.tooltips_checkbox.stateChanged.connect(on_tooltips_toggle)
+        self.dependency_notice.stateChanged.connect(self.ui_handlers.on_dependency_toggle)
+        self.tooltips_checkbox.stateChanged.connect(self.ui_handlers.on_tooltips_toggle)
         
         # -----------------------------
         # CONNECT SIGNALS (PySide6)
         # -----------------------------
 
-        self.exe_name_input.textChanged.connect(_on_exe_name_user_edit)
-        self.exe_name_input.textChanged.connect(on_exe_name_change)
+        self.exe_name_input.textChanged.connect(self.ui_handlers._on_exe_name_user_edit)
+        self.exe_name_input.textChanged.connect(self.ui_handlers.on_exe_name_change)
 
-        self.script_path_input.textChanged.connect(on_script_path_change)
+        self.script_path_input.textChanged.connect(self.ui_handlers.on_script_path_change)
 
         self.output_path_input.textChanged.connect(
             lambda text: None if getattr(self, "_loading_state", False) else self.validator.update_build_button_state()
@@ -807,7 +687,7 @@ class EXEBuilderApp(QWidget):
         font = QFont("Rubik UI", 12, QFont.Bold)
         self.build_btn.setFont(font)
         self.build_btn.setFixedSize(125, 35)
-        self.build_btn.clicked.connect(self.build_exe)
+        self.build_btn.clicked.connect(self.build_controller.build_exe)
 
         build_layout.addWidget(self.build_btn, alignment=Qt.AlignLeft)
 
@@ -833,7 +713,7 @@ class EXEBuilderApp(QWidget):
         attach_tooltips(self)
         
         self.state_ctrl.load_state()
-        self.populate_recent_dropdown()
+        self.recent_controller.populate_recent_dropdown()
         self._loading_state = False
         self.validator.validation_status_message()
         self.validator.update_build_button_state()
@@ -891,757 +771,15 @@ class EXEBuilderApp(QWidget):
                 
         self.python_status_label.setFixedSize(250,35)
         
-    def add_recent_script(self, path):
-        ap = os.path.abspath(os.path.normpath(path)) if path else ""
-        if not ap:
-            return
 
-        state_path = self.state_ctrl._state_file_path()
 
-        try:
-            if os.path.isfile(state_path):
-                with open(state_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            else:
-                data = {}
-        except:
-            data = {}
-
-        lst = data.get("recent_scripts", [])
-
-        if ap in lst:
-            lst.remove(ap)
-
-        lst.insert(0, ap)
-        lst = lst[:10]
-
-        data["recent_scripts"] = lst
-
-        try:
-            with open(state_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=4)
-        except Exception as e:
-            print("Recent scripts save error:", e)
-
-        # 🔑 IMPORTANT: keep in-memory copy synced
-        self.state_data = data
-        
-    def populate_recent_dropdown(self):
-        def _abs(p):
-            return os.path.abspath(os.path.normpath(p)) if p else ""
-
-        self.recent_folder_dropdown.blockSignals(True)
-        self.recent_folder_dropdown.clear()
-        
-        # 🔑 HEADER (non-clickable)
-        self.recent_folder_dropdown.addItem("Select Recent File")
-        model = self.recent_folder_dropdown.model()
-        item = model.item(0)
-        
-        item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
-       
-        # 🔑 ALWAYS READ FROM FILE (source of truth)
-        state_path = self.state_ctrl._state_file_path()
-
-        try:
-            if os.path.isfile(state_path):
-                with open(state_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            else:
-                data = {}
-        except:
-            data = {}
-
-        paths = data.get("recent_scripts", [])
-
-        seen = set()
-
-        for p in paths:
-            ap = _abs(p)
-
-            if not ap:
-                continue
-            if not os.path.isfile(ap):
-                continue
-            if ap in seen:
-                continue
-
-            seen.add(ap)
-
-            name = os.path.basename(ap)
-            parent = os.path.basename(os.path.dirname(ap))
-
-            # 🔑 DISPLAY ONLY (no logic impact)
-            display = f"{parent}\\{name}" if parent else name
-
-            # 🔑 IMPORTANT: FULL PATH still stored
-            self.recent_folder_dropdown.addItem(display, ap)
-
-        self.recent_folder_dropdown.blockSignals(False)
-                
-    def on_recent_file_selected(self, index):
-        if index <=0:
-            return
-
-        path = self.recent_folder_dropdown.currentData()
-
-        if not path:
-            return
-
-        path = os.path.abspath(os.path.normpath(path))
-
-        print("Selected:", path)
-
-        # 🔑 USE SAME PIPELINE AS EVERYTHING ELSE
-        if hasattr(self, "file_pickers"):
-            self.file_pickers._apply_selected_entry(path)
-            
-    def confirm_delete_recent(self):
-        full_path = getattr(self, "entry_script", "") or getattr(self, "script_path", "")
-
-        if not full_path:
-            return
-
-        reply = QMessageBox.question(
-            self,
-            "Delete Recent File",
-            f"Are you sure you want to remove:\n\n{full_path}",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
-        )
-
-        if reply != QMessageBox.Yes:
-            return
-
-        if os.path.abspath(os.path.normpath(full_path)) == os.path.abspath(os.path.normpath(getattr(self, "entry_script", ""))):
-            self.script_path_input.clear()
-            self.entry_script = None
-            self.project_root = None
-            self.script_path = ""
-
-        state_path = self.state_ctrl._state_file_path()
-
-        try:
-            if os.path.isfile(state_path):
-                with open(state_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            else:
-                data = {}
-        except:
-            data = {}
-
-        lst = data.get("recent_scripts", [])
-
-        norm = os.path.abspath(os.path.normpath(full_path))
-        lst = [p for p in lst if os.path.abspath(os.path.normpath(p)) != norm]
-
-        data["recent_scripts"] = lst
-        self.state_data = data
-
-        with open(state_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4)
-
-        self.populate_recent_dropdown()
-    
-    def update_delete_recent_icon_button(self, index):
-        if index > 0 and self.select_recent_icons.currentData():
-            self.delete_recent_icons.setEnabled(True)
-        else:
-            self.delete_recent_icons.setEnabled(False)
-        
-    def on_recent_icon_selected(self, index):
-        if index <=0:
-            return
-
-        path = self.select_recent_icons.currentData()
-
-        if not path:
-            return
-
-        path = os.path.abspath(os.path.normpath(path))
-
-        # 🔑 update state
-        self.icon_path = path
-
-        # 🔑 update UI
-        if hasattr(self, "icon_path_input"):
-            self.icon_path_input.setText(path)
-
-        # 🔑 FORCE full UI + button refresh (this was missing)
-        if hasattr(self, "validator"):
-            self.validator.update_build_button_state()
-
-        # 🔑 persist AFTER state is correct
-        if hasattr(self, "state_ctrl"):
-            self.state_ctrl.save_state()
-            
-            
-        # 🔑 CRITICAL: reset dropdown back to header
-        self.select_recent_icons.setCurrentIndex(0)
-        
-    def confirm_delete_recent_icon(self):
-        full_path = getattr(self, "icon_path", "").strip()
-
-        if not full_path:
-            return
-
-        
-        reply = QMessageBox.question(
-            self,
-            "Delete Recent Icon",
-            f"Are you sure you want to remove:\n\n{full_path}",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
-        )
-
-        if reply != QMessageBox.Yes:
-            return
-
-        # ---------------------------
-        # REMOVE FROM STATE FILE
-        # ---------------------------
-
-        state_path = self.state_ctrl._state_file_path()
-
-        try:
-            if os.path.isfile(state_path):
-                with open(state_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            else:
-                data = {}
-        except:
-            data = {}
-
-        icons = data.get("recent_icons", [])
-
-        norm_target = os.path.abspath(os.path.normpath(full_path))
-
-        icons = [
-            p for p in icons
-            if os.path.abspath(os.path.normpath(p)) != norm_target
-        ]
-
-        data["recent_icons"] = icons
-
-        with open(state_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4)
-
-        # ---------------------------
-        # CLEAR CURRENT ICON IF MATCH
-        # ---------------------------
-
-        current = os.path.abspath(os.path.normpath(getattr(self, "icon_path", "")))
-
-        if current == norm_target:
-            self.icon_path_input.clear()
-            self.icon_path = ""
-
-        # ---------------------------
-        # REFRESH UI
-        # ---------------------------
-
-        self.populate_recent_icons_dropdown()
-        self.validator.validation_status_message()
-        
-    def add_recent_icon(self, path):
-        ap = os.path.abspath(os.path.normpath(path)) if path else ""
-        if not ap:
-            return
-
-        state_path = self.state_ctrl._state_file_path()
-
-        try:
-            if os.path.isfile(state_path):
-                with open(state_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            else:
-                data = {}
-        except:
-            data = {}
-
-        lst = data.get("recent_icons", [])
-
-        if ap in lst:
-            lst.remove(ap)
-
-        lst.insert(0, ap)
-        lst = lst[:10]
-
-        data["recent_icons"] = lst
-
-        try:
-            with open(state_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=4)
-        except Exception as e:
-            print("Recent icons save error:", e)
-
-        self.state_data = data
-        
-    def populate_recent_icons_dropdown(self):
-        def _abs(p):
-            return os.path.abspath(os.path.normpath(p)) if p else ""
-    
-        self.select_recent_icons.blockSignals(True)
-        self.select_recent_icons.clear()
-        
-        # 🔑 HEADER (non-clickable)
-        self.select_recent_icons.addItem("Select Recent Icon")
-        model = self.select_recent_icons.model()
-        item = model.item(0)
-        item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
-
-        state_path = self.state_ctrl._state_file_path()
-
-        try:
-            if os.path.isfile(state_path):
-                with open(state_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            else:
-                data = {}
-        except:
-            data = {}
-
-        paths = data.get("recent_icons", [])
-
-        seen = set()
-
-        for p in paths:
-            ap = _abs(p)
-
-            if not ap:
-                continue
-            if not os.path.isfile(ap):
-                continue
-            if ap in seen:
-                continue
-
-            seen.add(ap)
-
-            name = os.path.basename(ap)
-
-            # 🔑 FULL PATH IN DATA
-            self.select_recent_icons.addItem(name, ap)
-
-        self.select_recent_icons.blockSignals(False)
-
-    def closeEvent(self, event):
-        self.state_ctrl.save_state()
-
-    # =============================================================
-    # Dependency Popup (PySide6)
-    # =============================================================
-
-    def build_dependency_popup(self, packages: list[str]):
-        if not packages:
-            return None
-
-        # close existing popup
-        if hasattr(self, "popup") and self.popup:
-            self.popup.close()
-
-        popup = QDialog(self)
-        popup.setFixedSize(300, 300)
-        popup.setWindowTitle("Dependency Notice")
-        popup.setModal(False)
-        popup.setWindowFlag(Qt.WindowStaysOnTopHint, True)
-
-        layout = QVBoxLayout(popup)
-
-        label1 = QLabel(
-            "This script references the following external packages:"
-        )
-        label1.setWordWrap(True)
-        label1.setFont(QFont("Rubik UI", 11, QFont.Bold))
-        layout.addWidget(label1)
-
-        pkg_text = ", ".join(packages)
-
-        label2 = QLabel(pkg_text)
-        label2.setWordWrap(True)
-        label2.setFont(QFont("Rubik UI", 11, QFont.Bold))
-        layout.addWidget(label2)
-
-        label3 = QLabel(
-            "Ensure they are installed in the selected Python environment. "
-            "E.g. py -3.13 -m pip install <package-name>."
-        )
-        label3.setWordWrap(True)
-        label3.setFont(QFont("Rubik UI", 11, QFont.Bold))
-        layout.addWidget(label3)
-
-        ok_btn = QPushButton("OK")
-        ok_btn.setFixedWidth(80)
-        ok_btn.clicked.connect(popup.close)
-        layout.addWidget(ok_btn, alignment=Qt.AlignHCenter)
-
-        # Position
-        popup.adjustSize()
-        x = self.x() + self.width() + 10
-        y = self.y() + 50
-        popup.move(x, y)
-
-        self.popup = popup
-        return popup
-    
-    def show_dependency_warning_popup(self, packages: list[str]):
-        if not getattr(self, "dependency_notice_enabled", True):
-            if hasattr(self, "popup") and self.popup:
-                self.popup.close()
-            return
-
-        popup = self.build_dependency_popup(packages)
-
-        if popup:
-            popup.show()
-
-    # -------------------------------------------------------------
-    # Restore always-on-top when user returns to the app
-    # -------------------------------------------------------------
-
-    def _restore_topmost(self, event=None):
-        self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
-        self.show()
-
-    # -------------------------------------------------------------
-    # Build EXE
-    # -------------------------------------------------------------
-
-    def build_exe(self):
-        self.building = False  # kill any previous loop instantly
-        self._eta_running = True
-        self.state_ctrl.update_eta_loop()
-
-        # ==================================================
-        # Debug log (Desktop, user-visible)
-        # ==================================================
-
-        timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-        self.debug_log_path = os.path.join(
-            os.path.expanduser("~"),
-            "Desktop",
-            f"EXE_BUILDER_DEBUG_{timestamp}.log"
-        )
-
-        with open(self.debug_log_path, "w", encoding="utf-8") as f:
-            f.write("BUILD STARTED\n")
-
-        IS_FROZEN = getattr(sys, "frozen", False)
-
-        with open(self.debug_log_path, "a", encoding="utf-8") as f:
-            f.write(f"IS_FROZEN={IS_FROZEN}\n")
-            f.write(f"ENTRY_SCRIPT={repr(self.entry_script)}\n")
-            f.write(f"PROJECT_ROOT={repr(self.project_root)}\n")
-            f.write(f"PYTHON_INTERPRETER_PATH={repr(self.python_interpreter_path)}\n")
-
-        # ==================================================
-        # CANCEL MODE
-        # ==================================================
-
-        if self.build_process:
-            self.build_cancellation.cancel_build()
-            return
-
-        import build_cancellation
-        self.build_cancellation = build_cancellation.BuildCancellation(
-            app=self, ui=self
-        )
-
-        # ==================================================
-        # READ UI VALUES
-        # ==================================================
-        
-        script = self.script_path_input.text().strip()
-        outdir = self.output_path_input.text().strip()
-        icon = self.icon_path_input.text().strip()
-
-        script = os.path.normpath(script) if script else ""
-        outdir = os.path.normpath(outdir) if outdir else ""
-        icon = os.path.normpath(icon) if icon else ""
-
-        entry_point = self.entry_script
-        project_root = self.project_root
-
-        if not entry_point and script and os.path.isfile(script):
-            entry_point = script
-            project_root = os.path.dirname(script)
-
-        self.entry_script = entry_point
-        self.project_root = project_root
-
-        # ==================================================
-        # Bundle validation
-        # ==================================================
-
-        ok, error = validate_bundle_inputs(self)
-
-        if not ok:
-            self.build_cancellation.abort_build(error)
-            return
-
-        # ==================================================
-        # ENTER BUILD MODE
-        # ==================================================
-
-        self.building = True
-        if hasattr(self, "script_clear_btn"):
-            self.script_clear_btn.setDisabled(True)
-        self.build_btn.setText("Cancel EXE")
-        self.build_btn.setStyleSheet("background-color: #d43c3c;")
-        self.build_btn.clicked.disconnect()
-        self.build_btn.clicked.connect(self.build_exe)
-        self.status_label.setFixedWidth(425)
-        
-        self.build_start_time = time.time()
-        self.state_ctrl.update_eta_loop()
-
-        # ==================================================
-        # Final validation
-        # ==================================================
-
-        if not entry_point or not os.path.isfile(entry_point):
-            self.build_cancellation.abort_build("Invalid or missing entry script.")
-            return
-
-        if not project_root or not os.path.isdir(project_root):
-            self.build_cancellation.abort_build("Invalid project folder.")
-            return
-
-        exe_name = self.exe_name_input.text().strip()
-        if not exe_name:
-            self.build_cancellation.abort_build("Please enter an EXE name.")
-            return
-
-        # ==================================================
-        # Resolve PyInstaller (ALWAYS via Python interpreter)
-        # ==================================================
-
-        python = self.python_interpreter_path
-        if not python or not os.path.isfile(python):
-            self.build_cancellation.abort_build(
-                "Python interpreter not found.\n"
-                "Please select a Python interpreter before building."
-            )
-            return  
-
-        result = subprocess.run(
-            [python, "-m", "PyInstaller", "--version"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            creationflags=CREATE_NO_WINDOW
-        )
-
-        if result.returncode != 0:
-            self.build_cancellation.abort_build(
-                "PyInstaller is not available in the selected Python interpreter.\n\n"
-                "Install it with:\n\npip install pyinstaller"
-            )
-            return
-
-        cmd_prefix = [python, "-m", "PyInstaller"]
-
-        self.status_label.setText("Using PyInstaller (python -m)")
-        self.repaint()
-
-        # ==================================================
-        # Build paths
-        # ==================================================
-
-        self.build_counter += 1
-        timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M")
-        final_exe_name = f"{exe_name}_{timestamp}"
-
-        build_path = os.path.join(outdir, "build", final_exe_name)
-        spec_path = os.path.join(outdir, "spec", final_exe_name)
-
-        os.makedirs(build_path, exist_ok=True)
-        os.makedirs(spec_path, exist_ok=True)
-
-        cmd = [
-            *cmd_prefix,
-            "--onedir",
-            "--clean",
-            "--noconfirm",
-            "--collect-all=tkinter",
-            "--collect-all=tk",
-            "--collect-all=qt_material",
-            "--windowed",
-            "--noconsole",
-            "--hidden-import=pynput",
-            "--hidden-import=win32gui",
-            "--hidden-import=win32con",
-            "--hidden-import=win32api",
-            "--hidden-import=win32process",
-            "--hidden-import=pygetwindow",
-            "--hidden-import=pystray",
-            f"--distpath={outdir}",
-            f"--workpath={build_path}",
-            f"--specpath={spec_path}",
-            f"--name={final_exe_name}",
-            entry_point
-        ]
-
-        if project_root:
-            cmd.append(f"--add-data={project_root}{os.pathsep}.")
-
-        data_file = os.path.join(project_root, "screen_mover_state.json")
-        if os.path.isfile(data_file):
-            cmd.append(f"--add-data={data_file}{os.pathsep}.")
-
-        if icon:
-            cmd += ["--icon", icon]
-
-        self.current_build_paths = [
-            os.path.join(outdir, final_exe_name + ".exe"),
-            os.path.join(outdir, "build", final_exe_name),
-            os.path.join(outdir, "spec", final_exe_name),
-        ]   
-
-        # ==================================================
-        # Run PyInstaller (threaded)
-        # ==================================================
-
-        self.status_label.setText("Building...")
-        
-        
-        # ⛔ move this OUT of thread (safe here)
-        self.set_controls_enabled(False)
-        
-        def run_build(cmd):
-            self.recent_folder_dropdown.setEnabled(False)
-            self.refresh_btn.setEnabled(False)
-            self.exe_name_input.setReadOnly(False)
-            
-            try:
-                with open(self.debug_log_path, "a", encoding="utf-8") as f:
-                    f.write("ENTERED run_build\n")
-                    f.write("CMD: " + " ".join(cmd) + "\n")
-
-                proc = subprocess.Popen(
-                    cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    creationflags=CREATE_NO_WINDOW
-                )
-
-                self.build_process = proc
-
-                out, err = proc.communicate()
-                ret = proc.returncode
-
-                with open(self.debug_log_path, "a", encoding="utf-8") as f:
-                    f.write(f"RETURN CODE: {ret}\n")
-                    f.write("STDERR:\n" + (err or "<empty>") + "\n")
-
-                # ✅ SAFE HANDOFF TO UI THREAD
-                def on_complete():
-                    if not self.building:
-                        return
-
-                    if ret == 0:
-                        self.last_build_seconds = int(time.time() - self.build_start_time)
-                        self.state_ctrl.save_state()
-
-                        self.set_status("Build complete.")
-                        QTimer.singleShot(5000, self.showMinimized)
-                    else:
-                        self.set_status("Build failed. See debug log.")
-                
-                
-                self.refresh_btn.setEnabled(True)
-                self.exe_name_input.setReadOnly(True)
-                self._eta_running = False
-                self.recent_folder_dropdown.setEnabled(True)
-                self.build_btn.setText("Build EXE")
-                self.build_btn.setStyleSheet("background-color: #3bbf3b;")
-                self.set_status("Build complete." if ret == 0 else "Build failed. See debug log.")
-
-                try:
-                    self.build_btn.clicked.disconnect()
-                except:
-                    pass
-
-                self.build_btn.clicked.connect(self.build_exe)
-                                
-                QTimer.singleShot(0, lambda: on_complete())  # ← SAFE
-
-            finally:
-                # ✅ SAFE UI CLEANUP
-                def finalize_ui():
-                    self.build_process = None
-                    self.restore_build_ui()
-                    
-                QTimer.singleShot(0, lambda: finalize_ui())  # ← SAFE
-
-
-        # ✅ THIS MUST BE RIGHT AFTER THE FUNCTION
-        threading.Thread(
-            target=run_build,
-            args=(cmd,),
-            daemon=True
-        ).start()
-        
-        self.set_controls_enabled(True)
-        self.validator.update_build_button_state()
-            
-    def ui_safe(self, fn):
-        QTimer.singleShot(0, fn)
-
-    def set_controls_enabled(self, enabled: bool):
-
-        # 🔒 LOCK DURING BUILD
-        locked_controls = [
-            self.script_clear_btn,
-            self.icon_clear_btn,
-            self.output_refresh_btn,
-            self.refresh_btn,   # exe name reset
-        ]
-
-        for btn in locked_controls:
-            btn.setEnabled(enabled)
-            
-    # ==================================================
-    # UI RESTORE: Build finished / aborted / cancelled
-    # ==================================================
-
-    def restore_build_ui(self):
-        self.building = False
-        self.set_controls_enabled(True)
-        self._eta_running = False
-
-        # -------------------------------
-        # Restore Build buttonet_controls_enable
-        # -------------------------------
-
-        try:
-            self.build_btn.clicked.disconnect()
-        except:
-            pass
-
-        self.build_btn.setText("Build EXE")
-        self.build_btn.setStyleSheet("background-color: #3bbf3b;")
-        self.build_btn.clicked.connect(self.build_exe)
-
-        # -------------------------------
-        # Re-enable recovery buttons
-        # -------------------------------
-        
-        if hasattr(self, "output_refresh_btn"):
-            self.output_refresh_btn.setEnabled(True)
-
-        if hasattr(self, "icon_clear_btn"):
-            self.icon_clear_btn.setEnabled(True)
-
-        # -------------------------------
-        # Re-apply validation policy
-        # -------------------------------
-        # 🔑 FORCE validation AFTER unlock
-        QTimer.singleShot(0, self.validator.update_build_button_state)
 
 
     def set_status(self, text):
         self.status_label.setText(text)
+
+    def closeEvent(self, event):
+        self.state_ctrl.save_state()
 
 # -------------------------------------------------------------
 # Launch
