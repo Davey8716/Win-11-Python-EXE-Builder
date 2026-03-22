@@ -1,4 +1,11 @@
-**Updated as of 17/3/26 to use PySide6 qtwidgets**, probably is more buggy now**
+**Updated as of 22/3/26 to use PySide6 qtwidgets**
+** Ported it to use PySide6 qtwidgets **
+** added in drop downs for recently saved files and icons + delete buttons that delete current file in the output paths respectively**
+** added in dependency notice toggle **
+
+
+
+
 
 **Win 11 → Python → EXE Builder**
 
