@@ -104,7 +104,7 @@ class EXEBuilderApp(QWidget):
         self.build_counter = 0
         
         self.setWindowTitle("")
-        self.setFixedSize(500, 790)
+        self.setFixedSize(500, 810)
 
         self.tooltips_enabled = getattr(self, "tooltips_enabled", True)
         self.dependency_notice_enabled = getattr(self, "dependency_notice_enabled", True)
@@ -227,12 +227,14 @@ class EXEBuilderApp(QWidget):
         self.python_status_label.setReadOnly(True)
         self.python_status_label.setFont(QFont("Rubik UI", 11))
         self.python_status_label.setStyleSheet("color: #be1a1a;")
-        interpreter_layout.addWidget(self.python_status_label)
+        self.python_status_label.setFixedSize(250,35)
+        
 
         # --- Path ---
         self.python_entry_input = QLineEdit()
         self.python_entry_input.setPlaceholderText("No Python interpreter selected...")
         interpreter_layout.addWidget(self.python_entry_input)
+        interpreter_layout.addWidget(self.python_status_label)
 
         combined_layout.addWidget(apps_row)
         combined_layout.addWidget(interpreter_container)
@@ -331,17 +333,16 @@ class EXEBuilderApp(QWidget):
         python_layout.addLayout(folder_row)
                 
         # =================================================
-        # Row 2: Status
+        # Row 2: Status (moved BELOW path row)
         # =================================================
 
         self.script_folder_status_label = QLineEdit("PYTHON FOLDER NOT SET")
         self.script_folder_status_label.setFont(QFont("Rubik UI", 11))
         self.script_folder_status_label.setStyleSheet("color: #be1a1a;")
         self.script_folder_status_label.setReadOnly(True)
-        python_layout.addWidget(self.script_folder_status_label)
-        
+
         # =================================================
-        # Row 3: Path + reset (side-by-side)
+        # Row 3: Path + clear (side-by-side)
         # =================================================
 
         script_row = QWidget()
@@ -355,12 +356,19 @@ class EXEBuilderApp(QWidget):
 
         self.script_clear_btn = QPushButton("")
         self.script_clear_btn.clicked.connect(self.ui_handlers.clear_script_path)
-        
         script_layout.addWidget(self.script_clear_btn)
+
         script_layout.setContentsMargins(1,1,1,1)
+
+        # =================================================
+        # ADD TO LAYOUT (correct order)
+        # =================================================
+
         python_layout.addWidget(script_row)
+        python_layout.addWidget(self.script_folder_status_label)
+
         self.main_layout.addWidget(python_frame)
-        
+                
         # =============================================================
         # Icon Picker
         # =============================================================
@@ -505,6 +513,90 @@ class EXEBuilderApp(QWidget):
         self.delete_recent_icons.clicked.connect(self.recent_controller.confirm_delete_recent_icon)
         self.delete_all_icons.clicked.connect(self.recent_controller.confirm_delete_all_icons)
         
+        # # =============================================================
+        # # Output Folder
+        # # =============================================================
+
+        # output_block = QWidget()
+        # output_block_layout = QVBoxLayout(output_block)
+        # output_block_layout.setContentsMargins(3,3,3,3)
+        # output_block_layout.setSpacing(3)
+
+        # # =============================================================
+        # # Output FRAME (structured vertical)
+        # # =============================================================
+
+        # output_frame = QFrame()
+        # output_frame.setFrameShape(QFrame.StyledPanel)
+        # output_frame.setFrameShadow(QFrame.Raised)
+        # output_frame.setLineWidth(1)
+
+        # output_layout = QVBoxLayout(output_frame)
+        # output_layout.setContentsMargins(3,3,3,3)
+        # output_layout.setSpacing(3)
+
+        # # =================================================
+        # # Row 1: Select Output Folder button
+        # # =================================================
+
+        # self.output_btn = QPushButton("Select Output Folder")
+        # self.output_btn.clicked.connect(self.file_pickers.select_output_folder)
+        # output_layout.addWidget(self.output_btn, alignment=Qt.AlignLeft)
+
+        # # =================================================
+        # # Row 2: Status lines (stacked)
+        # # =================================================
+
+        # self.output_path_status_label = QLineEdit("EXE OUTPUT PATH NOT SET")
+        # self.exe_name_status_label = QLineEdit("EXE NAME NOT SET")
+    
+        # output_layout.addWidget(self.output_path_status_label)
+        # output_layout.addWidget(self.exe_name_status_label)
+
+        # # =================================================
+        # # Row 3: Output path + reset
+        # # =================================================
+
+        # output_entry_row = QWidget()
+        # output_entry_layout = QHBoxLayout(output_entry_row)
+        # output_entry_layout.setContentsMargins(1,1,1,1)
+
+        # self.output_path_input = QLineEdit()
+        # self.output_path_input.setPlaceholderText("No output folder selected...")
+
+        # self.output_refresh_btn = QPushButton("")
+        # self.output_refresh_btn.clicked.connect(self.ui_handlers.reset_output_to_desktop)
+
+        # output_entry_layout.addWidget(self.output_path_input)
+        # output_entry_layout.addWidget(self.output_refresh_btn)
+        # output_layout.addWidget(output_entry_row)
+
+        # # =================================================
+        # # Row 4: EXE name + reset (INSIDE FRAME)
+        # # =================================================
+
+        # exe_row = QWidget()
+        # exe_layout = QHBoxLayout(exe_row)
+        # exe_layout.setContentsMargins(1,1,1,1)
+
+        # self.exe_name_input = QLineEdit()
+        # self.exe_name_input.setPlaceholderText("Output file name (without .exe)")
+
+        # self.refresh_btn = QPushButton("")
+        # self.refresh_btn.clicked.connect(self.ui_handlers.reset_exe_name_from_script)
+        
+        # exe_layout.addWidget(self.exe_name_input)
+        # exe_layout.addWidget(self.refresh_btn)
+        # output_layout.addWidget(exe_row)
+
+        # # =================================================
+        # # ADD FRAME (ONLY ONCE, AT THE VERY END)
+        # # =================================================
+
+        # self.main_layout.addWidget(output_frame)
+        # # Store default style (Qt doesn't expose border color directly like CTk)
+        # self.exe_entry_default_style = self.exe_name_input.styleSheet()
+        
         # =============================================================
         # Output Folder
         # =============================================================
@@ -536,58 +628,64 @@ class EXEBuilderApp(QWidget):
         output_layout.addWidget(self.output_btn, alignment=Qt.AlignLeft)
 
         # =================================================
-        # Row 2: Status lines (stacked)
-        # =================================================
-
-        self.output_path_status_label = QLineEdit("EXE OUTPUT PATH NOT SET")
-        self.exe_name_status_label = QLineEdit("EXE NAME NOT SET")
-    
-        output_layout.addWidget(self.output_path_status_label)
-        output_layout.addWidget(self.exe_name_status_label)
-
-        # =================================================
-        # Row 3: Output path + reset
+        # Row 2: Output path + reset
         # =================================================
 
         output_entry_row = QWidget()
         output_entry_layout = QHBoxLayout(output_entry_row)
         output_entry_layout.setContentsMargins(1,1,1,1)
+        output_entry_layout.setSpacing(3)
 
         self.output_path_input = QLineEdit()
         self.output_path_input.setPlaceholderText("No output folder selected...")
+        output_entry_layout.addWidget(self.output_path_input)
 
         self.output_refresh_btn = QPushButton("")
         self.output_refresh_btn.clicked.connect(self.ui_handlers.reset_output_to_desktop)
-
-        output_entry_layout.addWidget(self.output_path_input)
         output_entry_layout.addWidget(self.output_refresh_btn)
+
         output_layout.addWidget(output_entry_row)
 
         # =================================================
-        # Row 4: EXE name + reset (INSIDE FRAME)
+        # Row 3: Output path status
+        # =================================================
+
+        self.output_path_status_label = QLineEdit("EXE OUTPUT PATH NOT SET")
+        self.output_path_status_label.setReadOnly(True)
+        output_layout.addWidget(self.output_path_status_label)
+
+        # =================================================
+        # Row 4: EXE name + reset
         # =================================================
 
         exe_row = QWidget()
         exe_layout = QHBoxLayout(exe_row)
         exe_layout.setContentsMargins(1,1,1,1)
+        exe_layout.setSpacing(3)
 
         self.exe_name_input = QLineEdit()
         self.exe_name_input.setPlaceholderText("Output file name (without .exe)")
+        exe_layout.addWidget(self.exe_name_input)
 
         self.refresh_btn = QPushButton("")
         self.refresh_btn.clicked.connect(self.ui_handlers.reset_exe_name_from_script)
-        
-        exe_layout.addWidget(self.exe_name_input)
         exe_layout.addWidget(self.refresh_btn)
+
         output_layout.addWidget(exe_row)
 
         # =================================================
-        # ADD FRAME (ONLY ONCE, AT THE VERY END)
+        # Row 5: EXE name status
+        # =================================================
+
+        self.exe_name_status_label = QLineEdit("EXE NAME NOT SET")
+        self.exe_name_status_label.setReadOnly(True)
+        output_layout.addWidget(self.exe_name_status_label)
+
+        # =================================================
+        # ADD FRAME
         # =================================================
 
         self.main_layout.addWidget(output_frame)
-        # Store default style (Qt doesn't expose border color directly like CTk)
-        self.exe_entry_default_style = self.exe_name_input.styleSheet()
         
         # =============================================================
         # Build FRAME
@@ -608,7 +706,7 @@ class EXEBuilderApp(QWidget):
 
         self.build_btn = QPushButton("Build EXE")
         self.build_btn.setFont(QFont("Rubik UI", 11))
-        self.build_btn.setFixedSize(125, 35)
+        self.build_btn.setFixedSize(180, 35)
         self.build_btn.clicked.connect(self.build_controller.build_exe)
 
         build_layout.addWidget(self.build_btn, alignment=Qt.AlignLeft)
@@ -703,7 +801,7 @@ class EXEBuilderApp(QWidget):
         self.json_import_controller.attach()
     
                 
-        self.python_status_label.setFixedSize(250,35)
+        
         
         self.dependency_notice.stateChanged.connect(self.ui_handlers.on_dependency_toggle)
         self.tooltips_checkbox.stateChanged.connect(self.ui_handlers.on_tooltips_toggle)
