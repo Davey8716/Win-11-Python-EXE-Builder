@@ -158,18 +158,77 @@ class RecentController:
         self.populate_recent_dropdown()
         app.validator.validation_status_message()
         
-        
+    def confirm_delete_all_folder(self):
+        app = self.app
+
+        reply = QMessageBox.question(
+            app,
+            "Delete All Recent Files",
+            "Are you sure you want to delete ALL recent files?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+
+        if reply != QMessageBox.Yes:
+            return
+
+        state_path = app.state_ctrl._state_file_path()
+
+        try:
+            if os.path.isfile(state_path):
+                with open(state_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            else:
+                data = {}
+        except:
+            data = {}
+
+        # 🔑 clear list
+        data["recent_scripts"] = []
+
+        app.state_data = data
+
+        try:
+            with open(state_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=4)
+        except Exception as e:
+            print("Delete all recent scripts error:", e)
+
+        # 🔑 clear UI + runtime state
+        if hasattr(app, "script_path_input"):
+            app.script_path_input.clear()
+        app.entry_script = None
+        app.project_root = None
+        app.script_path = ""
+
+        # 🔑 refresh dropdown
+        self.populate_recent_dropdown()
+
+        app.validator.validation_status_message()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     #========================================
     #================================ Icons
     #========================================
     
-    
-    # def update_delete_recent_icon_button(self, index):
-    #     app = self.app
-    #     if index > 0 and app.select_recent_icons.currentData():
-    #         app.delete_recent_icons.setEnabled(True)
-    #     else:
-    #         app.delete_recent_icons.setEnabled(False)
         
     def on_recent_icon_selected(self, index):
         app = self.app
@@ -188,52 +247,7 @@ class RecentController:
         if hasattr(app, "file_pickers"):
             app.file_pickers._apply_selected_icon(path)
             
-    def confirm_delete_recent_icon(self):
-        app = self.app
-        full_path = getattr(app, "icon_path", "") or ""
-
-        if not full_path:
-            return
-
-        reply = QMessageBox.question(
-            app,
-            "Delete Recent Icon",
-            f"Are you sure you want to remove:\n\n{full_path}",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
-        )
-
-        if reply != QMessageBox.Yes:
-            return
-
-        if os.path.abspath(os.path.normpath(full_path)) == os.path.abspath(os.path.normpath(getattr(app, "icon_path", ""))):
-            app.icon_path_input.clear()
-            app.icon_path = ""
-
-        state_path = app.state_ctrl._state_file_path()
-
-        try:
-            if os.path.isfile(state_path):
-                with open(state_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            else:
-                data = {}
-        except:
-            data = {}
-
-        lst = data.get("recent_icons", [])
-
-        norm = os.path.abspath(os.path.normpath(full_path))
-        lst = [p for p in lst if os.path.abspath(os.path.normpath(p)) != norm]
-
-        data["recent_icons"] = lst
-        app.state_data = data
-
-        with open(state_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4)
-
-        self.populate_recent_icons_dropdown()
-        app.validator.validation_status_message()
+   
         
     def add_recent_icon(self, path):
         app = self.app
@@ -319,3 +333,96 @@ class RecentController:
             app.select_recent_icons.addItem(display, ap)
 
         app.select_recent_icons.blockSignals(False)
+        
+        
+        
+    def confirm_delete_recent_icon(self):
+        app = self.app
+        full_path = getattr(app, "icon_path", "") or ""
+
+        if not full_path:
+            return
+
+        reply = QMessageBox.question(
+            app,
+            "Delete Recent Icon",
+            f"Are you sure you want to remove:\n\n{full_path}",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+
+        if reply != QMessageBox.Yes:
+            return
+
+        if os.path.abspath(os.path.normpath(full_path)) == os.path.abspath(os.path.normpath(getattr(app, "icon_path", ""))):
+            app.icon_path_input.clear()
+            app.icon_path = ""
+
+        state_path = app.state_ctrl._state_file_path()
+
+        try:
+            if os.path.isfile(state_path):
+                with open(state_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            else:
+                data = {}
+        except:
+            data = {}
+
+        lst = data.get("recent_icons", [])
+
+        norm = os.path.abspath(os.path.normpath(full_path))
+        lst = [p for p in lst if os.path.abspath(os.path.normpath(p)) != norm]
+
+        data["recent_icons"] = lst
+        app.state_data = data
+
+        with open(state_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
+
+        self.populate_recent_icons_dropdown()
+        app.validator.validation_status_message()
+        
+        
+    def confirm_delete_all_icons(self):
+        app = self.app
+
+        reply = QMessageBox.question(
+            app,
+            "Delete All Recent Icons",
+            "Are you sure you want to delete ALL recent icons?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+
+        if reply != QMessageBox.Yes:
+            return
+
+        state_path = app.state_ctrl._state_file_path()
+
+        try:
+            if os.path.isfile(state_path):
+                with open(state_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            else:
+                data = {}
+        except:
+            data = {}
+
+        data["recent_icons"] = []
+
+        app.state_data = data
+
+        try:
+            with open(state_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=4)
+        except Exception as e:
+            print("Delete all recent icons error:", e)
+
+        if hasattr(app, "icon_path_input"):
+            app.icon_path_input.clear()
+        app.icon_path = ""
+
+        self.populate_recent_icons_dropdown()
+
+        app.validator.validation_status_message()
