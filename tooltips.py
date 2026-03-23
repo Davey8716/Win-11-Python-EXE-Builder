@@ -145,7 +145,12 @@ def attach_tooltips(app):
     
     QtTooltip(
         app.delete_recent_folder,
-        "deletes current file in the path line output."
+        "Deletes current file in the path line output."
+    )
+    
+    QtTooltip(
+        app.delete_all_folders,
+        "Deletes all saved files from the drop down."
     )
 
     # -----------------------------
@@ -190,6 +195,11 @@ def attach_tooltips(app):
     QtTooltip(
         app.delete_recent_icons,
             "deletes current icon in the path line output."
+    )
+    
+    QtTooltip(
+        app.delete_all_icons,
+        "Deletes all Icons from the drop down."
     )
     
     QtTooltip(
