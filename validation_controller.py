@@ -167,12 +167,35 @@ class ValidationController:
         # STATUS TEXT
         # --------------------------------
 
+        # Script → parent\file
+        script_display = "No script"
+        if script:
+            name = os.path.basename(script)
+            parent = os.path.basename(os.path.dirname(script))
+            script_display = f"{parent}\\{name}" if parent else name
+
+        # Icon → just file name (or default)
+        icon_path = getattr(self.app, "icon_path", "").strip()
+        icon_display = os.path.basename(icon_path) if icon_path else "Default"
+
+        # Python → version only (3.13 / 3.14)
+        python_path = getattr(self.app, "python_interpreter_path", "").strip()
+        python_version = "Unknown"
+
+        if python_path:
+            parent = os.path.basename(os.path.dirname(python_path))
+            if parent.lower().startswith("python"):
+                raw = parent.lower().replace("python", "")
+                if raw.isdigit():
+                    python_version = f"{raw[0]}.{raw[1:]}" if len(raw) > 1 else raw
+
         state["status_text"] = (
-            f"READY TO BUILD — {os.path.basename(script)}"
+            f"READY — {script_display} | {icon_display} | Py {python_version}"
             if is_ready else
             "NOT READY TO BUILD"
         )
 
+        
         # --------------------------------
         # APPLY STATUS TO UI (MATCH QLINEEDIT STYLE)
         # --------------------------------
@@ -215,6 +238,8 @@ class ValidationController:
         outdir = os.path.normpath(outdir) if outdir else ""
         desktop = os.path.join(os.path.expanduser("~"), "Desktop")
         
+        
+        
         # 🔑 FORCE sync icon from UI (single source of truth)
         if hasattr(self.app, "icon_path_input"):
             ui_icon = self.app.icon_path_input.text().strip()
@@ -249,6 +274,23 @@ class ValidationController:
                 """)
 
         building = getattr(self.app, "building", False)
+        
+        # -------------------------------
+        # RECENT DELETE BUTTONS (scripts + icons)
+        # -------------------------------
+        for btn_name in [
+            "delete_recent_folder",
+            "delete_all_folders",
+            "delete_recent_icons",
+            "delete_all_icons",
+        ]:
+            if hasattr(self.app, btn_name):
+                btn = getattr(self.app, btn_name)
+
+                if building:
+                    _set_btn(btn, False)  # disable during build
+                else:
+                    _set_btn(btn, True)   # re-enable after build
 
         # -------------------------------
         # ICON CLEAR
