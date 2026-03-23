@@ -3,7 +3,6 @@ import os
 import ctypes
 import threading
 
-
 from ctypes import wintypes
 from build_controller import BuildController
 from tooltips import attach_tooltips
@@ -18,7 +17,9 @@ from recent_controller import RecentController
 from ui_handlers import UIHandlers
 from ui_dependency_popup import DependencyPopup
 from build_ui_controller import BuildUIController
+from json_import_controller import JsonImportController
 # Try to create a mutex
+
 mutex = ctypes.windll.kernel32.CreateMutexW(
     None,
     wintypes.BOOL(True),
@@ -61,6 +62,7 @@ class EXEBuilderApp(QWidget):
         self.project_root = None
         self.exe_name_user_modified = False
         
+        self.json_import_controller =JsonImportController(self)
         self.build_ui_controller = BuildUIController(self)
         self.ui_dependency_popup = DependencyPopup(self)
         self.recent_controller = RecentController(self)
@@ -102,6 +104,8 @@ class EXEBuilderApp(QWidget):
         self.build_btn = None
         self.last_build_seconds = 45
         self.build_counter = 0
+        
+       
 
         self.setWindowTitle("")
         self.setFixedSize(500, 790)
@@ -727,6 +731,14 @@ class EXEBuilderApp(QWidget):
                 labels.setReadOnly(True)
                 labels.setFixedSize(200,35)
                 labels.setFont(QFont("Rubik Ui", 11))
+                
+         # Init values for the drag and drop functionality
+        self.recent_folder_dropdown.setAcceptDrops(True)
+        self.select_recent_icons.setAcceptDrops(True)
+
+        self.recent_folder_dropdown.installEventFilter(self)
+        self.select_recent_icons.installEventFilter(self)
+        self.json_import_controller.attach()
     
                 
         self.python_status_label.setFixedSize(250,35)
@@ -751,6 +763,8 @@ class EXEBuilderApp(QWidget):
         self.icon_path_input.textChanged.connect(
             lambda text: None if getattr(self, "_loading_state", False) else self.validator.update_build_button_state()
         )
+        
+
 
 
     def set_status(self, text):
