@@ -106,27 +106,14 @@ class EXEBuilderApp(QWidget):
         self.setWindowTitle("")
         self.setFixedSize(500, 790)
 
-        if not hasattr(self, "tooltips_enabled"):
-            self.tooltips_enabled = True
-
-        if not hasattr(self, "dependency_notice_enabled"):
-            self.dependency_notice_enabled = True
-
-        if not hasattr(self, "script_path"):
-            self.script_path = ""
-
-        if not hasattr(self, "icon_path"):
-            self.icon_path = ""
-
-        if not hasattr(self, "output_path"):
-            self.output_path = ""
-
-        if not hasattr(self, "python_path"):
-            self.python_path = ""
-
-        if not hasattr(self, "exe_name"):
-            self.exe_name = ""
-            
+        self.tooltips_enabled = getattr(self, "tooltips_enabled", True)
+        self.dependency_notice_enabled = getattr(self, "dependency_notice_enabled", True)
+        self.script_path = getattr(self, "script_path", "")
+        self.icon_path = getattr(self, "icon_path", "")
+        self.output_path = getattr(self, "output_path", "")
+        self.python_path = getattr(self, "python_path", "")
+        self.exe_name = getattr(self, "exe_name", "")
+                    
         # =============================================================
         # Title + Tooltip Toggle
         # =============================================================
@@ -167,7 +154,6 @@ class EXEBuilderApp(QWidget):
         toggles_layout.setContentsMargins(3,3,3,3)
         
         toggles_layout.addStretch()
-
         title_layout.addWidget(title_label)
         title_layout.setContentsMargins(3,3,3,3)
         title_layout.addStretch()
@@ -219,8 +205,7 @@ class EXEBuilderApp(QWidget):
         apps_layout.addWidget(self.open_python_site_btn)
         apps_layout.addStretch()
 
-        combined_layout.addWidget(apps_row)
-    
+
         # =================================================
         # Interpreter (VERTICAL stack)
         # =================================================
@@ -249,12 +234,8 @@ class EXEBuilderApp(QWidget):
         self.python_entry_input.setPlaceholderText("No Python interpreter selected...")
         interpreter_layout.addWidget(self.python_entry_input)
 
-        # add interpreter block into frame
+        combined_layout.addWidget(apps_row)
         combined_layout.addWidget(interpreter_container)
-
-        # =================================================
-        # ADD FRAME (only once)
-        # =================================================
 
         row2_layout.addWidget(combined_frame)
         self.main_layout.addWidget(row2)
@@ -378,10 +359,6 @@ class EXEBuilderApp(QWidget):
         script_layout.addWidget(self.script_clear_btn)
         script_layout.setContentsMargins(1,1,1,1)
         python_layout.addWidget(script_row)
-
-        # =================================================
-        # ADD FRAME
-        # =================================================
         self.main_layout.addWidget(python_frame)
         
         # =============================================================
@@ -487,7 +464,6 @@ class EXEBuilderApp(QWidget):
         icon_row1_layout.addWidget(self.delete_recent_icons)
         icon_row1_layout.addWidget(self.delete_all_icons)
         icon_row1_layout.addStretch()
-
         icon_block_layout.addWidget(icon_row1)
 
         # -------- Row 2: ICO Converter (below) --------
@@ -519,18 +495,16 @@ class EXEBuilderApp(QWidget):
 
         icon_entry_layout.addWidget(self.icon_path_input)
         icon_entry_layout.addWidget(self.icon_clear_btn)
-
         icon_block_layout.addWidget(icon_entry_row)
+        
+        # -------- Final --------
+        icon_frame_layout.addWidget(icon_block)
+        self.main_layout.addWidget(icon_frame)
         
         self.select_recent_icons.currentIndexChanged.connect(self.recent_controller.on_recent_icon_selected)
         self.delete_recent_icons.clicked.connect(self.recent_controller.confirm_delete_recent_icon)
         self.delete_all_icons.clicked.connect(self.recent_controller.confirm_delete_all_icons)
-
-        # -------- Final --------
-
-        icon_frame_layout.addWidget(icon_block)
-        self.main_layout.addWidget(icon_frame)
-
+        
         # =============================================================
         # Output Folder
         # =============================================================
@@ -581,11 +555,11 @@ class EXEBuilderApp(QWidget):
 
         self.output_path_input = QLineEdit()
         self.output_path_input.setPlaceholderText("No output folder selected...")
-        output_entry_layout.addWidget(self.output_path_input)
 
         self.output_refresh_btn = QPushButton("")
         self.output_refresh_btn.clicked.connect(self.ui_handlers.reset_output_to_desktop)
 
+        output_entry_layout.addWidget(self.output_path_input)
         output_entry_layout.addWidget(self.output_refresh_btn)
         output_layout.addWidget(output_entry_row)
 
@@ -599,11 +573,11 @@ class EXEBuilderApp(QWidget):
 
         self.exe_name_input = QLineEdit()
         self.exe_name_input.setPlaceholderText("Output file name (without .exe)")
-        exe_layout.addWidget(self.exe_name_input)
 
         self.refresh_btn = QPushButton("")
         self.refresh_btn.clicked.connect(self.ui_handlers.reset_exe_name_from_script)
         
+        exe_layout.addWidget(self.exe_name_input)
         exe_layout.addWidget(self.refresh_btn)
         output_layout.addWidget(exe_row)
 
