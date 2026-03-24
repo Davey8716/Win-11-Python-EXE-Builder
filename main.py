@@ -6,7 +6,7 @@ import threading
 from ctypes import wintypes
 from build_controller import BuildController
 from tooltips import attach_tooltips
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit,QHBoxLayout, QComboBox
 from validation_controller import ValidationController
 from activation_controller import ActivationController
@@ -104,7 +104,7 @@ class EXEBuilderApp(QWidget):
         self.build_counter = 0
         
         self.setWindowTitle("")
-        self.setFixedSize(500, 810)
+        self.setFixedSize(500, 875)
 
         self.tooltips_enabled = getattr(self, "tooltips_enabled", True)
         self.dependency_notice_enabled = getattr(self, "dependency_notice_enabled", True)
@@ -241,6 +241,118 @@ class EXEBuilderApp(QWidget):
 
         row2_layout.addWidget(combined_frame)
         self.main_layout.addWidget(row2)
+        
+        # =============================================================
+        # Icon Picker
+        # =============================================================
+
+        icon_frame = QFrame()
+        icon_frame.setFrameShape(QFrame.StyledPanel)
+        icon_frame.setFrameShadow(QFrame.Raised)
+        icon_frame.setLineWidth(1)
+
+        icon_frame_layout = QVBoxLayout(icon_frame)
+        icon_frame_layout.setContentsMargins(1,1,1,1)
+        icon_frame_layout.setSpacing(1)
+
+        icon_block = QWidget()
+        icon_block_layout = QVBoxLayout(icon_block)
+        icon_block_layout.setContentsMargins(1,1,1,1)
+        icon_block_layout.setSpacing(3)
+
+        # -------- Row 1: Select Icon + Recent Dropdown + Delete --------
+
+        icon_row1 = QWidget()
+        icon_row1_layout = QHBoxLayout(icon_row1)
+        icon_row1_layout.setContentsMargins(1,1,1,1)
+        icon_row1_layout.setSpacing(5)
+
+        self.icon_btn = QPushButton("Select Icon (optional)")
+        self.icon_btn.clicked.connect(self.file_pickers.select_icon)
+
+        self.select_recent_icons = QComboBox()
+        self.select_recent_icons.setFixedSize(245,35)
+        self.select_recent_icons.setFont(QFont("Rubik UI", 11))
+        self.select_recent_icons.addItem("Select Recent Icon")
+        self.recent_controller.populate_recent_icons_dropdown()
+
+        model = self.select_recent_icons.model()
+        item = model.item(0)
+        item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
+
+        # placeholder behavior
+        self.select_recent_icons.setEditable(True)
+        self.select_recent_icons.lineEdit().setReadOnly(True)
+        if self.select_recent_icons.setEnabled(True):
+            self.select_recent_icons.setStyleSheet("""
+                QComboBox {
+                    background-color: #121212;
+                    color: #e0e0e0;
+                    border: 1px solid #2a2a2a;
+                    padding: 4px;
+                }
+
+                QComboBox::drop-down {
+                    border: none;
+                    background: #121212;
+                }
+
+                QComboBox QAbstractItemView {
+                    background-color: #121212;
+                    color: #e0e0e0;
+                    selection-background-color: #2a2a2a;
+                }
+            """)
+
+        self.delete_recent_icons = QPushButton("❌")
+        self.delete_all_icons = QPushButton("💥")
+
+
+        icon_row1_layout.addWidget(self.icon_btn)
+        icon_row1_layout.addWidget(self.select_recent_icons)
+        icon_row1_layout.addWidget(self.delete_recent_icons)
+        icon_row1_layout.addWidget(self.delete_all_icons)
+        icon_row1_layout.addStretch()
+        icon_block_layout.addWidget(icon_row1)
+
+        # -------- Row 2: ICO Converter (below) --------
+
+        icon_row2 = QWidget()
+        icon_row2_layout = QHBoxLayout(icon_row2)
+        icon_row2_layout.setContentsMargins(1,1,1,1)
+        icon_row2_layout.setSpacing(5)
+
+        self.ico_convert_btn = QPushButton("Open ICO Converters")
+        self.ico_convert_btn.clicked.connect(self.ui_handlers.open_icon_sites)
+
+        icon_row2_layout.addWidget(self.ico_convert_btn)
+        icon_row2_layout.addStretch()
+        icon_block_layout.addWidget(icon_row2)
+
+        # -------- Row 3: Entry + Clear --------
+
+        icon_entry_row = QWidget()
+        icon_entry_layout = QHBoxLayout(icon_entry_row)
+        icon_entry_layout.setContentsMargins(1,1,1,1)
+        icon_entry_layout.setSpacing(5)
+
+        self.icon_path_input = QLineEdit()
+        self.icon_path_input.setPlaceholderText("No icon selected...")
+        
+        self.icon_clear_btn = QPushButton("")
+        self.icon_clear_btn.clicked.connect(self.ui_handlers.clear_icon)
+
+        icon_entry_layout.addWidget(self.icon_path_input)
+        icon_entry_layout.addWidget(self.icon_clear_btn)
+        icon_block_layout.addWidget(icon_entry_row)
+        
+        # -------- Final --------
+        icon_frame_layout.addWidget(icon_block)
+        self.main_layout.addWidget(icon_frame)
+        
+        self.select_recent_icons.currentIndexChanged.connect(self.recent_controller.on_recent_icon_selected)
+        self.delete_recent_icons.clicked.connect(self.recent_controller.confirm_delete_recent_icon)
+        self.delete_all_icons.clicked.connect(self.recent_controller.confirm_delete_all_icons)
 
         # ---------------------------------
         # Python Folder FRAME (vertical)
@@ -263,7 +375,7 @@ class EXEBuilderApp(QWidget):
         self.folder_btn.clicked.connect(self.file_pickers.select_script_folder)
 
         self.recent_folder_dropdown = QComboBox()
-        self.recent_folder_dropdown.setFixedSize(150, 35)
+        self.recent_folder_dropdown.setFixedSize(245, 35)
         self.recent_folder_dropdown.setFont(QFont("Rubik UI", 12))
         self.recent_folder_dropdown.addItem("Select Recent File")
         
@@ -357,83 +469,8 @@ class EXEBuilderApp(QWidget):
         self.script_clear_btn = QPushButton("")
         self.script_clear_btn.clicked.connect(self.ui_handlers.clear_script_path)
         script_layout.addWidget(self.script_clear_btn)
-
-        script_layout.setContentsMargins(1,1,1,1)
-
-        # =================================================
-        # ADD TO LAYOUT (correct order)
-        # =================================================
-
-        python_layout.addWidget(script_row)
-        python_layout.addWidget(self.script_folder_status_label)
-
-        self.main_layout.addWidget(python_frame)
-                
-        # =============================================================
-        # Icon Picker
-        # =============================================================
-
-        icon_frame = QFrame()
-        icon_frame.setFrameShape(QFrame.StyledPanel)
-        icon_frame.setFrameShadow(QFrame.Raised)
-        icon_frame.setLineWidth(1)
-
-        icon_frame_layout = QVBoxLayout(icon_frame)
-        icon_frame_layout.setContentsMargins(1,1,1,1)
-        icon_frame_layout.setSpacing(1)
-
-        icon_block = QWidget()
-        icon_block_layout = QVBoxLayout(icon_block)
-        icon_block_layout.setContentsMargins(1,1,1,1)
-        icon_block_layout.setSpacing(3)
-
-        # -------- Row 1: Select Icon + Recent Dropdown + Delete --------
-
-        icon_row1 = QWidget()
-        icon_row1_layout = QHBoxLayout(icon_row1)
-        icon_row1_layout.setContentsMargins(1,1,1,1)
-        icon_row1_layout.setSpacing(5)
-
-        self.icon_btn = QPushButton("Select Icon (optional)")
-        self.icon_btn.clicked.connect(self.file_pickers.select_icon)
-
-        self.select_recent_icons = QComboBox()
-        self.select_recent_icons.setFixedSize(180,35)
-        self.select_recent_icons.setFont(QFont("Rubik UI", 11))
-        self.select_recent_icons.addItem("Select Recent Icon")
-        self.recent_controller.populate_recent_icons_dropdown()
-
-        model = self.select_recent_icons.model()
-        item = model.item(0)
-        item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
-
-        # placeholder behavior
-        self.select_recent_icons.setEditable(True)
-        self.select_recent_icons.lineEdit().setReadOnly(True)
-        if self.select_recent_icons.setEnabled(True):
-            self.select_recent_icons.setStyleSheet("""
-                QComboBox {
-                    background-color: #121212;
-                    color: #e0e0e0;
-                    border: 1px solid #2a2a2a;
-                    padding: 4px;
-                }
-
-                QComboBox::drop-down {
-                    border: none;
-                    background: #121212;
-                }
-
-                QComboBox QAbstractItemView {
-                    background-color: #121212;
-                    color: #e0e0e0;
-                    selection-background-color: #2a2a2a;
-                }
-            """)
-
-        self.delete_recent_icons = QPushButton("❌")
-        self.delete_all_icons = QPushButton("💥")
-
+        
+        
         for stuff in [
             self.delete_recent_icons,
             self.delete_recent_folder,
@@ -467,136 +504,17 @@ class EXEBuilderApp(QWidget):
             stuff.setFixedSize(35,35)
             stuff.setEnabled(True)
 
-        icon_row1_layout.addWidget(self.icon_btn)
-        icon_row1_layout.addWidget(self.select_recent_icons)
-        icon_row1_layout.addWidget(self.delete_recent_icons)
-        icon_row1_layout.addWidget(self.delete_all_icons)
-        icon_row1_layout.addStretch()
-        icon_block_layout.addWidget(icon_row1)
+        script_layout.setContentsMargins(1,1,1,1)
 
-        # -------- Row 2: ICO Converter (below) --------
+        # =================================================
+        # ADD TO LAYOUT (correct order)
+        # =================================================
 
-        icon_row2 = QWidget()
-        icon_row2_layout = QHBoxLayout(icon_row2)
-        icon_row2_layout.setContentsMargins(1,1,1,1)
-        icon_row2_layout.setSpacing(5)
+        python_layout.addWidget(script_row)
+        python_layout.addWidget(self.script_folder_status_label)
 
-        self.ico_convert_btn = QPushButton("Open ICO Converters")
-        self.ico_convert_btn.clicked.connect(self.ui_handlers.open_icon_sites)
+        self.main_layout.addWidget(python_frame)
 
-        icon_row2_layout.addWidget(self.ico_convert_btn)
-        icon_row2_layout.addStretch()
-        icon_block_layout.addWidget(icon_row2)
-
-        # -------- Row 3: Entry + Clear --------
-
-        icon_entry_row = QWidget()
-        icon_entry_layout = QHBoxLayout(icon_entry_row)
-        icon_entry_layout.setContentsMargins(1,1,1,1)
-        icon_entry_layout.setSpacing(5)
-
-        self.icon_path_input = QLineEdit()
-        self.icon_path_input.setPlaceholderText("No icon selected...")
-
-        self.icon_clear_btn = QPushButton("")
-        self.icon_clear_btn.clicked.connect(self.ui_handlers.clear_icon)
-
-        icon_entry_layout.addWidget(self.icon_path_input)
-        icon_entry_layout.addWidget(self.icon_clear_btn)
-        icon_block_layout.addWidget(icon_entry_row)
-        
-        # -------- Final --------
-        icon_frame_layout.addWidget(icon_block)
-        self.main_layout.addWidget(icon_frame)
-        
-        self.select_recent_icons.currentIndexChanged.connect(self.recent_controller.on_recent_icon_selected)
-        self.delete_recent_icons.clicked.connect(self.recent_controller.confirm_delete_recent_icon)
-        self.delete_all_icons.clicked.connect(self.recent_controller.confirm_delete_all_icons)
-        
-        # # =============================================================
-        # # Output Folder
-        # # =============================================================
-
-        # output_block = QWidget()
-        # output_block_layout = QVBoxLayout(output_block)
-        # output_block_layout.setContentsMargins(3,3,3,3)
-        # output_block_layout.setSpacing(3)
-
-        # # =============================================================
-        # # Output FRAME (structured vertical)
-        # # =============================================================
-
-        # output_frame = QFrame()
-        # output_frame.setFrameShape(QFrame.StyledPanel)
-        # output_frame.setFrameShadow(QFrame.Raised)
-        # output_frame.setLineWidth(1)
-
-        # output_layout = QVBoxLayout(output_frame)
-        # output_layout.setContentsMargins(3,3,3,3)
-        # output_layout.setSpacing(3)
-
-        # # =================================================
-        # # Row 1: Select Output Folder button
-        # # =================================================
-
-        # self.output_btn = QPushButton("Select Output Folder")
-        # self.output_btn.clicked.connect(self.file_pickers.select_output_folder)
-        # output_layout.addWidget(self.output_btn, alignment=Qt.AlignLeft)
-
-        # # =================================================
-        # # Row 2: Status lines (stacked)
-        # # =================================================
-
-        # self.output_path_status_label = QLineEdit("EXE OUTPUT PATH NOT SET")
-        # self.exe_name_status_label = QLineEdit("EXE NAME NOT SET")
-    
-        # output_layout.addWidget(self.output_path_status_label)
-        # output_layout.addWidget(self.exe_name_status_label)
-
-        # # =================================================
-        # # Row 3: Output path + reset
-        # # =================================================
-
-        # output_entry_row = QWidget()
-        # output_entry_layout = QHBoxLayout(output_entry_row)
-        # output_entry_layout.setContentsMargins(1,1,1,1)
-
-        # self.output_path_input = QLineEdit()
-        # self.output_path_input.setPlaceholderText("No output folder selected...")
-
-        # self.output_refresh_btn = QPushButton("")
-        # self.output_refresh_btn.clicked.connect(self.ui_handlers.reset_output_to_desktop)
-
-        # output_entry_layout.addWidget(self.output_path_input)
-        # output_entry_layout.addWidget(self.output_refresh_btn)
-        # output_layout.addWidget(output_entry_row)
-
-        # # =================================================
-        # # Row 4: EXE name + reset (INSIDE FRAME)
-        # # =================================================
-
-        # exe_row = QWidget()
-        # exe_layout = QHBoxLayout(exe_row)
-        # exe_layout.setContentsMargins(1,1,1,1)
-
-        # self.exe_name_input = QLineEdit()
-        # self.exe_name_input.setPlaceholderText("Output file name (without .exe)")
-
-        # self.refresh_btn = QPushButton("")
-        # self.refresh_btn.clicked.connect(self.ui_handlers.reset_exe_name_from_script)
-        
-        # exe_layout.addWidget(self.exe_name_input)
-        # exe_layout.addWidget(self.refresh_btn)
-        # output_layout.addWidget(exe_row)
-
-        # # =================================================
-        # # ADD FRAME (ONLY ONCE, AT THE VERY END)
-        # # =================================================
-
-        # self.main_layout.addWidget(output_frame)
-        # # Store default style (Qt doesn't expose border color directly like CTk)
-        # self.exe_entry_default_style = self.exe_name_input.styleSheet()
-        
         # =============================================================
         # Output Folder
         # =============================================================
@@ -706,27 +624,27 @@ class EXEBuilderApp(QWidget):
 
         self.build_btn = QPushButton("Build EXE")
         self.build_btn.setFont(QFont("Rubik UI", 11))
-        self.build_btn.setFixedSize(180, 35)
+        self.build_btn.setFixedSize(150, 35)
         self.build_btn.clicked.connect(self.build_controller.build_exe)
 
-        build_layout.addWidget(self.build_btn, alignment=Qt.AlignLeft)
+        
 
         # =================================================
         # Row 2: Status
         # =================================================
 
-        self.status_label = QLineEdit("Ready")
-        self.status_label.setFont(QFont("Rubik UI", 11))
-        self.status_label.setReadOnly(True)
+        self.status_label = QLabel("Ready")
+        self.status_label.setFixedSize(315,100)
+        self.status_label.setFont(QFont("Rubik UI", 11, QFont.Bold))
         build_layout.addWidget(self.status_label)
-        
+        build_layout.addWidget(self.build_btn, alignment=Qt.AlignLeft)
         
         for refresh_btns in [
             self.refresh_btn,
             self.output_refresh_btn,
             self.icon_clear_btn,
-            self.script_clear_btn
-            
+            self.script_clear_btn,
+
         ]:
             refresh_btns.setText("🔃")
             refresh_btns.setFixedSize(35,35)
@@ -759,7 +677,7 @@ class EXEBuilderApp(QWidget):
             btns.setFont(QFont("Rubik UI", 11,))
             btns.setFixedSize(160,35)
         
-        self.recent_folder_dropdown.setFixedSize(180,35)
+        self.recent_folder_dropdown.setFixedSize(245,35)
             
         for labels in [
             self.script_folder_status_label,
@@ -814,10 +732,13 @@ class EXEBuilderApp(QWidget):
             self.exe_name_input,
             self.icon_path_input,
         ]:
+            
             widget.textChanged.connect(
-                lambda text: None if getattr(self, "_loading_state", False) else self.validator.update_build_button_state()
+                lambda text: None if getattr(self, "_loading_state", False) else (
+                    setattr(self, "build_error", None),
+                    self.validator.update_build_button_state()
+                )
             )
-                
 
 
 
