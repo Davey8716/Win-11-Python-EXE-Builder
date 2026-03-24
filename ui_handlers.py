@@ -24,6 +24,7 @@ class UIHandlers:
             
     def reset_output_to_desktop(self):
         app = self.app
+        app.build_error = None
         desktop = get_desktop_path()
         app.output_path_input.setText(desktop)
         app.output_path = desktop
