@@ -135,7 +135,7 @@ def attach_tooltips(app):
         "Select a folder containing one or more Python files.\n"
         "If the folder contains only one .py file, it will be used automatically.\n"
         "If multiple .py files are found, a popup will appear.\n"
-        "allowing you to choose the main entry script."
+        "Allowing you to choose the main entry script."
     )
     
     QtTooltip(
@@ -184,7 +184,7 @@ def attach_tooltips(app):
     QtTooltip(
         app.ico_convert_btn,
         "Opens 3 websites that convert PNG/JPG images into .ico files\n"
-        "for use as custom EXE icons."
+        "For use as custom EXE icons."
     )
 
     QtTooltip(
@@ -194,7 +194,7 @@ def attach_tooltips(app):
     
     QtTooltip(
         app.delete_recent_icons,
-            "deletes current icon in the path line output."
+            "Deletes current icon in the path line output."
     )
     
     QtTooltip(
@@ -240,7 +240,7 @@ def attach_tooltips(app):
     QtTooltip(
         app.refresh_btn,
         "Reset EXE name to match the entry script name.\n"
-        "A python folder must be selected to for this to be ungreyed and resetable.\n"
+        "A python folder must be selected to for this to be ungryed and resettable.\n"
     )
 
     # -----------------------------
