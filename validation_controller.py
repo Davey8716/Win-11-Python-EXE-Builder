@@ -9,6 +9,12 @@ class ValidationController:
         app = EXEBuilderApp instance
         """
         self.app = app
+        
+    def set_build_error(self, message: str):
+        self.app.build_error = message
+        self.update_build_button_state()
+        self.validation_status_message()
+        
 
     # ==================================================
     # Can we build again?
@@ -41,12 +47,12 @@ class ValidationController:
         return True
     
     def validation_status_message(self):
+        
         script = self.app.script_path_input.text().strip()
         outdir = self.app.output_path_input.text().strip()
         exe_name = self.app.exe_name_input.text().strip()
-                
+    
         python = getattr(self.app, "python_interpreter_path", "")
-        
         
         # 🔑 NORMALIZE
         script = os.path.normpath(script) if script else ""
@@ -76,9 +82,11 @@ class ValidationController:
             if python and os.path.isfile(python):
                 self.app.python_status_label.setText("PYTHON INTERPRETER SET")
                 self.app.python_status_label.setStyleSheet("color: #3bbf3b;")
+                self.app.python_status_label.setFixedSize(210,35)
             else:
                 self.app.python_status_label.setText("PYTHON INTERPRETER NOT SET")
                 self.app.python_status_label.setStyleSheet("color: #be1a1a;")
+                self.app.python_status_label.setFixedSize(245,35)
                 
         # --------------------------------
         # INLINE: Python folder
@@ -88,9 +96,11 @@ class ValidationController:
             if folder_ok:
                 self.app.script_folder_status_label.setText("PYTHON FOLDER SET")
                 self.app.script_folder_status_label.setStyleSheet("color: #3bbf3b;")
+                self.app.script_folder_status_label.setFixedSize(170,35)
             else:
                 self.app.script_folder_status_label.setText("PYTHON FOLDER NOT SET")
                 self.app.script_folder_status_label.setStyleSheet("color: #be1a1a;")
+                self.app.script_folder_status_label.setFixedSize(205,35)
                 
         # --------------------------------
         # INLINE: Output path
@@ -116,6 +126,9 @@ class ValidationController:
         python_ok = python and os.path.isfile(python)
 
         is_ready = bool(script_ok and outdir_ok and exe_ok and python_ok)
+        # 🔑 FORCE NOT READY if build error exists
+        if getattr(self.app, "build_error", None):
+            is_ready = False
 
         state["is_ready"] = is_ready
         state["script_ok"] = script_ok
@@ -126,6 +139,13 @@ class ValidationController:
         # Reset popup eligibility when leaving READY state
         if not is_ready:
             self.app._dependency_popup_shown = False
+
+        if not is_ready:
+            self.app.status_label.setFixedSize(120,75)
+        else:
+            self.app.status_label.setFixedSize(350,100)
+
+        
 
         # ==========================================================
         # Dependency advisory — fire ONCE when NOT READY → READY
@@ -167,33 +187,86 @@ class ValidationController:
         # STATUS TEXT
         # --------------------------------
 
-        # Script → parent\file
-        script_display = "No script"
-        if script:
-            name = os.path.basename(script)
-            parent = os.path.basename(os.path.dirname(script))
-            script_display = f"{parent}\\{name}" if parent else name
-
-        # Icon → just file name (or default)
-        icon_path = getattr(self.app, "icon_path", "").strip()
-        icon_display = os.path.basename(icon_path) if icon_path else "Default"
-
-        # Python → version only (3.13 / 3.14)
+        # Python version (Py 3.14)
         python_path = getattr(self.app, "python_interpreter_path", "").strip()
         python_version = "Unknown"
-
         if python_path:
             parent = os.path.basename(os.path.dirname(python_path))
             if parent.lower().startswith("python"):
                 raw = parent.lower().replace("python", "")
                 if raw.isdigit():
                     python_version = f"{raw[0]}.{raw[1:]}" if len(raw) > 1 else raw
+                    
+        # Icon (name or Default)
+        icon_path = getattr(self.app, "icon_path", "").strip()
+        icon_display = os.path.basename(icon_path) if icon_path else "Default - (No User Icon)"
 
+        # Script (parent\file)
+        script_display = "No script"
+        if script:
+            name = os.path.basename(script)
+            parent = os.path.basename(os.path.dirname(script))
+            script_display = f"{parent}\\{name}" if parent else name
+
+        # EXE name
+        exe_name_display = getattr(self.app, "exe_name", "").strip()
+        exe_name_display = exe_name if exe_name else "No EXE name"
+
+        # Output path
+        outdir_display = outdir if outdir else "No output"
+
+        error_msg = getattr(self.app, "build_error", None)
+        
+        
+        if error_msg:
+            state["status_text"] = error_msg
+            is_ready = False  # 🔑 force red + stop READY logic
         state["status_text"] = (
-            f"READY — {script_display} | {icon_display} | Py {python_version}"
+            f"READY — Py {python_version} | {icon_display} \n"
+            f"------------------------------------------------\n"
+            f"{script_display}\n"
+            f"------------------------------------------------\n"
+            f"{outdir_display} |{exe_name_display}"
+            
             if is_ready else
-            "NOT READY TO BUILD"
+            (
+                error_msg if error_msg else
+                "NOT READY\n"
+                f"----------------\n"
+                "TO BUILD"
+                
+            )
+       
+            
         )
+        
+                
+        # --------------------------------
+        # BUTTON COLOR: Python Interpreter
+        # --------------------------------
+        if hasattr(self.app, "interpreter_btn"):
+            if python and os.path.isfile(python):
+                self.app.interpreter_btn.setStyleSheet("background-color: #3bbf3b;")
+            else:
+                self.app.interpreter_btn.setStyleSheet("background-color: #be1a1a;")
+
+        # --------------------------------
+        # BUTTON COLOR: Python Folder
+        # --------------------------------
+        if hasattr(self.app, "folder_btn"):
+            if folder_ok:
+                self.app.folder_btn.setStyleSheet("background-color: #3bbf3b;")
+            else:
+                self.app.folder_btn.setStyleSheet("background-color: #be1a1a;")
+
+        # --------------------------------
+        # BUTTON COLOR: Output Folder
+        # --------------------------------
+        if hasattr(self.app, "output_btn"):
+            if outdir and os.path.isdir(outdir):
+                self.app.output_btn.setStyleSheet("background-color: #3bbf3b;")
+            else:
+                self.app.output_btn.setStyleSheet("background-color: #be1a1a;")
 
         
         # --------------------------------
@@ -205,7 +278,7 @@ class ValidationController:
 
             if is_ready:
                 self.app.status_label.setStyleSheet("""
-                    QLineEdit {
+                    QLabel {
                         background-color: #202020;
                         color: #3bbf3b;
                         border: 1px solid #3a3a3a;
@@ -213,7 +286,7 @@ class ValidationController:
                 """)
             else:
                 self.app.status_label.setStyleSheet("""
-                    QLineEdit {
+                    QLabel {
                         background-color: #202020;
                         color: #be1a1a;
                         border: 1px solid #3a3a3a;
@@ -225,6 +298,7 @@ class ValidationController:
         # --------------------------------
     def update_build_button_state(self):
         state = self.validation_status_message()
+        
         is_ready = state["is_ready"]
 
         script = self.app.script_path_input.text().strip()
@@ -238,14 +312,7 @@ class ValidationController:
         outdir = os.path.normpath(outdir) if outdir else ""
         desktop = os.path.join(os.path.expanduser("~"), "Desktop")
         
-        
-        
-        # 🔑 FORCE sync icon from UI (single source of truth)
-        if hasattr(self.app, "icon_path_input"):
-            ui_icon = self.app.icon_path_input.text().strip()
-            self.app.icon_path = os.path.normpath(ui_icon) if ui_icon else ""
-
-        
+            
         # -------------------------------
         # UNIFIED BUTTON STATE HANDLER
         # -------------------------------
@@ -324,10 +391,18 @@ class ValidationController:
             if building:
                 _set_btn(self.app.output_refresh_btn, False)
             else:
+                python_path = getattr(self.app, "python_interpreter_path", "")
+                python_ok = python_path and os.path.isfile(python_path)
+
+                is_desktop = (
+                    outdir and
+                    os.path.normpath(outdir) == os.path.normpath(desktop)
+                )
+
                 can_revert_output = (
                     script_ok and
-                        not outdir or
-                        os.path.normpath(outdir) != os.path.normpath(desktop)
+                    python_ok and
+                    not is_desktop
                 )
 
                 _set_btn(self.app.output_refresh_btn, can_revert_output)
@@ -341,30 +416,51 @@ class ValidationController:
             else:
                 _set_btn(self.app.script_clear_btn, script_ok)
 
-
         # -------------------------------
         # BUILD BUTTON (separate styling)
         # -------------------------------
         if hasattr(self.app, "build_btn"):
-            self.app.build_btn.setEnabled(is_ready)
 
-            if is_ready:
+            # 🔴 BUILDING → Cancel mode
+            if building:
+                self.app.build_btn.setEnabled(True)
+                self.app.build_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #d43c3c;
+                        color: white;
+                    }
+                    QPushButton:hover {
+                        background-color: #d43c3c;
+                    }
+                """)
+
+            # 🟢 READY → Build
+            elif is_ready:
+                self.app.build_btn.setEnabled(True)
                 self.app.build_btn.setStyleSheet("""
                     QPushButton {
                         background-color: #3bbf3b;
+                        color: white;
                     }
                     QPushButton:hover {
                         background-color: #2e9e2e;
                     }
                 """)
+
+            # 🔴 NOT READY → disabled (grey text)
             else:
+                self.app.build_btn.setEnabled(False)
                 self.app.build_btn.setStyleSheet("""
                     QPushButton {
                         background-color: #be1a1a;
-                        color: #777777;
+                        color: white;
+                    }
+                    QPushButton:disabled {
+                        background-color: #be1a1a;
+                        color: white;
                     }
                 """)
-                
+                                        
         # -------------------------------
         # EXE NAME REFRESH (🔃)
         # -------------------------------
@@ -422,9 +518,11 @@ class ValidationController:
             if outdir and os.path.isdir(outdir):
                 self.app.output_path_status_label.setText("OUTPUT PATH SET")
                 self.app.output_path_status_label.setStyleSheet("color: #3bbf3b;")
+                self.app.output_path_status_label.setFixedSize(155,35)
             else:
                 self.app.output_path_status_label.setText("OUTPUT PATH NOT SET")
                 self.app.output_path_status_label.setStyleSheet("color: #be1a1a;")
+                self.app.output_path_status_label.setFixedSize(185,35)
 
         # --------------------------------
         # INLINE: EXE name status
@@ -435,9 +533,11 @@ class ValidationController:
             if exe_name:
                 self.app.exe_name_status_label.setText("EXE NAME SET")
                 self.app.exe_name_status_label.setStyleSheet("color: #3bbf3b;")
+                self.app.exe_name_status_label.setFixedSize(125,35)
             else:
                 self.app.exe_name_status_label.setText("EXE NAME NOT SET")
                 self.app.exe_name_status_label.setStyleSheet("color: #be1a1a;")
+                self.app.exe_name_status_label.setFixedSize(155,35)
                 
 
         # -------------------------------
@@ -452,6 +552,7 @@ class ValidationController:
         # -------------------------------
         # Validation state
         # -------------------------------
+
 
         validation = self.validation_status_message()
         state.update(validation)

@@ -1,5 +1,6 @@
 import datetime,os,sys,subprocess,time,threading
 from PySide6.QtCore import  QTimer
+from PySide6.QtGui import QFont
 from bundle_validation import validate_bundle_inputs
 from datetime import datetime
 
@@ -13,12 +14,11 @@ class BuildController:
     # Build EXE
     # -------------------------------------------------------------
 
-    def build_exe(self):
+    def build_exe(self, app):
         app = self.app
-
-        app.building = False  # kill any previous loop instantly
+        app.building = False
         app._eta_running = True
-        app.state_ctrl.update_eta_loop()
+
 
         # ==================================================
         # Debug log (Desktop, user-visible)
@@ -95,14 +95,15 @@ class BuildController:
         if hasattr(app, "script_clear_btn"):
             app.script_clear_btn.setDisabled(True)
         app.build_btn.setText("Cancel EXE")
-        app.build_btn.setStyleSheet("background-color: #d43c3c;")
         app.build_btn.clicked.disconnect()
         app.build_btn.clicked.connect(self.build_exe)
         app.status_label.setFixedWidth(425)
         
+       
+        
         app.build_start_time = time.time()
         app.state_ctrl.update_eta_loop()
-
+        
         # ==================================================
         # Final validation
         # ==================================================
@@ -151,7 +152,34 @@ class BuildController:
 
         app.status_label.setText("Using PyInstaller (python -m)")
         app.repaint()
+        
+        # --------------------------------------------------
+        # OUTPUT FOLDER SAFETY CHECK (exists + writable)
+        # --------------------------------------------------
 
+        if not outdir or not os.path.isdir(outdir):
+            app.set_status("Output folder does not exist.")
+            app.building = False
+            app.build_ui_controller.restore_build_ui()
+            app.validator.validation_status_message()  # 🔑 force red
+            return
+
+        # 🔑 Test write access (handles protected folders)
+        try:
+            test_file = os.path.join(outdir, "__write_test.tmp")
+            with open(test_file, "w") as f:
+                f.write("test")
+            os.remove(test_file)
+        except Exception:
+            app.validator.set_build_error(
+                f"ERROR — Cannot write to this folder\n{outdir}\n"
+                "This location is read-only. Choose another."
+            )
+
+            app.building = False
+            app.build_ui_controller.restore_build_ui()
+            return
+        
         # ==================================================
         # Build paths
         # ==================================================
@@ -211,17 +239,16 @@ class BuildController:
         # ==================================================
 
         app.status_label.setText("Building...")
-        
-        
         # ⛔ move this OUT of thread (safe here)
-        self.app.build_ui_controller.set_controls_enabled(False)
+        app.build_ui_controller.set_controls_enabled(False)
         
         def run_build(cmd):
             app.recent_folder_dropdown.setEnabled(False)
             app.refresh_btn.setEnabled(False)
             app.exe_name_input.setReadOnly(False)
             app.icon_clear_btn.setEnabled(False)
-           
+            
+
             try:
                 with open(app.debug_log_path, "a", encoding="utf-8") as f:
                     f.write("ENTERED run_build\n")
@@ -257,6 +284,8 @@ class BuildController:
                         QTimer.singleShot(5000, app.showMinimized)
                     else:
                         app.set_status("Build failed. See debug log.")
+                    
+                    app.building = False
                         
                 app.icon_clear_btn.setEnabled(True)
                 app.refresh_btn.setEnabled(True)
@@ -264,8 +293,10 @@ class BuildController:
                 app._eta_running = False
                 app.recent_folder_dropdown.setEnabled(True)
                 app.build_btn.setText("Build EXE")
-                app.build_btn.setStyleSheet("background-color: #3bbf3b;")
+                self.app.build_btn.setStyleSheet("background-color:#3bbf3b;")
                 app.set_status("Build complete." if ret == 0 else "Build failed. See debug log.")
+           
+                app.status_label.setFont(QFont("Rubik UI", 11, QFont.Bold))
 
                 try:
                     app.build_btn.clicked.disconnect()
@@ -273,7 +304,6 @@ class BuildController:
                     pass
 
                 app.build_btn.clicked.connect(self.build_exe)
-                                
                 QTimer.singleShot(0, lambda: on_complete())  # ← SAFE
 
             finally:
@@ -283,7 +313,6 @@ class BuildController:
                     app.restore_build_ui()
                     
                 QTimer.singleShot(0, lambda: finalize_ui())  # ← SAFE
-
 
         # ✅ THIS MUST BE RIGHT AFTER THE FUNCTION
         threading.Thread(
