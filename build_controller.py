@@ -184,7 +184,7 @@ class BuildController:
         # Build paths
         # ==================================================
 
-        app.build_counter += 1
+        app.last_build_counter += 1
         timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M")
         final_exe_name = f"{exe_name}_{timestamp}"
 
@@ -295,7 +295,7 @@ class BuildController:
                 app.build_btn.setText("Build EXE")
                 self.app.build_btn.setStyleSheet("background-color:#3bbf3b;")
                 app.set_status("Build complete." if ret == 0 else "Build failed. See debug log.")
-           
+            
                 app.status_label.setFont(QFont("Rubik UI", 11, QFont.Bold))
 
                 try:

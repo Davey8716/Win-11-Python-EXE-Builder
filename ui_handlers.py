@@ -6,6 +6,18 @@ class UIHandlers:
     def __init__(self, app):
         self.app = app
 
+    def clear_interpreter_path(self):
+        app = self.app
+
+        if hasattr(app, "python_entry_input"):
+            app.python_entry_input.clear()
+
+        app.python_interpreter_path = ""
+        app.python_path = ""
+
+        app.state_ctrl.save_state()
+        app.validator.update_build_button_state()
+
     def clear_script_path(self):
         app = self.app
         app.script_path_input.clear()

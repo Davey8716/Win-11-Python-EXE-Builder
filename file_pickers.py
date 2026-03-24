@@ -68,18 +68,21 @@ class FilePickerController:
         if not path:
             return
 
-        # 🔑 NORMALIZE HERE
+        # 🔑 NORMALIZE
         path = os.path.normpath(path)
 
-        # ✅ SINGLE SOURCE OF TRUTH
+        # ✅ SINGLE SOURCE OF TRUTH (current)
         self.app.python_interpreter_path = path
-
-        # optional alias (safe to keep if used elsewhere)
         self.app.python_path = path
 
         # ✅ UI update
         if hasattr(self.app, "python_entry_input"):
             self.app.python_entry_input.setText(path)
+
+        # 🔑 ADD → recents system
+        if hasattr(self.app, "recent_controller"):
+            self.app.recent_controller.add_recent_interpreter(path)
+            self.app.recent_controller.populate_recent_interpreters_dropdown()
 
         # remember last dir
         self.app.last_python_dir = os.path.dirname(path)

@@ -8,7 +8,7 @@ from PySide6.QtGui import QFont
 class StateController:
     def __init__(self, app):
         self.app = app
-        self.build_counter = 0
+        self.last_build_counter = 0
 
     def _state_file_path(self) -> str:
         if getattr(sys, "frozen", False):
@@ -93,7 +93,7 @@ class StateController:
             self.app.exe_name = data.get("last_exe_name", "")
 
             self.app.last_build_seconds = data.get("last_build_seconds", 45)
-            self.app.build_counter = data.get("build_counter", 0)
+            self.app.last_build_counter = data.get("last_build_counter", 0)
 
             self.app.icon_user_cleared = data.get("icon_user_cleared", False)
             self.app.script_user_cleared = data.get("script_user_cleared", False)
@@ -169,23 +169,53 @@ class StateController:
             existing_data.get("recent_icons", [])
         )
 
+        recent_interpreters =  getattr(self.app, "state_data", {}).get(
+            "recent_interpreters",
+            existing_data.get("recent_interpreters", [])
+        )
+
+        # data = {
+        #     "last_script_path": _norm(self.app.script_path),
+        #     "last_icon_path": _norm(self.app.icon_path),
+        #     "last_output_folder": _norm(self.app.output_path),
+        #     "last_build_seconds": self.app.last_build_seconds,
+        #     "last_build_counter": self.app.last_build_counter,
+        #     "last_exe_name": self.app.exe_name,
+        #     "icon_user_cleared": getattr(self.app, "icon_user_cleared", False),
+        #     "script_user_cleared": getattr(self.app, "script_user_cleared", False),
+        #     "python_interpreter_path": _norm(
+        #         getattr(self.app, "python_interpreter_path", "")
+        #     ),
+        #     "recent_interpreters": recent_interpreters,
+        #     "tooltips_enabled": getattr(self.app, "tooltips_enabled", True),
+        #     "dependency_notice_enabled": getattr(self.app, "dependency_notice_enabled", True),
+        #     "recent_scripts": recent_scripts,
+        #     "recent_icons": recent_icons,
+        # }
+
         data = {
-            "last_script_path": _norm(self.app.script_path),
-            "last_icon_path": _norm(self.app.icon_path),
-            "last_output_folder": _norm(self.app.output_path),
-            "last_build_seconds": self.app.last_build_seconds,
-            "build_counter": self.app.build_counter,
-            "last_exe_name": self.app.exe_name,
-            "icon_user_cleared": getattr(self.app, "icon_user_cleared", False),
-            "script_user_cleared": getattr(self.app, "script_user_cleared", False),
             "python_interpreter_path": _norm(
                 getattr(self.app, "python_interpreter_path", "")
             ),
-            "tooltips_enabled": getattr(self.app, "tooltips_enabled", True),
-            "dependency_notice_enabled": getattr(self.app, "dependency_notice_enabled", True),
+
+            "last_script_path": _norm(self.app.script_path),
+            "last_icon_path": _norm(self.app.icon_path),
+            "last_output_folder": _norm(self.app.output_path),
+            "last_exe_name": self.app.exe_name,
+
             "recent_scripts": recent_scripts,
             "recent_icons": recent_icons,
-        }
+            "recent_interpreters": recent_interpreters,
+
+            "last_build_seconds": self.app.last_build_seconds,
+            "last_build_counter": self.app.last_build_counter,
+
+            "tooltips_enabled": getattr(self.app, "tooltips_enabled", True),
+            "dependency_notice_enabled": getattr(self.app, "dependency_notice_enabled", True),
+
+            "icon_user_cleared": getattr(self.app, "icon_user_cleared", False),
+            "script_user_cleared": getattr(self.app, "script_user_cleared", False),
+            }
 
         self.app.state_data = data
 

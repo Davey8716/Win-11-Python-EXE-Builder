@@ -101,7 +101,7 @@ class EXEBuilderApp(QWidget):
         self.current_build_paths = []
         self.build_btn = None
         self.last_build_seconds = 45
-        self.build_counter = 0
+        self.last_build_counter = 0
         
         self.setWindowTitle("")
         self.setFixedSize(500, 875)
@@ -194,12 +194,15 @@ class EXEBuilderApp(QWidget):
         apps_row = QWidget()
         apps_layout = QHBoxLayout(apps_row)
         apps_layout.setContentsMargins(1,1,1,1)
+        apps_layout.setSpacing(5)
 
         self.apps_btn = QPushButton("Open Installed Apps")
         self.apps_btn.clicked.connect(self.file_pickers.open_installed_apps)
 
         self.open_python_site_btn = QPushButton("Python.org")
         self.open_python_site_btn.clicked.connect(self.ui_handlers.open_python_site)
+
+  
 
         apps_layout.addWidget(self.apps_btn)
         apps_layout.addWidget(self.open_python_site_btn)
@@ -209,39 +212,121 @@ class EXEBuilderApp(QWidget):
         # =================================================
         # Interpreter (VERTICAL stack)
         # =================================================
-
         interpreter_container = QWidget()
         interpreter_layout = QVBoxLayout(interpreter_container)
         interpreter_layout.setContentsMargins(1,1,1,1)
-        interpreter_layout.setSpacing(1)
+        interpreter_layout.setSpacing(3)
 
-        # --- Button ---
+        # --- Button row (horizontal) ---
+        interpreter_btn_row = QWidget()
+        interpreter_btn_layout = QHBoxLayout(interpreter_btn_row)
+        interpreter_btn_layout.setContentsMargins(1,1,1,1)
+        interpreter_btn_layout.setSpacing(5)
+
         self.interpreter_btn = QPushButton("Select Py Interpreter")
         self.interpreter_btn.clicked.connect(
             self.file_pickers.select_python_interpreter
         )
-        interpreter_layout.addWidget(self.interpreter_btn, alignment=Qt.AlignLeft)
 
+        self.select_interpreter = QComboBox()
+        self.select_interpreter.setFixedSize(245,35)
+        self.select_interpreter.setFont(QFont("Rubik UI", 11))
+
+        # 🔑 Header
+        self.select_interpreter.addItem("Select Recent Interpreter")
+        self.recent_controller.populate_recent_interpreters_dropdown()
+
+        model = self.select_interpreter.model()
+        item = model.item(0)
+        item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
+
+        # 🔑 Placeholder behavior
+        self.select_interpreter.setEditable(True)
+        self.select_interpreter.lineEdit().setReadOnly(True)
+        if self.select_interpreter.setEnabled(True):
+
+            # 🔑 Styling (match others)
+            self.select_interpreter.setStyleSheet("""
+                QComboBox {
+                    background-color: #121212;
+                    color: #e0e0e0;
+                    border: 1px solid #2a2a2a;
+                    padding: 4px;
+                }
+
+                QComboBox::drop-down {
+                    border: none;
+                    background: #121212;
+                }
+
+                QComboBox QAbstractItemView {
+                    background-color: #121212;
+                    color: #e0e0e0;
+                    selection-background-color: #2a2a2a;
+                }
+            """)
+
+
+
+        self.python_delete_interpreter = QPushButton("❌")
+        self.python_delete_all_interpreter = QPushButton("💥")
+
+        for btn in [
+            self.python_delete_interpreter,
+            self.python_delete_all_interpreter
+        ]:
+            btn.setFixedSize(35,35)
+
+        interpreter_btn_layout.addWidget(self.interpreter_btn)
+        interpreter_btn_layout.addWidget(self.select_interpreter)
+        interpreter_btn_layout.addWidget(self.python_delete_interpreter)
+        interpreter_btn_layout.addWidget(self.python_delete_all_interpreter)
+        interpreter_btn_layout.addStretch()
+
+        interpreter_layout.addWidget(interpreter_btn_row)
+
+        # --- Path row (input + refresh inline) ---
+        interpreter_entry_row = QWidget()
+        interpreter_entry_layout = QHBoxLayout(interpreter_entry_row)
+        interpreter_entry_layout.setContentsMargins(1,1,1,1)
+        interpreter_entry_layout.setSpacing(5)
+
+        self.python_entry_input = QLineEdit()
+        self.python_entry_input.setPlaceholderText("No Python interpreter selected...")
+
+        self.interpreter_refresh_btn = QPushButton("🔃")
+        self.interpreter_refresh_btn.setFixedSize(35,35)
+        self.interpreter_refresh_btn.clicked.connect(self.ui_handlers.clear_interpreter_path)
+        self.select_interpreter.currentIndexChanged.connect(
+            self.recent_controller.on_recent_interpreter_selected
+        )
+        
+
+        interpreter_entry_layout.addWidget(self.python_entry_input)
+        interpreter_entry_layout.addWidget(self.interpreter_refresh_btn)
+
+        interpreter_layout.addWidget(interpreter_entry_row)
+            
         # --- Status ---
         self.python_status_label = QLineEdit("PYTHON INTERPRETER NOT SET")
         self.python_status_label.setReadOnly(True)
         self.python_status_label.setFont(QFont("Rubik UI", 11))
         self.python_status_label.setStyleSheet("color: #be1a1a;")
         self.python_status_label.setFixedSize(250,35)
-        
 
-        # --- Path ---
-        self.python_entry_input = QLineEdit()
-        self.python_entry_input.setPlaceholderText("No Python interpreter selected...")
-        interpreter_layout.addWidget(self.python_entry_input)
         interpreter_layout.addWidget(self.python_status_label)
 
+
+        # --- Final attach ---
         combined_layout.addWidget(apps_row)
         combined_layout.addWidget(interpreter_container)
 
         row2_layout.addWidget(combined_frame)
         self.main_layout.addWidget(row2)
-        
+
+        self.python_delete_interpreter.clicked.connect(self.recent_controller.interpreter_delete)
+        self.python_delete_all_interpreter.clicked.connect(self.recent_controller.all_interpreter_delete)
+                
         # =============================================================
         # Icon Picker
         # =============================================================

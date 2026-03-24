@@ -147,6 +147,8 @@ class ValidationController:
 
         
 
+        
+
         # ==========================================================
         # Dependency advisory — fire ONCE when NOT READY → READY
         # ==========================================================
@@ -499,6 +501,20 @@ class ValidationController:
                         border: 1px solid #3a3a3a;
                     }
                 """)
+        
+
+        # Reset popup eligibility when leaving READY state
+        if not is_ready:
+            self.app._dependency_popup_shown = False
+
+        if not is_ready:
+            self.app.status_label.setFixedSize(120,75)
+        else:
+            self.app.status_label.setFixedSize(275,100)
+        if building:
+            self.app.status_label.setFixedSize(275,50)
+
+
 
 
         # --------------------------------
