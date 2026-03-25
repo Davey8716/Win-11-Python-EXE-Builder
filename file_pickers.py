@@ -18,17 +18,6 @@ class FilePickerController:
         return os.path.splitext(os.path.basename(script_path))[0]
 
     # ============================================================
-    # Open Installed Apps
-    # ============================================================
-
-    def open_installed_apps(self):
-        """Open Windows Installed Apps (Programs and Features)."""
-        try:
-            subprocess.Popen(["appwiz.cpl"], shell=True)
-        except Exception as e:
-            print("Failed to open Installed Apps:", e)
-
-    # ============================================================
     # Locate python installs
     # ============================================================
 

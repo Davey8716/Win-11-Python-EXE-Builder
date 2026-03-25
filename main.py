@@ -55,6 +55,7 @@ class EXEBuilderApp(QWidget):
         self._last_advisory_script = None
         self._eta_running = False
         self._loading_state = True
+        self.building = False
 
         self.entry_script = None
         self.project_root = None
@@ -72,8 +73,7 @@ class EXEBuilderApp(QWidget):
         self.activation_controller = ActivationController(self)
         self.file_pickers = FilePickerController(self)
 
-        # 🔒 A build cannot survive a restart
-        self.building = False
+   
 
         # ---------------------------------------------------------
         # SINGLE INSTANCE: Listen for activation events
@@ -103,8 +103,8 @@ class EXEBuilderApp(QWidget):
         self.last_build_seconds = 45
         self.last_build_counter = 0
         
-        self.setWindowTitle("")
-        self.setFixedSize(500, 875)
+        # self.setWindowTitle("")
+        self.setFixedSize(500, 735)
 
         self.tooltips_enabled = getattr(self, "tooltips_enabled", True)
         self.dependency_notice_enabled = getattr(self, "dependency_notice_enabled", True)
@@ -135,15 +135,6 @@ class EXEBuilderApp(QWidget):
         self.tooltips_checkbox = QCheckBox("Tooltips")
         self.dependency_notice = QCheckBox("Dependency Notice")
 
-        for checkbox in [
-            self.tooltips_checkbox,
-            self.dependency_notice
-            
-        ]:
-            checkbox.setFont(QFont("Rubik Ui",11, QFont.Bold))
-            checkbox.setChecked(True)
-            checkbox.setFixedSize(185,35)
-            
         title_label = QLabel(" Win 11 → Python → EXE Builder")
         title_label.setFont(QFont("Rubik UI", 12, QFont.Bold))
         title_label.setFixedSize(290,35)
@@ -174,10 +165,6 @@ class EXEBuilderApp(QWidget):
         row2_layout.setContentsMargins(1,1,1,1)
         row2_layout.setSpacing(1)
 
-        # -------------------------
-        # Combined FRAME (apps + interpreter)
-        # -------------------------
-
         combined_frame = QFrame()
         combined_frame.setFrameShape(QFrame.StyledPanel)
         combined_frame.setFrameShadow(QFrame.Raised)
@@ -196,45 +183,32 @@ class EXEBuilderApp(QWidget):
         apps_layout.setContentsMargins(1,1,1,1)
         apps_layout.setSpacing(5)
 
-        self.apps_btn = QPushButton("Open Installed Apps")
-        self.apps_btn.clicked.connect(self.file_pickers.open_installed_apps)
-
         self.open_python_site_btn = QPushButton("Python.org")
-        self.open_python_site_btn.clicked.connect(self.ui_handlers.open_python_site)
-
-  
-
-        apps_layout.addWidget(self.apps_btn)
         apps_layout.addWidget(self.open_python_site_btn)
         apps_layout.addStretch()
-
 
         # =================================================
         # Interpreter (VERTICAL stack)
         # =================================================
+
         interpreter_container = QWidget()
         interpreter_layout = QVBoxLayout(interpreter_container)
         interpreter_layout.setContentsMargins(1,1,1,1)
         interpreter_layout.setSpacing(3)
 
-        # --- Button row (horizontal) ---
         interpreter_btn_row = QWidget()
         interpreter_btn_layout = QHBoxLayout(interpreter_btn_row)
         interpreter_btn_layout.setContentsMargins(1,1,1,1)
         interpreter_btn_layout.setSpacing(5)
-
         self.interpreter_btn = QPushButton("Select Py Interpreter")
-        self.interpreter_btn.clicked.connect(
-            self.file_pickers.select_python_interpreter
-        )
-
+    
         self.select_interpreter = QComboBox()
         self.select_interpreter.setFixedSize(245,35)
         self.select_interpreter.setFont(QFont("Rubik UI", 11))
 
         # 🔑 Header
         self.select_interpreter.addItem("Select Recent Interpreter")
-        self.recent_controller.populate_recent_interpreters_dropdown()
+       
 
         model = self.select_interpreter.model()
         item = model.item(0)
@@ -266,16 +240,8 @@ class EXEBuilderApp(QWidget):
                 }
             """)
 
-
-
         self.python_delete_interpreter = QPushButton("❌")
         self.python_delete_all_interpreter = QPushButton("💥")
-
-        for btn in [
-            self.python_delete_interpreter,
-            self.python_delete_all_interpreter
-        ]:
-            btn.setFixedSize(35,35)
 
         interpreter_btn_layout.addWidget(self.interpreter_btn)
         interpreter_btn_layout.addWidget(self.select_interpreter)
@@ -292,30 +258,14 @@ class EXEBuilderApp(QWidget):
         interpreter_entry_layout.setSpacing(5)
 
         self.python_entry_input = QLineEdit()
-        self.python_entry_input.setPlaceholderText("No Python interpreter selected...")
+        self.python_entry_input.setPlaceholderText("python_entry_input")
 
         self.interpreter_refresh_btn = QPushButton("🔃")
         self.interpreter_refresh_btn.setFixedSize(35,35)
-        self.interpreter_refresh_btn.clicked.connect(self.ui_handlers.clear_interpreter_path)
-        self.select_interpreter.currentIndexChanged.connect(
-            self.recent_controller.on_recent_interpreter_selected
-        )
-        
 
         interpreter_entry_layout.addWidget(self.python_entry_input)
         interpreter_entry_layout.addWidget(self.interpreter_refresh_btn)
-
         interpreter_layout.addWidget(interpreter_entry_row)
-            
-        # --- Status ---
-        self.python_status_label = QLineEdit("PYTHON INTERPRETER NOT SET")
-        self.python_status_label.setReadOnly(True)
-        self.python_status_label.setFont(QFont("Rubik UI", 11))
-        self.python_status_label.setStyleSheet("color: #be1a1a;")
-        self.python_status_label.setFixedSize(250,35)
-
-        interpreter_layout.addWidget(self.python_status_label)
-
 
         # --- Final attach ---
         combined_layout.addWidget(apps_row)
@@ -324,9 +274,6 @@ class EXEBuilderApp(QWidget):
         row2_layout.addWidget(combined_frame)
         self.main_layout.addWidget(row2)
 
-        self.python_delete_interpreter.clicked.connect(self.recent_controller.interpreter_delete)
-        self.python_delete_all_interpreter.clicked.connect(self.recent_controller.all_interpreter_delete)
-                
         # =============================================================
         # Icon Picker
         # =============================================================
@@ -353,13 +300,11 @@ class EXEBuilderApp(QWidget):
         icon_row1_layout.setSpacing(5)
 
         self.icon_btn = QPushButton("Select Icon (optional)")
-        self.icon_btn.clicked.connect(self.file_pickers.select_icon)
 
         self.select_recent_icons = QComboBox()
         self.select_recent_icons.setFixedSize(245,35)
         self.select_recent_icons.setFont(QFont("Rubik UI", 11))
         self.select_recent_icons.addItem("Select Recent Icon")
-        self.recent_controller.populate_recent_icons_dropdown()
 
         model = self.select_recent_icons.model()
         item = model.item(0)
@@ -392,7 +337,6 @@ class EXEBuilderApp(QWidget):
         self.delete_recent_icons = QPushButton("❌")
         self.delete_all_icons = QPushButton("💥")
 
-
         icon_row1_layout.addWidget(self.icon_btn)
         icon_row1_layout.addWidget(self.select_recent_icons)
         icon_row1_layout.addWidget(self.delete_recent_icons)
@@ -408,7 +352,6 @@ class EXEBuilderApp(QWidget):
         icon_row2_layout.setSpacing(5)
 
         self.ico_convert_btn = QPushButton("Open ICO Converters")
-        self.ico_convert_btn.clicked.connect(self.ui_handlers.open_icon_sites)
 
         icon_row2_layout.addWidget(self.ico_convert_btn)
         icon_row2_layout.addStretch()
@@ -422,22 +365,15 @@ class EXEBuilderApp(QWidget):
         icon_entry_layout.setSpacing(5)
 
         self.icon_path_input = QLineEdit()
-        self.icon_path_input.setPlaceholderText("No icon selected...")
-        
+        self.icon_path_input.setPlaceholderText("icon_path_input")
         self.icon_clear_btn = QPushButton("")
-        self.icon_clear_btn.clicked.connect(self.ui_handlers.clear_icon)
 
         icon_entry_layout.addWidget(self.icon_path_input)
         icon_entry_layout.addWidget(self.icon_clear_btn)
         icon_block_layout.addWidget(icon_entry_row)
         
-        # -------- Final --------
         icon_frame_layout.addWidget(icon_block)
         self.main_layout.addWidget(icon_frame)
-        
-        self.select_recent_icons.currentIndexChanged.connect(self.recent_controller.on_recent_icon_selected)
-        self.delete_recent_icons.clicked.connect(self.recent_controller.confirm_delete_recent_icon)
-        self.delete_all_icons.clicked.connect(self.recent_controller.confirm_delete_all_icons)
 
         # ---------------------------------
         # Python Folder FRAME (vertical)
@@ -457,7 +393,7 @@ class EXEBuilderApp(QWidget):
         # =================================================
 
         self.folder_btn = QPushButton("Select Python Folder")
-        self.folder_btn.clicked.connect(self.file_pickers.select_script_folder)
+      
 
         self.recent_folder_dropdown = QComboBox()
         self.recent_folder_dropdown.setFixedSize(245, 35)
@@ -500,43 +436,12 @@ class EXEBuilderApp(QWidget):
         self.delete_recent_folder = QPushButton("❌")
         self.delete_all_folders = QPushButton("💥")
    
-        for btns in [
-            self.delete_recent_folder,
-            self.delete_all_folders
-            
-            
-        ]:
-            btns.setFixedSize(35,35)
-            btns.setEnabled(True)
-
         folder_row = QHBoxLayout()
         folder_row.setContentsMargins(0, 0, 0, 0)
         folder_row.setSpacing(5)
 
-        for widget in [
-            self.folder_btn,
-            self.recent_folder_dropdown,
-            self.delete_recent_folder,
-            self.delete_all_folders,
-            
-        ]:
-            folder_row.addWidget(widget)
-            
-        folder_row.addStretch()
-        
-        self.recent_folder_dropdown.currentIndexChanged.connect(self.recent_controller.on_recent_file_selected)
-        self.delete_recent_folder.clicked.connect(self.recent_controller.confirm_delete_recent)
-        self.delete_all_folders.clicked.connect(self.recent_controller.confirm_delete_all_folder)
-        python_layout.addLayout(folder_row)
-                
-        # =================================================
-        # Row 2: Status (moved BELOW path row)
-        # =================================================
 
-        self.script_folder_status_label = QLineEdit("PYTHON FOLDER NOT SET")
-        self.script_folder_status_label.setFont(QFont("Rubik UI", 11))
-        self.script_folder_status_label.setStyleSheet("color: #be1a1a;")
-        self.script_folder_status_label.setReadOnly(True)
+        python_layout.addLayout(folder_row)
 
         # =================================================
         # Row 3: Path + clear (side-by-side)
@@ -548,56 +453,14 @@ class EXEBuilderApp(QWidget):
         script_layout.setSpacing(3)
 
         self.script_path_input = QLineEdit()
-        self.script_path_input.setPlaceholderText("Select script or folder...")
+        self.script_path_input.setPlaceholderText("script_path_input")
         script_layout.addWidget(self.script_path_input)
 
         self.script_clear_btn = QPushButton("")
-        self.script_clear_btn.clicked.connect(self.ui_handlers.clear_script_path)
         script_layout.addWidget(self.script_clear_btn)
-        
-        
-        for stuff in [
-            self.delete_recent_icons,
-            self.delete_recent_folder,
-            self.delete_all_icons,
-            self.delete_all_folders,
-            
-        ]:
-            stuff.setStyleSheet("""
-            QPushButton {
-                background-color: #2a2a2a;
-                border: 1px solid #3a3a3a;
-                border-radius: 5px;
-                color: #e0e0e0;
-                font-size: 14px;
-            }
-
-            QPushButton:hover {
-                background-color: #3a3a3a;
-            }
-
-            QPushButton:pressed {
-                background-color: #1f1f1f;
-            }
-
-            QPushButton:disabled {
-                background-color: #1a1a1a;
-                color: #555;
-            }
-        """)
-            
-            stuff.setFixedSize(35,35)
-            stuff.setEnabled(True)
 
         script_layout.setContentsMargins(1,1,1,1)
-
-        # =================================================
-        # ADD TO LAYOUT (correct order)
-        # =================================================
-
         python_layout.addWidget(script_row)
-        python_layout.addWidget(self.script_folder_status_label)
-
         self.main_layout.addWidget(python_frame)
 
         # =============================================================
@@ -627,7 +490,6 @@ class EXEBuilderApp(QWidget):
         # =================================================
 
         self.output_btn = QPushButton("Select Output Folder")
-        self.output_btn.clicked.connect(self.file_pickers.select_output_folder)
         output_layout.addWidget(self.output_btn, alignment=Qt.AlignLeft)
 
         # =================================================
@@ -640,23 +502,13 @@ class EXEBuilderApp(QWidget):
         output_entry_layout.setSpacing(3)
 
         self.output_path_input = QLineEdit()
-        self.output_path_input.setPlaceholderText("No output folder selected...")
+        self.output_path_input.setPlaceholderText("output_path_input")
         output_entry_layout.addWidget(self.output_path_input)
 
         self.output_refresh_btn = QPushButton("")
-        self.output_refresh_btn.clicked.connect(self.ui_handlers.reset_output_to_desktop)
         output_entry_layout.addWidget(self.output_refresh_btn)
 
         output_layout.addWidget(output_entry_row)
-
-        # =================================================
-        # Row 3: Output path status
-        # =================================================
-
-        self.output_path_status_label = QLineEdit("EXE OUTPUT PATH NOT SET")
-        self.output_path_status_label.setReadOnly(True)
-        output_layout.addWidget(self.output_path_status_label)
-
         # =================================================
         # Row 4: EXE name + reset
         # =================================================
@@ -667,27 +519,13 @@ class EXEBuilderApp(QWidget):
         exe_layout.setSpacing(3)
 
         self.exe_name_input = QLineEdit()
-        self.exe_name_input.setPlaceholderText("Output file name (without .exe)")
+        self.exe_name_input.setPlaceholderText("exe_name_input")
         exe_layout.addWidget(self.exe_name_input)
 
         self.refresh_btn = QPushButton("")
-        self.refresh_btn.clicked.connect(self.ui_handlers.reset_exe_name_from_script)
         exe_layout.addWidget(self.refresh_btn)
 
         output_layout.addWidget(exe_row)
-
-        # =================================================
-        # Row 5: EXE name status
-        # =================================================
-
-        self.exe_name_status_label = QLineEdit("EXE NAME NOT SET")
-        self.exe_name_status_label.setReadOnly(True)
-        output_layout.addWidget(self.exe_name_status_label)
-
-        # =================================================
-        # ADD FRAME
-        # =================================================
-
         self.main_layout.addWidget(output_frame)
         
         # =============================================================
@@ -703,32 +541,94 @@ class EXEBuilderApp(QWidget):
         build_layout.setContentsMargins(6, 6, 6, 6)
         build_layout.setSpacing(3)
 
-        # =================================================
-        # Row 1: Build button (centered)
-        # =================================================
+
+
+        self.status_label = QLabel("Ready")
+        self.status_label.setFixedSize(315,100)
+        self.status_label.setFont(QFont("Rubik UI", 11, QFont.Bold))
+
 
         self.build_btn = QPushButton("Build EXE")
         self.build_btn.setFont(QFont("Rubik UI", 11))
         self.build_btn.setFixedSize(150, 35)
         self.build_btn.clicked.connect(self.build_controller.build_exe)
 
-        
 
-        # =================================================
-        # Row 2: Status
-        # =================================================
-
-        self.status_label = QLabel("Ready")
-        self.status_label.setFixedSize(315,100)
-        self.status_label.setFont(QFont("Rubik UI", 11, QFont.Bold))
         build_layout.addWidget(self.status_label)
         build_layout.addWidget(self.build_btn, alignment=Qt.AlignLeft)
+
+        for checkbox in [
+            self.tooltips_checkbox,
+            self.dependency_notice
+            
+        ]:
+            checkbox.setFont(QFont("Rubik Ui",11, QFont.Bold))
+            checkbox.setChecked(True)
+            checkbox.setFixedSize(185,35)
+
+        for widget in [
+            self.folder_btn,
+            self.recent_folder_dropdown,
+            self.delete_recent_folder,
+            self.delete_all_folders,
+            
+        ]:  
+            
+            folder_row.addWidget(widget)
+            
+        folder_row.addStretch()
+
+
+        for btns in [
+            self.delete_recent_folder,
+            self.delete_all_folders
+            
+            
+        ]:
+            btns.setFixedSize(35,35)
+            btns.setEnabled(True)
+
+        for delete_btns in [
+            self.delete_recent_icons,
+            self.delete_recent_folder,
+            self.delete_all_icons,
+            self.delete_all_folders,
+            self.python_delete_all_interpreter,
+            self.python_delete_interpreter,
+            
+        ]:
+            delete_btns.setStyleSheet("""
+            QPushButton {
+                background-color: #2a2a2a;
+                border: 1px solid #3a3a3a;
+                border-radius: 5px;
+                color: #e0e0e0;
+                font-size: 14px;
+            }
+
+            QPushButton:hover {
+                background-color: #3a3a3a;
+            }
+
+            QPushButton:pressed {
+                background-color: #1f1f1f;
+            }
+
+            QPushButton:disabled {
+                background-color: #1a1a1a;
+                color: #555;
+            }
+        """)
+            
+            delete_btns.setFixedSize(35,35)
+            delete_btns.setEnabled(True)
         
         for refresh_btns in [
             self.refresh_btn,
             self.output_refresh_btn,
             self.icon_clear_btn,
             self.script_clear_btn,
+            self.interpreter_refresh_btn,
 
         ]:
             refresh_btns.setText("🔃")
@@ -748,33 +648,24 @@ class EXEBuilderApp(QWidget):
 
         for btns in [
             self.open_python_site_btn,
-            self.apps_btn,
-            self.folder_btn,
-            self.interpreter_btn,
             self.icon_btn,
             self.ico_convert_btn,
-            self.output_btn,
-
-            
         ]:
             
-            btns.setStyleSheet("background-color: #494949")
+            btns.setStyleSheet("background-color: #3bbf3b")
             btns.setFont(QFont("Rubik UI", 11,))
+            btns.setFixedSize(160,35)
+
+        for btns in [
+            self.interpreter_btn,
+            self.folder_btn,
+            self.output_btn
+
+        ]:
             btns.setFixedSize(160,35)
         
         self.recent_folder_dropdown.setFixedSize(245,35)
             
-        for labels in [
-            self.script_folder_status_label,
-            self.output_path_status_label,
-            self.exe_name_status_label
-            
-            ]:
-                labels.setReadOnly(True)
-                labels.setFixedSize(200,35)
-                labels.setFont(QFont("Rubik Ui", 11))
-                
-         # Init values for the drag and drop functionality
         for widget in [
             self.recent_folder_dropdown,
             self.select_recent_icons,
@@ -782,35 +673,7 @@ class EXEBuilderApp(QWidget):
             widget.setAcceptDrops(True)
             widget.installEventFilter(self)
 
-        # =================================================
-        # ADD FRAME
-        # =================================================
-
         self.main_layout.addWidget(build_frame)
-
-        # ----------------------------------------------------
-        # Initial validation pass
-        # ----------------------------------------------------
-
-        attach_tooltips(self)
-        
-        self.state_ctrl.load_state()
-        self.recent_controller.populate_recent_dropdown()
-        self._loading_state = False
-        self.validator.validation_status_message()
-        self.validator.update_build_button_state()
-
-            
-        self.json_import_controller.attach()
-    
-                
-        
-        
-        self.dependency_notice.stateChanged.connect(self.ui_handlers.on_dependency_toggle)
-        self.tooltips_checkbox.stateChanged.connect(self.ui_handlers.on_tooltips_toggle)
-        self.exe_name_input.textChanged.connect(self.ui_handlers._on_exe_name_user_edit)
-        self.exe_name_input.textChanged.connect(self.ui_handlers.on_exe_name_change)
-        self.script_path_input.textChanged.connect(self.ui_handlers.on_script_path_change)
 
         for widget in [
             self.output_path_input,
@@ -825,7 +688,45 @@ class EXEBuilderApp(QWidget):
                 )
             )
 
+        attach_tooltips(self)
+        self._loading_state = False
+        self.state_ctrl.load_state()
+        self.recent_controller.populate_recent_dropdown()
+        self.validator.validation_status_message()
+        self.validator.update_build_button_state()
+        self.json_import_controller.attach()
+        self.interpreter_btn.clicked.connect(self.file_pickers.select_python_interpreter)
+        self.python_delete_interpreter.clicked.connect(self.recent_controller.interpreter_delete)
+        self.select_interpreter.currentIndexChanged.connect(self.recent_controller.on_recent_interpreter_selected)
+        self.python_delete_all_interpreter.clicked.connect(
+            self.recent_controller.all_interpreter_delete
+        )
 
+        self.recent_controller.populate_recent_icons_dropdown()
+        self.recent_folder_dropdown.currentIndexChanged.connect(self.recent_controller.on_recent_file_selected)
+        self.delete_recent_folder.clicked.connect(self.recent_controller.confirm_delete_recent)
+        self.delete_all_folders.clicked.connect(self.recent_controller.confirm_delete_all_folder)
+        self.ico_convert_btn.clicked.connect(self.ui_handlers.open_icon_sites)
+
+        self.open_python_site_btn.clicked.connect(self.ui_handlers.open_python_site)
+        self.select_recent_icons.currentIndexChanged.connect(self.recent_controller.on_recent_icon_selected)
+        self.delete_recent_icons.clicked.connect(self.recent_controller.confirm_delete_recent_icon)
+        self.delete_all_icons.clicked.connect(self.recent_controller.confirm_delete_all_icons)
+
+        self.recent_controller.populate_recent_interpreters_dropdown()
+        self.interpreter_refresh_btn.clicked.connect(self.ui_handlers.clear_interpreter_path)
+        self.icon_btn.clicked.connect(self.file_pickers.select_icon)
+        self.icon_clear_btn.clicked.connect(self.ui_handlers.clear_icon)
+        self.folder_btn.clicked.connect(self.file_pickers.select_script_folder)
+        self.script_clear_btn.clicked.connect(self.ui_handlers.clear_script_path)
+        self.output_btn.clicked.connect(self.file_pickers.select_output_folder)
+        self.output_refresh_btn.clicked.connect(self.ui_handlers.reset_output_to_desktop)
+        self.refresh_btn.clicked.connect(self.ui_handlers.reset_exe_name_from_script)
+        self.dependency_notice.stateChanged.connect(self.ui_handlers.on_dependency_toggle)
+        self.tooltips_checkbox.stateChanged.connect(self.ui_handlers.on_tooltips_toggle)
+        self.exe_name_input.textChanged.connect(self.ui_handlers._on_exe_name_user_edit)
+        self.exe_name_input.textChanged.connect(self.ui_handlers.on_exe_name_change)
+        self.script_path_input.textChanged.connect(self.ui_handlers.on_script_path_change)
 
     def set_status(self, text):
         self.status_label.setText(text)
@@ -846,99 +747,29 @@ if __name__ == "__main__":
 
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
-    
-    palette = QPalette()   # ✅ MUST create instance
-    
-    palette.setColor(QPalette.Window, QColor(18, 18, 18))
-    palette.setColor(QPalette.Base, QColor(25, 25, 25))
-    palette.setColor(QPalette.AlternateBase, QColor(35, 35, 35))
 
-    palette.setColor(QPalette.Text, QColor(220, 220, 220))
-    palette.setColor(QPalette.WindowText, QColor(220, 220, 220))
+    # palette = QPalette()
 
-    palette.setColor(QPalette.Button, QColor(60, 60, 60))
-    palette.setColor(QPalette.ButtonText, QColor(220, 220, 220))
+    # palette.setColor(QPalette.Window, QColor(37, 37, 37))          # main bg
+    # palette.setColor(QPalette.WindowText, Qt.white)
 
-    palette.setColor(QPalette.Highlight, QColor(80, 120, 200))
-    palette.setColor(QPalette.HighlightedText, QColor(255, 255, 255))
-    
+    # palette.setColor(QPalette.Base, QColor(32, 32, 32))            # inputs
+    # palette.setColor(QPalette.AlternateBase, QColor(45, 45, 45))
 
-    app.setPalette(palette)
-    
-    app.setStyleSheet("""
-    /* -----------------------------
-    GLOBAL BACKGROUND
-    ----------------------------- */
-    QWidget {
-        background-color: #121212;
-        color: #e0e0e0;
-        font-family: "Rubik UI";
-    }
-    /* -----------------------------
-    CHECK BOXES(CONTRAST GREY)
-    ----------------------------- */
-    QCheckBox {
-        background-color: #1c1c1c;
-        border: 1px solid #1c1c1c;
-        border-radius: 3px;
-    }
-    
+    # palette.setColor(QPalette.ToolTipBase, Qt.white)
+    # palette.setColor(QPalette.ToolTipText, Qt.white)
 
-    /* -----------------------------
-    FRAMES (FORCE CONSISTENT GREY)
-    ----------------------------- */
-    QFrame {
-        background-color: #1c1c1c;
-        border: 1px solid #2e2e2e;
-        border-radius: 6px;
-    }
+    # palette.setColor(QPalette.Text, Qt.white)
+    # palette.setColor(QPalette.Button, QColor(37, 37, 37))
+    # palette.setColor(QPalette.ButtonText, Qt.white)
 
-    /* 🔴 FORCE CHILDREN INSIDE FRAMES */
-    QFrame QWidget {
-        background-color: #1c1c1c;
-    }
+    # palette.setColor(QPalette.BrightText, Qt.red)
 
-    /* subtle highlight edge */
-    QFrame:hover {
-        border: 1px solid #3a3a3a;
-    }
+    # palette.setColor(QPalette.Highlight, QColor(59, 191, 59))      # your green
+    # palette.setColor(QPalette.HighlightedText, Qt.black)
 
-    /* -----------------------------
-    INPUT FIELDS
-    ----------------------------- */
-    QLineEdit {
-        background-color: #252525;
-        border: 1px solid #3a3a3a;
-        padding: 6px;
-        border-radius: 4px;
-    }
+    # app.setPalette(palette)
 
-    /* -----------------------------
-    STATUS COLORS
-    ----------------------------- */
-    QLineEdit[readOnly="true"] {
-        background-color: #202020;
-    }
-
-    /* -----------------------------
-    BUTTONS
-    ----------------------------- */
-    QPushButton {
-        background-color: #494949;
-        border: 1px solid #3a3a3a;
-        border-radius: 5px;
-        padding: 6px;
-    }
-
-    QPushButton:hover {
-        background-color: #5a5a5a;
-    }
-
-    QPushButton:pressed {
-        background-color: #3f3f3f;
-    }
-    """)
-    
     window = EXEBuilderApp()
     window.show()
     sys.exit(app.exec())

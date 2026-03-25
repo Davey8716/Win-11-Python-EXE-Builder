@@ -73,34 +73,6 @@ class ValidationController:
         else:
             folder_ok = False
 
-
-        # --------------------------------
-        # INLINE PYTHON STATUS (button row)
-        # --------------------------------
-
-        if hasattr(self.app, "python_status_label"):
-            if python and os.path.isfile(python):
-                self.app.python_status_label.setText("PYTHON INTERPRETER SET")
-                self.app.python_status_label.setStyleSheet("color: #3bbf3b;")
-                self.app.python_status_label.setFixedSize(210,35)
-            else:
-                self.app.python_status_label.setText("PYTHON INTERPRETER NOT SET")
-                self.app.python_status_label.setStyleSheet("color: #be1a1a;")
-                self.app.python_status_label.setFixedSize(245,35)
-                
-        # --------------------------------
-        # INLINE: Python folder
-        # --------------------------------
-
-        if hasattr(self.app, "script_folder_status_label"):
-            if folder_ok:
-                self.app.script_folder_status_label.setText("PYTHON FOLDER SET")
-                self.app.script_folder_status_label.setStyleSheet("color: #3bbf3b;")
-                self.app.script_folder_status_label.setFixedSize(170,35)
-            else:
-                self.app.script_folder_status_label.setText("PYTHON FOLDER NOT SET")
-                self.app.script_folder_status_label.setStyleSheet("color: #be1a1a;")
-                self.app.script_folder_status_label.setFixedSize(205,35)
                 
         # --------------------------------
         # INLINE: Output path
@@ -144,10 +116,6 @@ class ValidationController:
             self.app.status_label.setFixedSize(120,75)
         else:
             self.app.status_label.setFixedSize(350,100)
-
-        
-
-        
 
         # ==========================================================
         # Dependency advisory — fire ONCE when NOT READY → READY
@@ -224,9 +192,9 @@ class ValidationController:
             state["status_text"] = error_msg
             is_ready = False  # 🔑 force red + stop READY logic
         state["status_text"] = (
-            f"READY — Py {python_version} | {icon_display} \n"
+            f"READY — Py {python_version} | {icon_display} |\n"
             f"------------------------------------------------\n"
-            f"{script_display}\n"
+            f"{script_display} |\n"
             f"------------------------------------------------\n"
             f"{outdir_display} |{exe_name_display}"
             
@@ -242,7 +210,7 @@ class ValidationController:
             
         )
         
-                
+        # KEEP
         # --------------------------------
         # BUTTON COLOR: Python Interpreter
         # --------------------------------
@@ -274,14 +242,13 @@ class ValidationController:
         # --------------------------------
         # APPLY STATUS TO UI (MATCH QLINEEDIT STYLE)
         # --------------------------------
-
         if hasattr(self.app, "status_label"):
             self.app.status_label.setText(state["status_text"])
 
             if is_ready:
                 self.app.status_label.setStyleSheet("""
                     QLabel {
-                        background-color: #202020;
+                        background-color: #FFFFFF;
                         color: #3bbf3b;
                         border: 1px solid #3a3a3a;
                     }
@@ -289,14 +256,14 @@ class ValidationController:
             else:
                 self.app.status_label.setStyleSheet("""
                     QLabel {
-                        background-color: #202020;
+                        background-color: #FFFFFF;
                         color: #be1a1a;
                         border: 1px solid #3a3a3a;
                     }
                 """)
 
         return state
-    
+
         # --------------------------------
     def update_build_button_state(self):
         state = self.validation_status_message()
@@ -313,6 +280,14 @@ class ValidationController:
         script = os.path.normpath(script) if script else ""
         outdir = os.path.normpath(outdir) if outdir else ""
         desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+
+        python_path = getattr(self.app, "python_interpreter_path", "").strip()
+        python_path = os.path.normpath(python_path) if python_path else ""
+        python_ok = bool(python_path and os.path.isfile(python_path))
+        
+        icon_path = getattr(self.app, "icon_path", "").strip()
+        icon_path = os.path.normpath(icon_path) if icon_path else ""
+        icon_ok = bool(icon_path and os.path.isfile(icon_path))
         
             
         # -------------------------------
@@ -352,6 +327,9 @@ class ValidationController:
             "delete_all_folders",
             "delete_recent_icons",
             "delete_all_icons",
+            "python_delete_interpreter"
+            "python_delete_all_interpreter"
+
         ]:
             if hasattr(self.app, btn_name):
                 btn = getattr(self.app, btn_name)
@@ -360,6 +338,39 @@ class ValidationController:
                     _set_btn(btn, False)  # disable during build
                 else:
                     _set_btn(btn, True)   # re-enable after build
+
+        # -------------------------------
+        # PYTHON SELECT
+        # -------------------------------
+        if hasattr(self.app, "select_python_btn"):
+            _set_btn(self.app.select_python_btn, not building and not python_ok)
+
+        # -------------------------------
+        # ICON SELECT
+        # -------------------------------
+        if hasattr(self.app, "select_icon_btn"):
+            _set_btn(self.app.select_icon_btn, not building and not icon_ok)
+
+        # -------------------------------
+        # OPEN ICO CONVERTER
+        # -------------------------------
+        if hasattr(self.app, "open_ico_converter_btn"):
+            _set_btn(self.app.open_ico_converter_btn, not building)
+
+        # -------------------------------
+        # PYTHON INTERPRETER CLEAR
+        # -------------------------------
+        if hasattr(self.app, "interpreter_refresh_btn"):
+            _set_btn(self.app.interpreter_refresh_btn, not building and python_ok)
+
+        # -------------------------------
+        # INTERPRETER BUTTONS
+        # -------------------------------
+        if hasattr(self.app, "delete_recent_interpreter"):
+            _set_btn(self.app.delete_recent_interpreter, not building and python_ok)
+
+        if hasattr(self.app, "delete_all_interpreters"):
+            _set_btn(self.app.delete_all_interpreters, not building and bool(self.app.recent_interpreters))
 
         # -------------------------------
         # ICON CLEAR
@@ -485,23 +496,8 @@ class ValidationController:
         if hasattr(self.app, "exe_name_input"):
             if getattr(self.app, "building", False):
                 self.app.exe_name_input.setReadOnly(True)
-                self.app.exe_name_input.setStyleSheet("""
-                    QLineEdit {
-                        background-color: #202020;
-                        color: #777777;
-                        border: 1px solid #3a3a3a;
-                    }
-                """)
             else:
                 self.app.exe_name_input.setReadOnly(False)
-                self.app.exe_name_input.setStyleSheet("""
-                    QLineEdit {
-                        background-color: #252525;
-                        color: #e0e0e0;
-                        border: 1px solid #3a3a3a;
-                    }
-                """)
-        
 
         # Reset popup eligibility when leaving READY state
         if not is_ready:
@@ -513,9 +509,6 @@ class ValidationController:
             self.app.status_label.setFixedSize(275,100)
         if building:
             self.app.status_label.setFixedSize(275,50)
-
-
-
 
         # --------------------------------
         # HARD RESET when script removed

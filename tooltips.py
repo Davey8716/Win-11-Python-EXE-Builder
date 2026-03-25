@@ -117,13 +117,6 @@ def attach_tooltips(app):
         "File path to python script folder and file."
     )
 
-    QtTooltip(
-        app.apps_btn,
-        "Opens Windows Installed Apps.\n"
-        "Check or remove Python versions.\n"
-        "If builds fail due to environment issues,\n"
-        "Go to python.org for downloading specific releases."
-    )
     
     QtTooltip(
         app.open_python_site_btn,
