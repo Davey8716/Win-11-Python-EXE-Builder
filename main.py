@@ -771,7 +771,6 @@ class EXEBuilderApp(QWidget):
         # -------------------------------
 
         frames = [
-            apps_title_frame,
             combined_frame,
             interpreter_container,
             icon_frame,

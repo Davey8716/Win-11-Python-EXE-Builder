@@ -329,10 +329,7 @@ class ValidationController:
         app.date_time_dropdown.setEnabled(not building)
         is_desktop = outdir and os.path.normpath(outdir) == os.path.normpath(desktop)
 
-        set_btn(
-            app.output_refresh_btn,
-            not building and not is_desktop
-        )
+        set_btn(app.output_refresh_btn,not building and not is_desktop)
 
         # -------------------------------
         # EXE NAME REFRESH (revert to script name)
@@ -349,10 +346,7 @@ class ValidationController:
             current_name != derived_name
         )
 
-        set_btn(
-            app.refresh_btn,
-            not building and can_revert_name
-        )
+        set_btn(app.refresh_btn,not building and can_revert_name)
 
         app.exe_name_input.setReadOnly(building)
 
