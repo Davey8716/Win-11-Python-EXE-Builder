@@ -150,7 +150,6 @@ class EXEBuilderApp(QWidget):
         toggles_layout.addWidget(self.dependency_notice)
         toggles_layout.addStretch()
 
-
         # -------------------------------
         # WRAPPER (forces vertical alignment)
         # -------------------------------
@@ -163,7 +162,6 @@ class EXEBuilderApp(QWidget):
         toggles_wrapper_layout.addStretch()  # 🔑 pushes toggles DOWN
         toggles_wrapper_layout.addWidget(toggles_frame)
 
-
         # -------------------------------
         # MAIN LAYOUT
         # -------------------------------
@@ -171,9 +169,7 @@ class EXEBuilderApp(QWidget):
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(1, 1, 1, 1)
         self.main_layout.setSpacing(2)
-
         self.main_layout.addWidget(title_row)
-
 
         # =============================================================
         # Script / Buttons Section
@@ -193,7 +189,6 @@ class EXEBuilderApp(QWidget):
         combined_layout.setContentsMargins(1,1,1,1)
         combined_layout.setSpacing(1)
 
-
         # =================================================
         # Apps TITLE FRAME
         # =================================================
@@ -212,7 +207,6 @@ class EXEBuilderApp(QWidget):
 
         apps_title_layout.addWidget(self.apps_title)
         apps_title_layout.addStretch()
-
 
         # =================================================
         # INLINE ROW (Apps title + toggles)

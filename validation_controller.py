@@ -256,7 +256,6 @@ class ValidationController:
 
     def update_ui_state(self):
         app = self.app
-
         building = getattr(app, "building", False)
 
         # -------------------------------
@@ -275,7 +274,6 @@ class ValidationController:
 
         icon_path = getattr(app, "icon_path", "").strip()
         icon_ok = bool(icon_path and os.path.isfile(icon_path))
-
         exe_name = app.exe_name_input.text().strip()
 
         is_ready = (
@@ -299,85 +297,37 @@ class ValidationController:
             else:
                 btn.setStyleSheet("")
 
-        # -------------------------------
-        # DROPDOWNS (your problem area)
-        # -------------------------------
-        app.recent_folder_dropdown.setEnabled(not building)
-        app.select_recent_icons.setEnabled(not building)
-        app.select_interpreter.setEnabled(not building)
-        app.date_time_dropdown.setEnabled(not building)
-
-        # -------------------------------
-        # PYTHON INTERPRETER SELECT
-        # -------------------------------
-        set_btn(app.interpreter_btn, not building)
-        # -------------------------------
-
-        # -------------------------------
-        # DELETE BUTTONS (ALL / SINGLE)
-        # -------------------------------
-        set_btn(app.python_delete_interpreter, not building and python_ok)
-        set_btn(app.python_delete_all_interpreter, not building)
-
-        set_btn(app.delete_all_icons, not building)
-        set_btn(app.delete_all_folders, not building)
-    
-
-        # -------------------------------
-        # SELECT BUTTONS
-        # -------------------------------
-        set_btn(app.folder_btn, not building)
-        set_btn(app.icon_btn, not building)
-
-        # -------------------------------
-        # GREEN ACTION BUTTONS (🔃 etc)
-        # -------------------------------
-        set_btn(app.icon_clear_btn, not building and icon_ok)
-        set_btn(app.interpreter_refresh_btn, not building and python_ok)
-        set_btn(app.script_clear_btn, not building)
-        # -------------------------------
-        # TOGGLES (Tooltips / Dependency Notice)
-        # -------------------------------
+        # Tooltips
         set_btn(app.tooltips_checkbox, not building)
         set_btn(app.dependency_notice, not building)
 
-        # -------------------------------
-        # DELETE BUTTONS
-        # -------------------------------
-        set_btn(app.delete_recent_folder, not building)
-        set_btn(app.delete_recent_icons, not building)
-        # -------------------------------
-        # PYTHON.ORG BUTTON
-        # -------------------------------
+        # Apps
         set_btn(app.open_python_site_btn, not building)
-
-        # -------------------------------
-        # OPEN ICO CONVERTER
-        # -------------------------------
+        set_btn(app.interpreter_btn, not building)
+        set_btn(app.interpreter_refresh_btn, not building and python_ok)
+        set_btn(app.python_delete_interpreter, not building and python_ok)
+        set_btn(app.python_delete_all_interpreter, not building)
+        app.select_interpreter.setEnabled(not building)
+        
+        set_btn(app.icon_btn, not building)
         set_btn(app.ico_convert_btn, not building)
+        set_btn(app.delete_all_icons, not building)
+        set_btn(app.delete_recent_icons, not building)
+        set_btn(app.icon_clear_btn,not building)
+        app.select_recent_icons.setEnabled(not building)
 
-        # -------------------------------
-        # APPEND PYTHON VERSION TO EXE NAME
-        # -------------------------------
+        # File
+        set_btn(app.folder_btn, not building)
+        set_btn(app.script_clear_btn, not building)
+        set_btn(app.delete_recent_folder, not building)
+        set_btn(app.delete_all_folders, not building)
+        app.recent_folder_dropdown.setEnabled(not building)
+
+        # Output
         set_btn(app.appened_py_version, not building)
-
-        # -------------------------------
-        # OUTPUT SELECT BUTTON
-        # -------------------------------
         set_btn(app.output_btn, not building)
-
-        # -------------------------------
-        # OUTPUT
-        # -------------------------------
+        app.date_time_dropdown.setEnabled(not building)
         is_desktop = outdir and os.path.normpath(outdir) == os.path.normpath(desktop)
-
-        # -------------------------------
-        # OUTPUT REFRESH (revert to Desktop)
-        # -------------------------------
-        is_desktop = (
-            outdir and
-            os.path.normpath(outdir) == os.path.normpath(desktop)
-        )
 
         set_btn(
             app.output_refresh_btn,
@@ -404,9 +354,6 @@ class ValidationController:
             not building and can_revert_name
         )
 
-        # -------------------------------
-        # LOCK INPUTS DURING BUILD
-        # -------------------------------
         app.exe_name_input.setReadOnly(building)
 
         # -------------------------------
@@ -494,21 +441,6 @@ class ValidationController:
             }}
         """)
 
-    def force_build_button_reset(self):
-        app = self.app
 
-        if not hasattr(app, "build_btn"):
-            return
-
-        try:
-            app.build_btn.clicked.disconnect()
-        except:
-            pass
-
-        app.build_btn.setEnabled(True)
-        app.build_btn.setText("Build EXE")
-        app.build_btn.setStyleSheet("background-color: #3bbf3b;")
-
-        app.build_btn.clicked.connect(app.build_controller.build_exe)
 
 

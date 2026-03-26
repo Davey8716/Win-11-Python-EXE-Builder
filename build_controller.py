@@ -294,11 +294,8 @@ class BuildController:
         # 🔑 STOP LOOP CLEANLY
         app._eta_running = False
         app.building = False
-
         app.build_process = None
-
         app.validation_controller.update_ui_state()
-        app.validation_controller.force_build_button_reset()
 
         
 
