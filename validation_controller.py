@@ -9,13 +9,42 @@ class ValidationController:
         app = EXEBuilderApp instance
         """
         self.app = app
+ 
+    def extract_imports_from_file(self, py_file: str) -> set[str]:
+        imports = set()
+
+        try:
+            with open(py_file, "r", encoding="utf-8") as f:
+                tree = ast.parse(f.read(), filename=py_file)
+        except Exception:
+            return imports  # advisory only
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    imports.add(alias.name.split(".")[0])
+            elif isinstance(node, ast.ImportFrom):
+                if node.module:
+                    imports.add(node.module.split(".")[0])
+
+        return imports
+
+    def filter_external_imports(self, imports: set[str]) -> list[str]:
+        stdlib = set(sys.stdlib_module_names)
+        return sorted(i for i in imports if i not in stdlib)
+
+
+    def run_dependency_advisory(self, entry_file: str) -> list[str]:
+        imports = self.extract_imports_from_file(entry_file)
+        external = self.filter_external_imports(imports)
+        return external
+
         
     def set_build_error(self, message: str):
         self.app.build_error = message
         self.update_build_button_state()
         self.validation_status_message()
         
-
     # ==================================================
     # Can we build again?
     # =================================================
@@ -30,7 +59,6 @@ class ValidationController:
         script = os.path.normpath(script) if script else ""
         outdir = os.path.normpath(outdir) if outdir else ""
         python = os.path.normpath(python) if python else ""
-
 
         if not python or not os.path.isfile(python):
             return False
@@ -88,6 +116,12 @@ class ValidationController:
 
         state["exe_ok"] = bool(exe_name)
 
+        icon_path = getattr(self.app, "icon_path", "").strip()
+        icon_path = os.path.normpath(icon_path) if icon_path else ""
+
+        icon_ok = bool(icon_path and os.path.isfile(icon_path))
+        state["icon_ok"] = icon_ok
+
         # --------------------------------
         # BUILD READINESS
         # --------------------------------
@@ -107,6 +141,26 @@ class ValidationController:
         state["outdir_ok"] = outdir_ok
         state["exe_ok"] = exe_ok
         state["python_ok"] = python_ok
+        state["icon_ok"] = icon_ok
+
+        def _style_input(widget, ok):
+            if not widget:
+                return
+
+            widget.setStyleSheet(f"""
+                QLineEdit {{
+                    background-color: #FFFFFF;
+                    color: {"#3bbf3b" if ok else "#be1a1a"};
+                    border: 2px solid #3a3a3a;
+                }}
+            """)
+
+        # 🔑 strict mapping (each tied to its own validation)
+        _style_input(self.app.python_entry_input, python_ok)
+        _style_input(self.app.script_path_input, script_ok)
+        _style_input(self.app.output_path_input, outdir_ok)
+        _style_input(self.app.exe_name_input, exe_ok)
+        _style_input(self.app.icon_path_input,icon_ok)
 
         # Reset popup eligibility when leaving READY state
         if not is_ready:
@@ -115,7 +169,7 @@ class ValidationController:
         if not is_ready:
             self.app.status_label.setFixedSize(120,75)
         else:
-            self.app.status_label.setFixedSize(350,100)
+            self.app.status_label.setFixedSize(350,75)
 
         # ==========================================================
         # Dependency advisory — fire ONCE when NOT READY → READY
@@ -184,30 +238,23 @@ class ValidationController:
 
         # Output path
         outdir_display = outdir if outdir else "No output"
-
         error_msg = getattr(self.app, "build_error", None)
-        
         
         if error_msg:
             state["status_text"] = error_msg
             is_ready = False  # 🔑 force red + stop READY logic
         state["status_text"] = (
             f"READY — Py {python_version} | {icon_display} |\n"
-            f"------------------------------------------------\n"
             f"{script_display} |\n"
-            f"------------------------------------------------\n"
             f"{outdir_display} |{exe_name_display}"
             
             if is_ready else
             (
                 error_msg if error_msg else
                 "NOT READY\n"
-                f"----------------\n"
                 "TO BUILD"
                 
             )
-       
-            
         )
         
         # KEEP
@@ -238,7 +285,36 @@ class ValidationController:
             else:
                 self.app.output_btn.setStyleSheet("background-color: #be1a1a;")
 
-        
+        # -------------------------------
+        # Python delete buttons (force white like others)
+        # -------------------------------
+        for attr in ["python_delete_interpreter", "python_delete_all_interpreter"]:
+            if hasattr(self.app, attr):
+                btn = getattr(self.app, attr)
+
+                btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #FFFFFF;
+                        color: black;
+                        border: 1px solid #cccccc;
+                        border-radius: 5px;
+                    }
+
+                    QPushButton:hover {
+                        background-color: #f0f0f0;
+                    }
+
+                    QPushButton:pressed {
+                        background-color: #e0e0e0;
+                    }
+
+                    QPushButton:disabled {
+                        background-color: #1a1a1a;
+                        color: #555;
+                    }
+                """)
+
+
         # --------------------------------
         # APPLY STATUS TO UI (MATCH QLINEEDIT STYLE)
         # --------------------------------
@@ -263,7 +339,7 @@ class ValidationController:
                 """)
 
         return state
-
+    
         # --------------------------------
     def update_build_button_state(self):
         state = self.validation_status_message()
@@ -303,7 +379,7 @@ class ValidationController:
             if enabled and active_style:
                 btn.setStyleSheet("""
                     QPushButton {
-                        background-color: #444444;
+                        background-color: #FFFFFF;
                     }
                     QPushButton:hover {
                         background-color: #555555;
@@ -312,7 +388,7 @@ class ValidationController:
             else:
                 btn.setStyleSheet("""
                     QPushButton {
-                        background-color:#1F1F1F;
+                        background-color:#FFFFFF;
                         color: #777777;
                     }
                 """)
@@ -570,37 +646,6 @@ class ValidationController:
         state["can_build"] = self.inputs_are_valid()
 
         return state
-
-
-    def extract_imports_from_file(self, py_file: str) -> set[str]:
-        imports = set()
-
-        try:
-            with open(py_file, "r", encoding="utf-8") as f:
-                tree = ast.parse(f.read(), filename=py_file)
-        except Exception:
-            return imports  # advisory only
-
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import):
-                for alias in node.names:
-                    imports.add(alias.name.split(".")[0])
-            elif isinstance(node, ast.ImportFrom):
-                if node.module:
-                    imports.add(node.module.split(".")[0])
-
-        return imports
-
-    def filter_external_imports(self, imports: set[str]) -> list[str]:
-        stdlib = set(sys.stdlib_module_names)
-        return sorted(i for i in imports if i not in stdlib)
-
-
-    def run_dependency_advisory(self, entry_file: str) -> list[str]:
-        imports = self.extract_imports_from_file(entry_file)
-        external = self.filter_external_imports(imports)
-        return external
-
 
 
 

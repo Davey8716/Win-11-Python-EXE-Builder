@@ -130,6 +130,39 @@ class UIHandlers:
             app.state_ctrl.save_state()
 
         app.validator.update_build_button_state()
+
+    def on_datetime_format_changed(self, index):
+        app = self.app
+
+        if index == 0:
+            # 🔴 OFF
+            app.append_datetime = False
+            app.datetime_format = ""
+
+            # visually clear selection
+            app.date_time_dropdown.setCurrentIndex(0)
+
+        else:
+            # 🟢 ON
+            app.append_datetime = True
+            app.datetime_format = app.date_time_dropdown.currentData()
+
+        if hasattr(app, "state_ctrl"):
+            app.state_ctrl.save_state()
+
+        if hasattr(app, "validator"):
+            app.validator.validation_status_message()
+
+    def on_append_py_version_toggle(self, checked):
+        app = self.app
+
+        app.append_py_version = checked
+
+        if hasattr(app, "state_ctrl"):
+            app.state_ctrl.save_state()
+
+        if hasattr(app, "validator"):
+            app.validator.validation_status_message()
     
     def _on_exe_name_user_edit(self, text):
         app = self.app

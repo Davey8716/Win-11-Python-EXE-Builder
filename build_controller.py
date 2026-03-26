@@ -185,8 +185,32 @@ class BuildController:
         # ==================================================
 
         app.last_build_counter += 1
-        timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M")
-        final_exe_name = f"{exe_name}_{timestamp}"
+        timestamp = ""
+        if getattr(app, "append_datetime", False):
+            fmt = getattr(app, "datetime_format", "")
+            if fmt:
+                timestamp = datetime.now().strftime(fmt)
+        parts = [exe_name]
+
+        # date/time (existing)
+        if getattr(app, "append_datetime", False):
+            parts.append(timestamp)
+
+        # python version
+        if getattr(app, "append_py_version", False):
+            python_path = getattr(app, "python_interpreter_path", "")
+            version = "py"
+
+            if python_path:
+                parent = os.path.basename(os.path.dirname(python_path)).lower()
+                if parent.startswith("python"):
+                    raw = parent.replace("python", "")
+                    if raw.isdigit():
+                        version = f"py{raw[0]}.{raw[1:]}" if len(raw) > 1 else f"py{raw}"
+
+            parts.append(version)
+
+        final_exe_name = "_".join(parts)
 
         build_path = os.path.join(outdir, "build", final_exe_name)
         spec_path = os.path.join(outdir, "spec", final_exe_name)
