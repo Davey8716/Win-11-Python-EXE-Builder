@@ -17,7 +17,6 @@ from state_controller import StateController
 from recent_controller import RecentController
 from ui_handlers import UIHandlers
 from ui_dependency_popup import DependencyPopup
-from build_ui_controller import BuildUIController
 from json_import_controller import JsonImportController
 from PySide6.QtGui import QFontMetrics
 # Try to create a mutex
@@ -64,7 +63,6 @@ class EXEBuilderApp(QWidget):
         self.exe_name_user_modified = False
         
         self.json_import_controller =JsonImportController(self)
-        self.build_ui_controller = BuildUIController(self)
         self.ui_dependency_popup = DependencyPopup(self)
         self.recent_controller = RecentController(self)
         self.ui_handlers = UIHandlers(self)
@@ -96,7 +94,6 @@ class EXEBuilderApp(QWidget):
         # ---------------------------------------------------------
 
         self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
-        self.building = False
         self.build_process = None
         self.current_build_paths = []
         self.build_btn = None
@@ -633,6 +630,7 @@ class EXEBuilderApp(QWidget):
         self.date_time_dropdown.addItem("Append Date/Time")  # header
 
         formats = [
+            ("None", None),
             ("YYYY-MM-DD", "%Y-%m-%d"),
             ("DD-MM-YYYY", "%d-%m-%Y"),
             ("YYYY-MM-DD_HH-MM", "%Y-%m-%d_%H-%M"),
@@ -913,18 +911,14 @@ class EXEBuilderApp(QWidget):
                 font-size: 14px;
             }
 
-            QPushButton:hover {
-                background-color: #3a3a3a;
-            }
-
             QPushButton:pressed {
                 background-color: #1f1f1f;
             }
-
+            
             QPushButton:disabled {
-                background-color: #1a1a1a;
-                color: #555;
+                background-color: #777777;
             }
+
         """)
             
             delete_btns.setFixedSize(35,35)
@@ -992,25 +986,11 @@ class EXEBuilderApp(QWidget):
 
         self.main_layout.addWidget(build_frame)
 
-        for widget in [
-            self.output_path_input,
-            self.exe_name_input,
-            self.icon_path_input,
-        ]:
-            
-            widget.textChanged.connect(
-                lambda text: None if getattr(self, "_loading_state", False) else (
-                    setattr(self, "build_error", None),
-                    self.validator.update_build_button_state()
-                )
-            )
-
         attach_tooltips(self)
         self._loading_state = False
         self.state_ctrl.load_state()
         self.recent_controller.populate_recent_dropdown()
         self.validator.validation_status_message()
-        self.validator.update_build_button_state()
         self.json_import_controller.attach()
         self.interpreter_btn.clicked.connect(self.file_pickers.select_python_interpreter)
         self.python_delete_interpreter.clicked.connect(self.recent_controller.interpreter_delete)
@@ -1046,6 +1026,8 @@ class EXEBuilderApp(QWidget):
         self.exe_name_input.textChanged.connect(self.ui_handlers._on_exe_name_user_edit)
         self.exe_name_input.textChanged.connect(self.ui_handlers.on_exe_name_change)
         self.script_path_input.textChanged.connect(self.ui_handlers.on_script_path_change)
+
+        self.validator.update_ui_state()
 
     def set_status(self, text):
         self.status_label.setText(text)

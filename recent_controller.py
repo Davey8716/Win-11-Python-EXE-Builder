@@ -33,8 +33,7 @@ class RecentController:
         if hasattr(app, "state_ctrl"):
             app.state_ctrl.save_state()
 
-        if hasattr(app, "validator"):
-            app.validator.update_build_button_state()
+    
 
     def add_recent_interpreter(self, path):
         app = self.app
@@ -169,6 +168,7 @@ class RecentController:
             json.dump(data, f, indent=4)
 
         app.validator.validation_status_message()
+        self.app.validator.update_ui_state()
 
     def all_interpreter_delete(self):
         app = self.app
@@ -212,6 +212,7 @@ class RecentController:
         app.python_path = ""
 
         app.validator.validation_status_message()
+        self.app.validator.update_ui_state()
 
 
     def add_recent_script(self, path):
@@ -364,6 +365,7 @@ class RecentController:
 
         self.populate_recent_dropdown()
         app.validator.validation_status_message()
+        self.app.validator.update_ui_state()
         
     def confirm_delete_all_folder(self):
         app = self.app
@@ -412,6 +414,7 @@ class RecentController:
         self.populate_recent_dropdown()
 
         app.validator.validation_status_message()
+        self.app.validator.update_ui_state()
 
 
 
@@ -589,6 +592,7 @@ class RecentController:
 
         self.populate_recent_icons_dropdown()
         app.validator.validation_status_message()
+        self.app.validator.update_ui_state()
         
         
     def confirm_delete_all_icons(self):
@@ -633,3 +637,4 @@ class RecentController:
         self.populate_recent_icons_dropdown()
 
         app.validator.validation_status_message()
+        self.app.validator.update_ui_state()

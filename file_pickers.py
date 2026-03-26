@@ -83,6 +83,7 @@ class FilePickerController:
         # refresh validation
         if hasattr(self.app, "validator"):
             self.app.validator.validation_status_message()
+            self.app.validator.update_ui_state()
             
     def _resolve_python_start_dir(self):
         """Best directory to open the interpreter picker in."""
@@ -246,6 +247,7 @@ class FilePickerController:
 
         self.app.state_ctrl.save_state()
         self.app.validator.validation_status_message()
+        self.app.validator.update_ui_state()
         
     def _apply_selected_icon(self, full_path):
     # 🔑 NORMALIZE
@@ -271,6 +273,7 @@ class FilePickerController:
 
         self.app.state_ctrl.save_state()
         self.app.validator.validation_status_message()
+        self.app.validator.update_ui_state()
 
     # ============================================================
     # Select icon
@@ -300,6 +303,7 @@ class FilePickerController:
 
             self.app.state_ctrl.save_state()
             self.app.validator.validation_status_message()
+            self.app.validator.update_ui_state()
 
     # ============================================================
     # Select output folder
@@ -339,6 +343,7 @@ class FilePickerController:
 
         self.app.state_ctrl.save_state()
         self.app.validator.validation_status_message()
+        self.app.validator.update_ui_state()
     
 class ScriptPickerPopup(QDialog):
     def __init__(self, parent, folder_path, py_files, callback):

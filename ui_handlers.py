@@ -8,15 +8,13 @@ class UIHandlers:
 
     def clear_interpreter_path(self):
         app = self.app
-
         if hasattr(app, "python_entry_input"):
             app.python_entry_input.clear()
 
         app.python_interpreter_path = ""
         app.python_path = ""
-
         app.state_ctrl.save_state()
-        app.validator.update_build_button_state()
+      
 
     def clear_script_path(self):
         app = self.app
@@ -25,14 +23,14 @@ class UIHandlers:
         app.project_root = None
         app.script_path = ""
         app.state_ctrl.save_state()
-        app.validator.update_build_button_state()
+      
             
     def clear_icon(self):
         app = self.app
         app.icon_path_input.clear()
         app.icon_path = ""
         app.state_ctrl.save_state()
-        app.validator.update_build_button_state()
+    
             
     def reset_output_to_desktop(self):
         app = self.app
@@ -41,8 +39,7 @@ class UIHandlers:
         app.output_path_input.setText(desktop)
         app.output_path = desktop
         app.state_ctrl.save_state()
-        app.validator.update_build_button_state()
-            
+    
     def reset_exe_name_from_script(self):
         app = self.app
         script = app.entry_script
@@ -50,12 +47,10 @@ class UIHandlers:
             return
 
         derived = os.path.splitext(os.path.basename(script))[0]
-
         app.exe_name_user_modified = False
         app.exe_name_input.setText(derived)
-
         app.state_ctrl.save_state()
-        app.validator.update_build_button_state()
+        
             
     def on_dependency_toggle(self, state):
         app = self.app
@@ -66,10 +61,8 @@ class UIHandlers:
         # -------------------------
         if app.dependency_notice_enabled:
             script = app.script_path
-
             if script and os.path.isfile(script):
                 packages = app.validator.run_dependency_advisory(script)
-
                 if packages:
                     self.app.ui_dependency_popup.show_dependency_warning_popup(packages)
 
@@ -107,14 +100,12 @@ class UIHandlers:
             if hasattr(app, "output_path_input"):
                 app.output_path_input.clear()
             app.output_path = ""
-
             if hasattr(app, "exe_name_input"):
                 app.exe_name_input.clear()
             app.exe_name = ""
-
             app.state_ctrl.save_state()
 
-        app.validator.update_build_button_state()
+
     
     # =============================================================
     # EXE name cleared by USER
@@ -129,7 +120,12 @@ class UIHandlers:
         if not value:
             app.state_ctrl.save_state()
 
-        app.validator.update_build_button_state()
+            
+        if hasattr(app, "validator"):
+            app.validator.validation_status_message()
+            app.validator.update_ui_state()
+
+
 
     def on_datetime_format_changed(self, index):
         app = self.app
@@ -152,6 +148,7 @@ class UIHandlers:
 
         if hasattr(app, "validator"):
             app.validator.validation_status_message()
+            self.app.validator.update_ui_state()
 
     def on_append_py_version_toggle(self, checked):
         app = self.app
@@ -163,12 +160,16 @@ class UIHandlers:
 
         if hasattr(app, "validator"):
             app.validator.validation_status_message()
+            self.app.validator.update_ui_state()
     
     def _on_exe_name_user_edit(self, text):
         app = self.app
         if app._loading_state:
             return
         app.exe_name_user_modified = True
+        if hasattr(app, "validator"):
+            app.validator.validation_status_message()
+            app.validator.update_ui_state()
 
 
     def open_python_site(self):

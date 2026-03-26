@@ -32,7 +32,7 @@ class StateController:
         est_total = self.app.last_build_seconds
         remaining = max(est_total - elapsed, 0)
             # 🔑 FORCE FONT EVERY TICK (kills jump)
-        self.app.status_label.setFont(QFont("Rubik UI", 15, QFont.Bold))
+        self.app.status_label.setFont(QFont("Rubik UI", 13, QFont.Bold))
         self.app.status_label.setText(
             f"Building... {elapsed}s elapsed\n — approx {remaining}s remaining"
         )
@@ -135,6 +135,9 @@ class StateController:
             if hasattr(self.app, "python_entry_input"):
                 self.app.python_entry_input.setText(self.app.python_interpreter_path)
 
+                
+            self.app.validator.update_ui_state()
+
         except Exception as e:
             self.app.state_data = {"recent_scripts": []}
             print("State load error:", e)
@@ -173,25 +176,6 @@ class StateController:
             "recent_interpreters",
             existing_data.get("recent_interpreters", [])
         )
-
-        # data = {
-        #     "last_script_path": _norm(self.app.script_path),
-        #     "last_icon_path": _norm(self.app.icon_path),
-        #     "last_output_folder": _norm(self.app.output_path),
-        #     "last_build_seconds": self.app.last_build_seconds,
-        #     "last_build_counter": self.app.last_build_counter,
-        #     "last_exe_name": self.app.exe_name,
-        #     "icon_user_cleared": getattr(self.app, "icon_user_cleared", False),
-        #     "script_user_cleared": getattr(self.app, "script_user_cleared", False),
-        #     "python_interpreter_path": _norm(
-        #         getattr(self.app, "python_interpreter_path", "")
-        #     ),
-        #     "recent_interpreters": recent_interpreters,
-        #     "tooltips_enabled": getattr(self.app, "tooltips_enabled", True),
-        #     "dependency_notice_enabled": getattr(self.app, "dependency_notice_enabled", True),
-        #     "recent_scripts": recent_scripts,
-        #     "recent_icons": recent_icons,
-        # }
 
         data = {
             "python_interpreter_path": _norm(

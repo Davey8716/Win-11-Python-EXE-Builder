@@ -86,4 +86,5 @@ class JsonImportController(QObject):
             app.file_pickers._apply_selected_icon(data["last_icon_path"])
 
         app.validator.validation_status_message()
-        app.validator.update_build_button_state()
+        self.app.validator.update_ui_state()
+        

@@ -20,7 +20,7 @@ class BuildCancellation:
                 print("Spec cleanup failed:", e)
 
     def cancel_build(self):
-        self.ui.set_status("Cancelling build...")
+
 
         # Kill PyInstaller and children
         if self.app.build_process and self.app.build_process.poll() is None:
@@ -64,8 +64,9 @@ class BuildCancellation:
         self.app.building = False
 
         # Restore UI baseline
-        self.app.build_ui_controller.restore_build_ui()
         self.ui.set_status("Build cancelled.")
+        self.app.validation_controller.update_ui_state()
+        self.app.validation_controller.validation_status_message()
         
 
     def abort_build(self, message):
@@ -77,4 +78,4 @@ class BuildCancellation:
             pass
 
         self.ui.set_status(message)
-        self.ui.restore_build_ui()
+  
