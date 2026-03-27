@@ -77,6 +77,17 @@ class RecentController:
     def populate_recent_interpreters_dropdown(self):
         app = self.app
 
+        def extract_version(p):
+            try:
+                parent = os.path.basename(os.path.dirname(p)).lower()
+                if parent.startswith("python"):
+                    raw = parent.replace("python", "")
+                    if raw.isdigit():
+                        return int(raw)
+            except:
+                pass
+            return 0
+
         def _abs(p):
             return os.path.abspath(os.path.normpath(p)) if p else ""
 
@@ -99,7 +110,10 @@ class RecentController:
         except:
             data = {}
 
-        paths = data.get("recent_interpreters", [])
+        paths = sorted(
+            data.get("recent_interpreters", []),
+            key=extract_version
+        )
 
         seen = set()
 
@@ -285,7 +299,13 @@ class RecentController:
         except:
             data = {}
 
-        paths = data.get("recent_scripts", [])
+        paths = sorted(
+            data.get("recent_scripts", []),
+            key=lambda p: (
+                os.path.basename(os.path.dirname(p)).lower(),  # project folder
+                os.path.basename(p).lower()                    # file name
+            )
+        )
 
         seen = set()
 
@@ -520,7 +540,10 @@ class RecentController:
         except:
             data = {}
 
-        paths = data.get("recent_icons", [])
+        paths = sorted(
+            data.get("recent_icons", []),
+            key=lambda p: os.path.basename(p).lower()
+        )
 
         seen = set()
 
