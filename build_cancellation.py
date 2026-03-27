@@ -21,7 +21,6 @@ class BuildCancellation:
 
     def cancel_build(self):
 
-
         # Kill PyInstaller and children
         if self.app.build_process and self.app.build_process.poll() is None:
             try:

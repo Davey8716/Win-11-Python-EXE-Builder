@@ -356,11 +356,11 @@ class ValidationController:
         app.status_label.setText(status_text)
 
         if building:
-            color = "#3bbf3b"
+            color = "#000000"
         elif current_text.startswith("Build"):
-            color = "#3bbf3b" if "complete" in current_text.lower() else "#be1a1a"
+            color = "#000000" if "complete" in current_text.lower() else "#be1a1a"
         elif is_ready:
-            color = "#3bbf3b"
+            color = "#00ff00"
         else:
             color = "#be1a1a"
 
