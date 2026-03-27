@@ -73,97 +73,49 @@ class ValidationController:
         return True
     
     def validation_status_message(self):
-        
-        script = self.app.script_path_input.text().strip()
-        outdir = self.app.output_path_input.text().strip()
+
+        script = os.path.normpath(self.app.script_path_input.text().strip() or "")
+        outdir = os.path.normpath(self.app.output_path_input.text().strip() or "")
         exe_name = self.app.exe_name_input.text().strip()
-    
-        python = getattr(self.app, "python_interpreter_path", "")
-        
-        # 🔑 NORMALIZE
-        script = os.path.normpath(script) if script else ""
-        outdir = os.path.normpath(outdir) if outdir else ""
-        python = os.path.normpath(python) if python else ""
+        python = os.path.normpath(getattr(self.app, "python_interpreter_path", "") or "")
+        icon_path = os.path.normpath(getattr(self.app, "icon_path", "").strip() or "")
 
-        # --------------------------------
-        # Resolve script folder validity
-        # --------------------------------
-
-        if script and os.path.isfile(script):
-            folder = os.path.dirname(script)
-            py_files = [
-                f for f in os.listdir(folder)
-                if f.endswith(".py") and os.path.isfile(os.path.join(folder, f))
-            ]
-            folder_ok = bool(py_files)
-        else:
-            folder_ok = False
-
-                
-        # --------------------------------
-        # INLINE: Output path
-        # --------------------------------
-        
+        # -------------------------------
+        # STATE
+        # -------------------------------
         state = {}
-        state["output_ok"] = bool(outdir and os.path.isdir(outdir))
 
-        # --------------------------------
-        # INLINE: EXE name
-        # --------------------------------
-
-        state["exe_ok"] = bool(exe_name)
-        icon_path = getattr(self.app, "icon_path", "").strip()
-        icon_path = os.path.normpath(icon_path) if icon_path else ""
-
-        icon_ok = bool(icon_path and os.path.isfile(icon_path))
-        state["icon_ok"] = icon_ok
-
-        # --------------------------------
-        # BUILD READINESS
-        # --------------------------------
-
-        script_ok = script and os.path.isfile(script)
-        outdir_ok = outdir and os.path.isdir(outdir)
+        script_ok = bool(script and os.path.isfile(script))
+        outdir_ok = bool(outdir and os.path.isdir(outdir))
         exe_ok = bool(exe_name)
-        python_ok = python and os.path.isfile(python)
+        python_ok = bool(python and os.path.isfile(python))
+        icon_ok = bool(icon_path and os.path.isfile(icon_path))
 
-        is_ready = bool(script_ok and outdir_ok and exe_ok and python_ok)
-        # 🔑 FORCE NOT READY if build error exists
+        state.update({
+            "script_ok": script_ok,
+            "outdir_ok": outdir_ok,
+            "exe_ok": exe_ok,
+            "python_ok": python_ok,
+            "icon_ok": icon_ok,
+            "output_ok": outdir_ok,
+        })
+
+        # -------------------------------
+        # BUILD READINESS
+        # -------------------------------
+        is_ready = script_ok and outdir_ok and exe_ok and python_ok
+
         if getattr(self.app, "build_error", None):
             is_ready = False
 
         state["is_ready"] = is_ready
-        state["script_ok"] = script_ok
-        state["outdir_ok"] = outdir_ok
-        state["exe_ok"] = exe_ok
-        state["python_ok"] = python_ok
-        state["icon_ok"] = icon_ok
-
-        def _style_input(widget, ok):
-            if not widget:
-                return
-
-            widget.setStyleSheet(f"""
-                QLineEdit {{
-                    background-color: #FFFFFF;
-                    color: {"#3bbf3b" if ok else "#be1a1a"};
-                    border: 2px solid #3a3a3a;
-                }}
-            """)
-
-        # 🔑 strict mapping (each tied to its own validation)
-        _style_input(self.app.python_entry_input, python_ok)
-        _style_input(self.app.script_path_input, script_ok)
-        _style_input(self.app.output_path_input, outdir_ok)
-        _style_input(self.app.exe_name_input, exe_ok)
-        _style_input(self.app.icon_path_input,icon_ok)
 
         # Reset popup eligibility when leaving READY state
         if not is_ready:
             self.app._dependency_popup_shown = False
 
         if not is_ready:
-            self.app.status_label.setFixedSize(120,75)
+            self.app.status_label.setFixedSize(200,75)
         else:
             self.app.status_label.setFixedSize(350,75)
 
@@ -197,8 +149,6 @@ class ValidationController:
                 state["external_packages"] = []
         else:
             self.app._last_advisory_script = None
-            state["external_packages"] = []
-            self.app._dependency_popup_shown = False  # 🔑 reset when leaving READY
 
         # Track previous state
         self.app._was_build_ready = is_ready
@@ -208,7 +158,7 @@ class ValidationController:
         # --------------------------------
 
         # Python version (Py 3.14)
-        python_path = getattr(self.app, "python_interpreter_path", "").strip()
+        python_path = python
         python_version = "Unknown"
         if python_path:
             parent = os.path.basename(os.path.dirname(python_path))
@@ -218,7 +168,6 @@ class ValidationController:
                     python_version = f"{raw[0]}.{raw[1:]}" if len(raw) > 1 else raw
                     
         # Icon (name or Default)
-        icon_path = getattr(self.app, "icon_path", "").strip()
         icon_display = os.path.basename(icon_path) if icon_path else "Default - (No User Icon)"
 
         # Script (parent\file)
@@ -229,7 +178,6 @@ class ValidationController:
             script_display = f"{parent}\\{name}" if parent else name
 
         # EXE name
-        exe_name_display = getattr(self.app, "exe_name", "").strip()
         exe_name_display = exe_name if exe_name else "No EXE name"
 
         # Output path
@@ -379,28 +327,39 @@ class ValidationController:
         # -------------------------------
         # BUTTON COLOR: Python Interpreter
         # -------------------------------
-        if python_ok:
-            app.interpreter_btn.setStyleSheet("background-color: #3bbf3b;")
+        if building:
+            app.interpreter_btn.setStyleSheet("background-color: #8a8a8a;")
         else:
-            app.interpreter_btn.setStyleSheet("background-color: #be1a1a;")
+            if python_ok:
+                app.interpreter_btn.setStyleSheet("background-color: #3bbf3b;")
+            else:
+                app.interpreter_btn.setStyleSheet("background-color: #be1a1a;")
 
         # -------------------------------
         # BUTTON COLOR: Script Folder
         # -------------------------------
         folder_ok = bool(script_ok)
 
-        if folder_ok:
-            app.folder_btn.setStyleSheet("background-color: #3bbf3b;")
+        if building:
+            app.folder_btn.setStyleSheet("background-color: #8a8a8a;")
         else:
-            app.folder_btn.setStyleSheet("background-color: #be1a1a;")
+            if folder_ok:
+                app.folder_btn.setStyleSheet("background-color: #3bbf3b;")
+            else:
+                app.folder_btn.setStyleSheet("background-color: #be1a1a;")
 
         # -------------------------------
         # BUTTON COLOR: Output Folder
         # -------------------------------
-        if outdir and os.path.isdir(outdir):
-            app.output_btn.setStyleSheet("background-color: #3bbf3b;")
+        output_ok = bool(outdir and os.path.isdir(outdir))
+
+        if building:
+            app.output_btn.setStyleSheet("background-color: #8a8a8a;")
         else:
-            app.output_btn.setStyleSheet("background-color: #be1a1a;")
+            if output_ok:
+                app.output_btn.setStyleSheet("background-color: #3bbf3b;")
+            else:
+                app.output_btn.setStyleSheet("background-color: #be1a1a;")
 
         # -------------------------------
         # STATUS LABEL
@@ -435,6 +394,85 @@ class ValidationController:
             }}
         """)
 
+        # -------------------------------
+        # ICON BUTTON TEXT (match grey state)
+        # -------------------------------
+        icon_buttons = [
+            app.delete_recent_icons,
+            app.delete_recent_folder,
+            app.delete_all_icons,
+            app.delete_all_folders,
+            app.python_delete_all_interpreter,
+            app.python_delete_interpreter,
+            app.refresh_btn,
+            app.output_refresh_btn,
+            app.icon_clear_btn,
+            app.script_clear_btn,
+            app.interpreter_refresh_btn,
+        ]
 
+        for btn in icon_buttons:
+            if building:
+                btn.setText("")  # 🔑 remove symbol during build
+            else:
+                # restore symbols
+                if btn in [
+                    app.delete_recent_icons,
+                    app.delete_recent_folder,
+                    app.python_delete_interpreter,
+                ]:
+                    btn.setText("❌")
+                elif btn in [
+                    app.delete_all_icons,
+                    app.delete_all_folders,
+                    app.python_delete_all_interpreter,
+                ]:
+                    btn.setText("💥")
+                else:
+                    btn.setText("🔃")
 
+        # -------------------------------
+        # LOCK + GREY INPUTS DURING BUILD
+        # -------------------------------
 
+        script = app.script_path_input.text().strip()
+        outdir = app.output_path_input.text().strip()
+        python_path = getattr(app, "python_interpreter_path", "").strip()
+        exe_name = app.exe_name_input.text().strip()
+        icon_path = getattr(app, "icon_path", "").strip()
+
+        script_ok = bool(script and os.path.isfile(os.path.normpath(script)))
+        outdir_ok = bool(outdir and os.path.isdir(os.path.normpath(outdir)))
+        python_ok = bool(python_path and os.path.isfile(os.path.normpath(python_path)))
+        exe_ok = bool(exe_name)
+        icon_ok = bool(icon_path and os.path.isfile(os.path.normpath(icon_path)))
+
+        # -------------------------------
+        # LOCK + GREY (respect validation)
+        # -------------------------------
+        state = self.validation_status_message()
+
+        mapping = [
+            (app.python_entry_input, state["python_ok"]),
+            (app.script_path_input, state["script_ok"]),
+            (app.output_path_input, state["outdir_ok"]),
+            (app.exe_name_input, state["exe_ok"]),
+            (app.icon_path_input, state["icon_ok"]),
+        ]
+
+        for widget, ok in mapping:
+            widget.setReadOnly(building)
+
+            if building and ok:
+                # grey ONLY valid ones
+                widget.setStyleSheet("""
+                    QLineEdit {
+                        background-color: #d3d3d3;
+                        color: #7a7a7a;
+                        border: 2px solid #8a8a8a;
+                    }
+                """)
+            else:
+                # normal mode → let validation handle everything
+                # 🔑 restore validation styling
+                self.validation_status_message()

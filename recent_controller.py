@@ -32,6 +32,8 @@ class RecentController:
 
         if hasattr(app, "state_ctrl"):
             app.state_ctrl.save_state()
+        self.app.validator.update_ui_state()
+        self.app.validator.validation_status_message()
 
     
 
@@ -69,6 +71,8 @@ class RecentController:
             print("Recent interpreters save error:", e)
 
         app.state_data = data
+        self.app.validator.update_ui_state()
+        self.app.validator.validation_status_message()
 
     def populate_recent_interpreters_dropdown(self):
         app = self.app
@@ -119,6 +123,8 @@ class RecentController:
             app.select_interpreter.addItem(display, ap)
 
         app.select_interpreter.blockSignals(False)
+        self.app.validator.update_ui_state()
+        self.app.validator.validation_status_message()
 
     def interpreter_delete(self):
         app = self.app
@@ -169,6 +175,7 @@ class RecentController:
 
         app.validator.validation_status_message()
         self.app.validator.update_ui_state()
+        self.app.validator.validation_status_message()
 
     def all_interpreter_delete(self):
         app = self.app
@@ -213,6 +220,7 @@ class RecentController:
 
         app.validator.validation_status_message()
         self.app.validator.update_ui_state()
+        self.app.validator.validation_status_message()
 
 
     def add_recent_script(self, path):
@@ -249,6 +257,8 @@ class RecentController:
             print("Recent scripts save error:", e)
 
         app.state_data = data
+        self.app.validator.update_ui_state()
+        self.app.validator.validation_status_message()
         
     def populate_recent_dropdown(self):
         app = self.app
@@ -299,6 +309,8 @@ class RecentController:
             app.recent_folder_dropdown.addItem(display, ap)
 
         app.recent_folder_dropdown.blockSignals(False)
+        self.app.validator.update_ui_state()
+        self.app.validator.validation_status_message()
                 
     def on_recent_file_selected(self, index):
         app = self.app
@@ -316,6 +328,9 @@ class RecentController:
 
         if hasattr(app, "file_pickers"):
             app.file_pickers._apply_selected_entry(path)
+
+        self.app.validator.update_ui_state()
+        self.app.validator.validation_status_message()
             
     def confirm_delete_recent(self):
         app = self.app
@@ -366,6 +381,7 @@ class RecentController:
         self.populate_recent_dropdown()
         app.validator.validation_status_message()
         self.app.validator.update_ui_state()
+        
         
     def confirm_delete_all_folder(self):
         app = self.app
@@ -456,6 +472,8 @@ class RecentController:
 
         if hasattr(app, "file_pickers"):
             app.file_pickers._apply_selected_icon(path)
+        
+        self.app.validator.update_ui_state()
             
    
         
@@ -493,6 +511,7 @@ class RecentController:
             print("Recent icons save error:", e)
 
         app.state_data = data
+        self.app.validator.update_ui_state()
         
     def populate_recent_icons_dropdown(self):
         app = self.app
@@ -543,8 +562,7 @@ class RecentController:
             app.select_recent_icons.addItem(display, ap)
 
         app.select_recent_icons.blockSignals(False)
-        
-        
+        self.app.validator.update_ui_state()
         
     def confirm_delete_recent_icon(self):
         app = self.app

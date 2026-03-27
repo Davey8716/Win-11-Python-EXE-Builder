@@ -8,13 +8,26 @@ class UIHandlers:
 
     def clear_interpreter_path(self):
         app = self.app
+
+        # clear UI
         if hasattr(app, "python_entry_input"):
             app.python_entry_input.clear()
 
+        # 🔑 reset dropdown to header (match other dropdown behaviour)
+        if hasattr(app, "select_interpreter"):
+            app.select_interpreter.blockSignals(True)
+            app.select_interpreter.setCurrentIndex(0)
+            app.select_interpreter.blockSignals(False)
+
+        # clear state (single source of truth)
         app.python_interpreter_path = ""
         app.python_path = ""
+
         app.state_ctrl.save_state()
-      
+
+        # 🔑 force full UI + validation refresh
+        app.validator.validation_status_message()
+        app.validator.update_ui_state()
 
     def clear_script_path(self):
         app = self.app
@@ -23,15 +36,13 @@ class UIHandlers:
         app.project_root = None
         app.script_path = ""
         app.state_ctrl.save_state()
-      
-            
+
     def clear_icon(self):
         app = self.app
         app.icon_path_input.clear()
         app.icon_path = ""
         app.state_ctrl.save_state()
     
-            
     def reset_output_to_desktop(self):
         app = self.app
         app.build_error = None
@@ -51,14 +62,11 @@ class UIHandlers:
         app.exe_name_input.setText(derived)
         app.state_ctrl.save_state()
         
-            
+
     def on_dependency_toggle(self, state):
         app = self.app
         app.dependency_notice_enabled = bool(state)
 
-        # -------------------------
-        # ON → show popup
-        # -------------------------
         if app.dependency_notice_enabled:
             script = app.script_path
             if script and os.path.isfile(script):
@@ -66,9 +74,6 @@ class UIHandlers:
                 if packages:
                     self.app.ui_dependency_popup.show_dependency_warning_popup(packages)
 
-        # -------------------------
-        # OFF → close popup
-        # -------------------------
         else:
             popup_ctrl = getattr(app, "ui_dependency_popup", None)
 
@@ -83,7 +88,6 @@ class UIHandlers:
         app = self.app
         app.tooltips_enabled = bool(state)
         app.state_ctrl.save_state()
-
 
     def on_script_path_change(self, text):
         app = self.app
@@ -105,8 +109,6 @@ class UIHandlers:
             app.exe_name = ""
             app.state_ctrl.save_state()
 
-
-    
     # =============================================================
     # EXE name cleared by USER
     # =============================================================
@@ -124,8 +126,6 @@ class UIHandlers:
         if hasattr(app, "validator"):
             app.validator.validation_status_message()
             app.validator.update_ui_state()
-
-
 
     def on_datetime_format_changed(self, index):
         app = self.app

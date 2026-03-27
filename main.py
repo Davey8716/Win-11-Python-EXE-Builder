@@ -796,7 +796,6 @@ class EXEBuilderApp(QWidget):
             python_title_frame,
             output_title_frame,
             build_title_frame,
-           
         ]
 
         for frame in frames:
@@ -808,8 +807,6 @@ class EXEBuilderApp(QWidget):
                         background-color:   #F3F2F2;
                     }
         """)
-                
-        
 
         # -------------------------------
         # TITLE FRAMES — shrink to content
@@ -822,7 +819,6 @@ class EXEBuilderApp(QWidget):
             (output_title_frame, self.output_title),
             (build_title_frame, self.build_title),
         ]
-
 
         for frame, label in title_pairs:
             if frame and label:
@@ -879,9 +875,7 @@ class EXEBuilderApp(QWidget):
 
         for btns in [
             self.delete_recent_folder,
-            self.delete_all_folders
-            
-            
+            self.delete_all_folders,
         ]:
             btns.setFixedSize(35,35)
             btns.setEnabled(True)
@@ -895,25 +889,7 @@ class EXEBuilderApp(QWidget):
             self.python_delete_interpreter,
             
         ]:
-            delete_btns.setStyleSheet("""
-            QPushButton {
-                background-color: #2a2a2a;
-                border: 1px solid #3a3a3a;
-                border-radius: 5px;
-                color: #e0e0e0;
-                font-size: 14px;
-            }
 
-            QPushButton:pressed {
-                background-color: #1f1f1f;
-            }
-            
-            QPushButton:disabled {
-                background-color: #777777;
-            }
-
-        """)
-            
             delete_btns.setFixedSize(35,35)
             delete_btns.setEnabled(True)
         
@@ -923,7 +899,6 @@ class EXEBuilderApp(QWidget):
             self.icon_clear_btn,
             self.script_clear_btn,
             self.interpreter_refresh_btn,
-
         ]:
             refresh_btns.setText("🔃")
             refresh_btns.setFixedSize(35,35)
@@ -944,7 +919,6 @@ class EXEBuilderApp(QWidget):
             self.appened_py_version, 
         ]:
             
-            btns.setStyleSheet("background-color: #3bbf3b")
             btns.setFont(QFont("Rubik UI", 12,))
             btns.setFixedSize(160,35)
 
@@ -952,7 +926,6 @@ class EXEBuilderApp(QWidget):
             self.icon_btn,
             self.ico_convert_btn,
         ]:
-            btns.setStyleSheet("background-color: #4F6BB0")
             btns.setFont(QFont("Rubik UI",12))
             btns.setFixedSize(160,35)
 
