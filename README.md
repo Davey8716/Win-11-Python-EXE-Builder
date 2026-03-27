@@ -1,4 +1,8 @@
-**Updated as of 22/3/26 to use PySide6 qtwidgets**,
+**Updated as of 27/3/26 to use PySide6 qtwidgets**,
+
+########################################## #####################  IMPORTANT #####################  ##########################################################
+** You will want to rename each file in the exe name/folder section so you dont overwrite previous named builds that have "main" name as the entry script.
+** Dont try and build in protected folders like pictures/music etc unless you have disabled them on your system. They wont build.
 
 **Win 11 → Python → EXE Builder**
 
