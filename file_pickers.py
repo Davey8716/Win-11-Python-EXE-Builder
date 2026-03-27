@@ -1,6 +1,6 @@
 import os
 import subprocess
-from PySide6.QtWidgets import QFileDialog, QDialog, QVBoxLayout, QPushButton, QLabel, QComboBox, QVBoxLayout, QPushButton
+from PySide6.QtWidgets import QFileDialog, QDialog, QVBoxLayout, QPushButton, QLabel, QComboBox, QVBoxLayout, QPushButton,QFrame
 from PySide6.QtCore import Qt
 
 # -------------------------------------------------------------
@@ -367,11 +367,28 @@ class ScriptPickerPopup(QDialog):
 
         self.move(x, y)
 
-        # -------------------------------------------------------------
+    # -------------------------------------------------------------
         # Layout
         # -------------------------------------------------------------
 
         layout = QVBoxLayout(self)
+
+        self.frame = QFrame()
+        self.frame.setFrameShape(QFrame.StyledPanel)
+        self.frame.setFrameShadow(QFrame.Raised)
+        self.frame.setLineWidth(1)
+
+        self.frame.setStyleSheet("""
+            QFrame {
+                border: 2px solid #080B12;
+                border-radius: 2px;
+                background-color: #DCDBDB;
+            }
+        """)
+
+        frame_layout = QVBoxLayout(self.frame)
+        frame_layout.setContentsMargins(8, 8, 8, 8)
+        frame_layout.setSpacing(6)
 
         label = QLabel("Select the script\nthat starts your program:")
         label.setWordWrap(True)
@@ -380,7 +397,7 @@ class ScriptPickerPopup(QDialog):
             font-size: 13px;
             font-weight: bold;
         """)
-        layout.addWidget(label)
+        frame_layout.addWidget(label, alignment=Qt.AlignHCenter)
 
         self.dropdown = QComboBox()
         self.dropdown.addItems(py_files)
@@ -388,7 +405,7 @@ class ScriptPickerPopup(QDialog):
             font-family: "Rubik";
             font-size: 13px;
         """)
-        layout.addWidget(self.dropdown, alignment=Qt.AlignHCenter)
+        frame_layout.addWidget(self.dropdown, alignment=Qt.AlignHCenter)
 
         confirm_btn = QPushButton("Confirm")
         confirm_btn.setFixedWidth(120)
@@ -398,7 +415,9 @@ class ScriptPickerPopup(QDialog):
             font-size: 13px;
             font-weight: bold;
         """)
-        layout.addWidget(confirm_btn, alignment=Qt.AlignHCenter)
+        frame_layout.addWidget(confirm_btn, alignment=Qt.AlignHCenter)
+
+        layout.addWidget(self.frame, alignment=Qt.AlignHCenter)
 
     def confirm(self):
         selected_file = self.dropdown.currentText()

@@ -256,17 +256,20 @@ class ValidationController:
         set_btn(app.python_delete_interpreter, not building and python_ok)
         set_btn(app.python_delete_all_interpreter, not building)
         app.select_interpreter.setEnabled(not building)
+
+        icon_has_value = bool(app.icon_path_input.text().strip())
+        script_has_value = bool(app.script_path_input.text().strip())
         
         set_btn(app.icon_btn, not building)
+        set_btn(app.icon_clear_btn, not building and icon_has_value)
         set_btn(app.ico_convert_btn, not building)
         set_btn(app.delete_all_icons, not building)
         set_btn(app.delete_recent_icons, not building)
-        set_btn(app.icon_clear_btn,not building)
         app.select_recent_icons.setEnabled(not building)
 
         # File
         set_btn(app.folder_btn, not building)
-        set_btn(app.script_clear_btn, not building)
+        set_btn(app.script_clear_btn, not building and script_has_value)
         set_btn(app.delete_recent_folder, not building)
         set_btn(app.delete_all_folders, not building)
         app.recent_folder_dropdown.setEnabled(not building)
@@ -346,9 +349,9 @@ class ValidationController:
         elif current_text.startswith("Build"):
             status_text = current_text  # 🔑 preserve "Build complete / failed"
         elif is_ready:
-            status_text = "Ready to build"
+            status_text = "Ready to build."
         else:
-            status_text = "Missing required inputs"
+            status_text = "Missing required inputs."
 
         app.status_label.setText(status_text)
 
@@ -466,7 +469,7 @@ class ValidationController:
         # -------------------------------
         if building:
             for widget, _ in mapping:
-                widget.setReadOnly(True)
+
                 widget.setStyleSheet("""
                     QLineEdit {
                         background-color: #d3d3d3;
@@ -477,7 +480,7 @@ class ValidationController:
 
         else:
             for widget, ok in mapping:
-                widget.setReadOnly(False)
+
 
                 # 🔑 FORCE FULL RESET FIRST (this is what you're missing)
                 widget.setStyleSheet("")

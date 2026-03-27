@@ -66,9 +66,10 @@ class StateController:
             self.app.python_interpreter_path = _norm(data.get("python_interpreter_path", ""))
             self.app.python_path = self.app.python_interpreter_path
             self.app.exe_name = data.get("last_exe_name", "")
+            self.app.append_datetime = data.get("append_datetime", False)
+            self.app.datetime_format = data.get("datetime_format", None)
 
             self.app.last_build_seconds = data.get("last_build_seconds", 45)
-            self.app.last_build_counter = data.get("last_build_counter", 0)
 
             self.app.icon_user_cleared = data.get("icon_user_cleared", False)
             self.app.script_user_cleared = data.get("script_user_cleared", False)
@@ -109,6 +110,19 @@ class StateController:
 
             if hasattr(self.app, "python_entry_input"):
                 self.app.python_entry_input.setText(self.app.python_interpreter_path)
+
+            # --- restore datetime dropdown ---
+            if hasattr(self.app, "date_time_dropdown"):
+                if self.app.datetime_format:
+                    index = self.app.date_time_dropdown.findData(self.app.datetime_format)
+                    if index != -1:
+                        self.app.date_time_dropdown.setCurrentIndex(index)
+
+            # --- restore toggle state ---
+            if hasattr(self.app, "appened_py_version"):  # (your naming)
+                self.app.appened_py_version.setChecked(
+                    getattr(self.app, "append_py_version", False)
+                )
 
                 
             self.app.validator.update_ui_state()
@@ -167,13 +181,15 @@ class StateController:
             "recent_interpreters": recent_interpreters,
 
             "last_build_seconds": self.app.last_build_seconds,
-            "last_build_counter": self.app.last_build_counter,
-
+        
             "tooltips_enabled": getattr(self.app, "tooltips_enabled", True),
             "dependency_notice_enabled": getattr(self.app, "dependency_notice_enabled", True),
 
             "icon_user_cleared": getattr(self.app, "icon_user_cleared", False),
             "script_user_cleared": getattr(self.app, "script_user_cleared", False),
+
+            "append_datetime": getattr(self.app, "append_datetime", False),
+            "datetime_format": getattr(self.app, "datetime_format", None),
             }
 
         self.app.state_data = data

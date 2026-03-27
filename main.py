@@ -103,17 +103,18 @@ class EXEBuilderApp(QWidget):
         # =============================================================
         # Title + Tooltip Toggle
         # =============================================================
-        
-        title_row = QWidget(self)
-        title_row.setFixedHeight(40)
+        title_frame = QFrame()
+        title_frame.setFrameShape(QFrame.StyledPanel)
+        title_frame.setFrameShadow(QFrame.Raised)
+        title_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
-        title_layout = QHBoxLayout(title_row)
-        title_layout.setContentsMargins(8, 0, 8, 0)
-        title_layout.setSpacing(2)
+        title_layout = QHBoxLayout(title_frame)
+        title_layout.setContentsMargins(2,2,2,2)
+        title_layout.setSpacing(1)
 
         title_label = QLabel(" Win 11 → Python → EXE Builder")
-        title_label.setFont(QFont("Rubik UI", 14, QFont.Bold))
-        title_label.setFixedSize(320,35)
+        title_label.setFont(QFont("Rubik UI", 15, QFont.Bold))
+        title_label.setFixedSize(350,35)
 
         title_layout.addWidget(title_label)   # ✅ MISSING LINE
         title_layout.addStretch()
@@ -125,11 +126,10 @@ class EXEBuilderApp(QWidget):
         toggles_frame = QFrame()
         toggles_frame.setFrameShape(QFrame.StyledPanel)
         toggles_frame.setFrameShadow(QFrame.Raised)
-        toggles_frame.setLineWidth(1)
         toggles_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         toggles_layout = QVBoxLayout(toggles_frame)
-        toggles_layout.setContentsMargins(6, 2, 6, 2)
+        toggles_layout.setContentsMargins(2,2,2,2)
         toggles_layout.setSpacing(2)
 
         self.tooltips_checkbox = QCheckBox("Tooltips")
@@ -137,7 +137,6 @@ class EXEBuilderApp(QWidget):
 
         toggles_layout.addWidget(self.tooltips_checkbox)
         toggles_layout.addWidget(self.dependency_notice)
-        toggles_layout.addStretch()
 
         # -------------------------------
         # WRAPPER (forces vertical alignment)
@@ -158,7 +157,7 @@ class EXEBuilderApp(QWidget):
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(1, 1, 1, 1)
         self.main_layout.setSpacing(2)
-        self.main_layout.addWidget(title_row)
+        self.main_layout.addWidget(title_frame)
 
         # =============================================================
         # Script / Buttons Section
@@ -172,7 +171,6 @@ class EXEBuilderApp(QWidget):
         combined_frame = QFrame()
         combined_frame.setFrameShape(QFrame.StyledPanel)
         combined_frame.setFrameShadow(QFrame.Raised)
-        combined_frame.setLineWidth(1)
 
         combined_layout = QVBoxLayout(combined_frame)
         combined_layout.setContentsMargins(1,1,1,1)
@@ -185,14 +183,13 @@ class EXEBuilderApp(QWidget):
         apps_title_frame = QFrame()
         apps_title_frame.setFrameShape(QFrame.StyledPanel)
         apps_title_frame.setFrameShadow(QFrame.Raised)
-        apps_title_frame.setLineWidth(1)
         apps_title_frame.setFixedHeight(36)
 
         apps_title_layout = QHBoxLayout(apps_title_frame)
         apps_title_layout.setContentsMargins(3,3,3,3)
 
         self.apps_title = QLabel("Apps Section")
-        self.apps_title.setFont(QFont("Rubik UI", 13, QFont.Bold))
+        self.apps_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
 
         apps_title_layout.addWidget(self.apps_title)
         apps_title_layout.addStretch()
@@ -206,17 +203,9 @@ class EXEBuilderApp(QWidget):
         apps_toggles_layout.setContentsMargins(6,0,6,0)
         apps_toggles_layout.setSpacing(1)
 
-        apps_toggles_layout.addWidget(
-            apps_title_frame,
-            alignment=Qt.AlignLeft | Qt.AlignBottom
-        )
-
+        apps_toggles_layout.addWidget(apps_title_frame,alignment=Qt.AlignLeft | Qt.AlignBottom)
         apps_toggles_layout.addStretch()
-
-        apps_toggles_layout.addWidget(
-            toggles_wrapper,   # 🔑 wrapper fixes visual alignment
-            alignment=Qt.AlignRight
-        )
+        apps_toggles_layout.addWidget(toggles_wrapper,alignment=Qt.AlignRight)
 
         # =================================================
         # Apps ROW (buttons)
@@ -254,7 +243,7 @@ class EXEBuilderApp(QWidget):
         interpreter_btn_layout = QHBoxLayout(interpreter_btn_row)
         interpreter_btn_layout.setContentsMargins(1,1,1,1)
         interpreter_btn_layout.setSpacing(5)
-        self.interpreter_btn = QPushButton("Select Py Interpreter")
+        self.interpreter_btn = QPushButton("Py Interpreter")
     
         self.select_interpreter = QComboBox()
         self.select_interpreter.setFixedSize(245,35)
@@ -315,7 +304,7 @@ class EXEBuilderApp(QWidget):
         icons_title_frame = QFrame()
         icons_title_frame.setFrameShape(QFrame.StyledPanel)
         icons_title_frame.setFrameShadow(QFrame.Raised)
-        icons_title_frame.setLineWidth(1)
+  
 
         icons_title_layout = QHBoxLayout(icons_title_frame)
         icons_title_layout.setContentsMargins(3,3,3,3)
@@ -323,15 +312,16 @@ class EXEBuilderApp(QWidget):
 
         self.icons_title = QLabel("Icons Section")
         self.icons_title.setFixedHeight(30)
-        self.icons_title.setFont(QFont("Rubik UI", 13, QFont.Bold))
+        self.icons_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
 
         icons_title_layout.addWidget(self.icons_title)
         icons_title_layout.addStretch()
 
+        
         icon_frame = QFrame()
         icon_frame.setFrameShape(QFrame.StyledPanel)
         icon_frame.setFrameShadow(QFrame.Raised)
-        icon_frame.setLineWidth(1)
+
 
         icon_frame_layout = QVBoxLayout(icon_frame)
         icon_frame_layout.setContentsMargins(1,1,1,1)
@@ -349,7 +339,7 @@ class EXEBuilderApp(QWidget):
         icon_row1_layout.setContentsMargins(1,1,1,1)
         icon_row1_layout.setSpacing(5)
 
-        self.icon_btn = QPushButton("Select Icon (optional)")
+        self.icon_btn = QPushButton("Select Ico (optional)")
 
         self.select_recent_icons = QComboBox()
         self.select_recent_icons.setFixedSize(245,35)
@@ -374,7 +364,7 @@ class EXEBuilderApp(QWidget):
         icon_row2_layout.setContentsMargins(1,1,1,1)
         icon_row2_layout.setSpacing(5)
 
-        self.ico_convert_btn = QPushButton("Open ICO Converters")
+        self.ico_convert_btn = QPushButton("Open ICO Convert")
         icon_row1_layout.addWidget(self.ico_convert_btn)
         icon_row1_layout.addStretch()
         icon_block_layout.addWidget(icon_row1)
@@ -412,15 +402,15 @@ class EXEBuilderApp(QWidget):
         python_title_frame = QFrame()
         python_title_frame.setFrameShape(QFrame.StyledPanel)
         python_title_frame.setFrameShadow(QFrame.Raised)
-        python_title_frame.setLineWidth(1)
+     
 
         python_title_layout = QHBoxLayout(python_title_frame)
         python_title_layout.setContentsMargins(3,3,3,3)
         python_title_layout.setSpacing(3)
 
-        self.python_title = QLabel("Python File Section")
+        self.python_title = QLabel("File Section")
         self.python_title.setFixedHeight(30)
-        self.python_title.setFont(QFont("Rubik UI", 12, QFont.Bold))
+        self.python_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
 
         python_title_layout.addWidget(self.python_title)
         python_title_layout.addStretch()
@@ -428,7 +418,7 @@ class EXEBuilderApp(QWidget):
         python_frame = QFrame()
         python_frame.setFrameShape(QFrame.StyledPanel)
         python_frame.setFrameShadow(QFrame.Raised)
-        python_frame.setLineWidth(1)
+
 
         python_layout = QVBoxLayout(python_frame)
         python_layout.setContentsMargins(3,3,3,3)
@@ -438,7 +428,7 @@ class EXEBuilderApp(QWidget):
         # Row 1: Select folder button + recent dropdown
         # =================================================
 
-        self.folder_btn = QPushButton("Select Python File")
+        self.folder_btn = QPushButton("Python File")
       
         self.recent_folder_dropdown = QComboBox()
         self.recent_folder_dropdown.setFixedSize(245, 35)
@@ -500,7 +490,7 @@ class EXEBuilderApp(QWidget):
         output_title_frame = QFrame()
         output_title_frame.setFrameShape(QFrame.StyledPanel)
         output_title_frame.setFrameShadow(QFrame.Raised)
-        output_title_frame.setLineWidth(1)
+
 
         output_title_layout = QHBoxLayout(output_title_frame)
         output_title_layout.setContentsMargins(3,3,3,3)
@@ -508,7 +498,7 @@ class EXEBuilderApp(QWidget):
 
         self.output_title = QLabel("Output Section")
         self.output_title.setFixedHeight(30)
-        self.output_title.setFont(QFont("Rubik UI", 12, QFont.Bold))
+        self.output_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
 
         output_title_layout.addWidget(self.output_title)
         output_title_layout.addStretch()
@@ -516,7 +506,6 @@ class EXEBuilderApp(QWidget):
         output_frame = QFrame()
         output_frame.setFrameShape(QFrame.StyledPanel)
         output_frame.setFrameShadow(QFrame.Raised)
-        output_frame.setLineWidth(1)
 
         output_layout = QVBoxLayout(output_frame)
         output_layout.setContentsMargins(3,3,3,3)
@@ -526,7 +515,7 @@ class EXEBuilderApp(QWidget):
         # Row 1: Select Output Folder button
         # =================================================
 
-        self.output_btn = QPushButton("Select Output Folder")
+        self.output_btn = QPushButton("Output Folder")
 
         self.date_time_dropdown = QComboBox()
         self.date_time_dropdown.setFixedSize(200, 35)
@@ -622,7 +611,7 @@ class EXEBuilderApp(QWidget):
         build_title_frame = QFrame()
         build_title_frame.setFrameShape(QFrame.StyledPanel)
         build_title_frame.setFrameShadow(QFrame.Raised)
-        build_title_frame.setLineWidth(1)
+
 
         build_title_layout = QHBoxLayout(build_title_frame)
         build_title_layout.setContentsMargins(4,4,4,4)
@@ -630,7 +619,7 @@ class EXEBuilderApp(QWidget):
 
         self.build_title = QLabel("Build Section")
         self.build_title.setFixedHeight(30)
-        self.build_title.setFont(QFont("Rubik UI", 12, QFont.Bold))
+        self.build_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
 
         build_title_layout.addWidget(self.build_title)
         build_title_layout.addStretch()
@@ -638,7 +627,6 @@ class EXEBuilderApp(QWidget):
         build_frame = QFrame()
         build_frame.setFrameShape(QFrame.StyledPanel)
         build_frame.setFrameShadow(QFrame.Raised)
-        build_frame.setLineWidth(1)
         build_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         build_layout = QVBoxLayout(build_frame)
@@ -647,10 +635,10 @@ class EXEBuilderApp(QWidget):
 
         self.status_label = QLabel("Ready")
         self.status_label.setFixedSize(315,100)
-        self.status_label.setFont(QFont("Rubik UI", 11, QFont.Bold))
+        self.status_label.setFont(QFont("Rubik UI", 12, QFont.Bold))
 
         self.build_btn = QPushButton("Build EXE")
-        self.build_btn.setFont(QFont("Rubik UI", 11))
+        self.build_btn.setFont(QFont("Rubik UI", 13, QFont.Bold))
         self.build_btn.setFixedSize(150, 35)
         self.build_btn.clicked.connect(self.build_controller.build_exe)
 
@@ -677,13 +665,16 @@ class EXEBuilderApp(QWidget):
 
                 QComboBox::drop-down {
                     border: none;
-                    background: #F3F2F2;
+                    background: #817E7E;
                 }
 
                 QComboBox QAbstractItemView {
                     background-color: #DCDBDB;   /* matches main frames */
                     color: #2a2a2a;
                     selection-background-color: #c6c6c6;  /* subtle highlight */
+                    font-family: "Rubik UI";
+                    font-size: 15px;
+                    font-weight: bold;
                 }
 
                 QComboBox:disabled {
@@ -714,6 +705,7 @@ class EXEBuilderApp(QWidget):
         """)
                 
         frames = [
+            title_frame,
             apps_title_frame,
             icons_title_frame,
             python_title_frame,
@@ -842,14 +834,14 @@ class EXEBuilderApp(QWidget):
             self.appened_py_version, 
         ]:
             
-            btns.setFont(QFont("Rubik UI", 12,))
+            btns.setFont(QFont("Rubik UI", 11,QFont.Bold))
             btns.setFixedSize(160,35)
 
         for btns in [
             self.icon_btn,
             self.ico_convert_btn,
         ]:
-            btns.setFont(QFont("Rubik UI",12))
+            btns.setFont(QFont("Rubik UI",11, QFont.Bold))
             btns.setFixedSize(160,35)
 
 
@@ -861,7 +853,7 @@ class EXEBuilderApp(QWidget):
 
         ]:
             btns.setFixedSize(160,35)
-            btns.setFont(QFont("Rubik Ui",12))
+            btns.setFont(QFont("Rubik Ui",11, QFont.Bold))
             font.setBold(True)
         
         self.recent_folder_dropdown.setFixedSize(245,35)
