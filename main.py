@@ -19,7 +19,6 @@ from ui_handlers import UIHandlers
 from ui_dependency_popup import DependencyPopup
 from json_import_controller import JsonImportController
 from PySide6.QtGui import QFontMetrics
-# Try to create a mutex
 
 mutex = ctypes.windll.kernel32.CreateMutexW(
     None,
@@ -77,17 +76,8 @@ class EXEBuilderApp(QWidget):
         # SINGLE INSTANCE: Listen for activation events
         # ---------------------------------------------------------
 
-        self.activate_event = ctypes.windll.kernel32.CreateEventW(
-            None,
-            False,
-            False,
-            "EXEBUILDER_ACTIVATE_EVENT"
-        )
-
-        threading.Thread(
-            target=self.activation_controller.listen_for_activation,
-            daemon=True
-        ).start()
+        self.activate_event = ctypes.windll.kernel32.CreateEventW(None,False,False,"EXEBUILDER_ACTIVATE_EVENT")
+        threading.Thread(target=self.activation_controller.listen_for_activation,daemon=True).start()
 
         # ---------------------------------------------------------
         # ALWAYS ON TOP
@@ -100,7 +90,6 @@ class EXEBuilderApp(QWidget):
         self.last_build_seconds = 45
         self.last_build_counter = 0
         
-        # self.setWindowTitle("")
         self.setFixedSize(500, 985)
 
         self.tooltips_enabled = getattr(self, "tooltips_enabled", True)
@@ -281,28 +270,7 @@ class EXEBuilderApp(QWidget):
         # 🔑 Placeholder behavior
         self.select_interpreter.setEditable(True)
         self.select_interpreter.lineEdit().setReadOnly(True)
-        if self.select_interpreter.setEnabled(True):
-
-            # 🔑 Styling (match others)
-            self.select_interpreter.setStyleSheet("""
-                QComboBox {
-                    background-color: #121212;
-                    color: #e0e0e0;
-                    border: 1px solid #2a2a2a;
-                    padding: 4px;
-                }
-
-                QComboBox::drop-down {
-                    border: none;
-                    background: #121212;
-                }
-
-                QComboBox QAbstractItemView {
-                    background-color: #121212;
-                    color: #e0e0e0;
-                    selection-background-color: #2a2a2a;
-                }
-            """)
+        self.select_interpreter.setEnabled(True)
 
         self.python_delete_interpreter = QPushButton("❌")
         self.python_delete_all_interpreter = QPushButton("💥")
@@ -339,7 +307,7 @@ class EXEBuilderApp(QWidget):
 
         row2_layout.addWidget(combined_frame)
         self.main_layout.addWidget(row2)
-     
+ 
         # =============================================================
         # Icon Picker
         # =============================================================
@@ -395,31 +363,10 @@ class EXEBuilderApp(QWidget):
         # placeholder behavior
         self.select_recent_icons.setEditable(True)
         self.select_recent_icons.lineEdit().setReadOnly(True)
-        if self.select_recent_icons.setEnabled(True):
-            self.select_recent_icons.setStyleSheet("""
-                QComboBox {
-                    background-color: #121212;
-                    color: #e0e0e0;
-                    border: 1px solid #2a2a2a;
-                    padding: 4px;
-                }
-
-                QComboBox::drop-down {
-                    border: none;
-                    background: #121212;
-                }
-
-                QComboBox QAbstractItemView {
-                    background-color: #121212;
-                    color: #e0e0e0;
-                    selection-background-color: #2a2a2a;
-                }
-            """)
 
         self.delete_recent_icons = QPushButton("❌")
         self.delete_all_icons = QPushButton("💥")
 
-     
         # -------- Row 2: ICO Converter (below) --------
 
         icon_row2 = QWidget()
@@ -428,12 +375,9 @@ class EXEBuilderApp(QWidget):
         icon_row2_layout.setSpacing(5)
 
         self.ico_convert_btn = QPushButton("Open ICO Converters")
-
         icon_row1_layout.addWidget(self.ico_convert_btn)
-        
         icon_row1_layout.addStretch()
         icon_block_layout.addWidget(icon_row1)
-
 
         icon_row2_layout.addWidget(self.icon_btn)
         icon_row2_layout.addWidget(self.select_recent_icons)
@@ -496,7 +440,6 @@ class EXEBuilderApp(QWidget):
 
         self.folder_btn = QPushButton("Select Python File")
       
-
         self.recent_folder_dropdown = QComboBox()
         self.recent_folder_dropdown.setFixedSize(245, 35)
         self.recent_folder_dropdown.setFont(QFont("Rubik UI", 12))
@@ -509,39 +452,14 @@ class EXEBuilderApp(QWidget):
         self.recent_folder_dropdown.setEditable(True)
         self.recent_folder_dropdown.lineEdit().setReadOnly(True)
         self.recent_folder_dropdown.setCurrentIndex(-1)
-        if self.recent_folder_dropdown.setEnabled(True):
-            self.recent_folder_dropdown.setStyleSheet("""
-                QComboBox {
-                    background-color: #121212;
-                    color: #e0e0e0;
-                    border: 1px solid #2a2a2a;
-                    padding: 4px;
-                }
-
-                QComboBox::drop-down {
-                    border: none;
-                    background: #121212;
-                }
-
-                QComboBox QAbstractItemView {
-                    background-color: #121212;
-                    color: #e0e0e0;
-                    selection-background-color: #2a2a2a;
-                }
-
-                QComboBox:disabled {
-                    background-color: #1e1e1e;
-                    color: #777;
-                }
-            """)
-            
+        self.recent_folder_dropdown.setEnabled(True)
+        
         self.delete_recent_folder = QPushButton("❌")
         self.delete_all_folders = QPushButton("💥")
    
         folder_row = QHBoxLayout()
         folder_row.setContentsMargins(0, 0, 0, 0)
         folder_row.setSpacing(5)
-
 
         python_layout.addLayout(folder_row)
 
@@ -620,7 +538,6 @@ class EXEBuilderApp(QWidget):
         self.appened_py_version.setCheckable(True)
         
         self.date_time_dropdown.clear()
-
         self.date_time_dropdown.addItem("Append Date/Time")  # header
 
         formats = [
@@ -642,32 +559,8 @@ class EXEBuilderApp(QWidget):
         self.date_time_dropdown.setEditable(True)
         self.date_time_dropdown.lineEdit().setReadOnly(True)
         self.date_time_dropdown.setCurrentIndex(0)
-        if self.date_time_dropdown.setEnabled(True):
-            self.date_time_dropdown.setStyleSheet("""
-                QComboBox {
-                    background-color: #121212;
-                    color: #e0e0e0;
-                    border: 1px solid #2a2a2a;
-                    padding: 4px;
-                }
-
-                QComboBox::drop-down {
-                    border: none;
-                    background: #121212;
-                }
-
-                QComboBox QAbstractItemView {
-                    background-color: #121212;
-                    color: #e0e0e0;
-                    selection-background-color: #2a2a2a;
-                }
-
-                QComboBox:disabled {
-                    background-color: #1e1e1e;
-                    color: #777;
-                }
-            """)
-
+        self.date_time_dropdown.setEnabled(True)
+            
         row1 = QHBoxLayout()
         row1.setContentsMargins(2,2,2,2)
         row1.setSpacing(10)
@@ -766,9 +659,39 @@ class EXEBuilderApp(QWidget):
 
         self.main_layout.addWidget(build_title_frame)
 
-        # -------------------------------
-        # GLOBAL FRAME HIGHLIGHT
-        # -------------------------------
+        for dropdowns in [
+            self.date_time_dropdown,
+            self.recent_folder_dropdown,
+            self.select_recent_icons,
+            self.select_interpreter,
+
+
+        ]:
+            dropdowns.setStyleSheet("""
+                QComboBox {
+                    background-color: #F3F2F2;   /* matches title frames */
+                    color: #2a2a2a;              /* dark readable text */
+                    border: 1px solid #8a8a8a;   /* soft grey border */
+                    padding: 4px;
+                }
+
+                QComboBox::drop-down {
+                    border: none;
+                    background: #F3F2F2;
+                }
+
+                QComboBox QAbstractItemView {
+                    background-color: #DCDBDB;   /* matches main frames */
+                    color: #2a2a2a;
+                    selection-background-color: #c6c6c6;  /* subtle highlight */
+                }
+
+                QComboBox:disabled {
+                    background-color: #e0e0e0;
+                    color: #888;
+                }
+            """)
+
 
         frames = [
             combined_frame,

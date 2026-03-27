@@ -298,31 +298,6 @@ class ValidationController:
 
         app.exe_name_input.setReadOnly(building)
 
-        # -------------------------------
-        # BUILD BUTTON (authoritative)
-        # -------------------------------
-        if hasattr(app, "build_btn"):
-
-            try:
-                app.build_btn.clicked.disconnect()
-            except:
-                pass
-
-            if building:
-                set_btn(app.build_btn, True, "#d43c3c")
-                app.build_btn.setText("Cancel")
-
-                app.build_btn.clicked.connect(app.build_cancellation.cancel_build)
-
-            else:
-                if is_ready:
-                    set_btn(app.build_btn, True, "#3bbf3b")
-                else:
-                    set_btn(app.build_btn, False, "#be1a1a")
-
-                app.build_btn.setText("Build EXE")
-
-                app.build_btn.clicked.connect(app.build_controller.build_exe)
 
         # -------------------------------
         # BUTTON COLOR: Python Interpreter
@@ -432,6 +407,32 @@ class ValidationController:
                     btn.setText("🔃")
 
         # -------------------------------
+        # BUILD BUTTON (authoritative)
+        # -------------------------------
+        if hasattr(app, "build_btn"):
+
+            try:
+                app.build_btn.clicked.disconnect()
+            except:
+                pass
+
+            if building:
+                set_btn(app.build_btn, True, "#d43c3c")
+                app.build_btn.setText("Cancel")
+
+                app.build_btn.clicked.connect(app.build_cancellation.cancel_build)
+
+            else:
+                if is_ready:
+                    set_btn(app.build_btn, True, "#3bbf3b")
+                else:
+                    set_btn(app.build_btn, False, "#be1a1a")
+
+                app.build_btn.setText("Build EXE")
+
+                app.build_btn.clicked.connect(app.build_controller.build_exe)
+
+        # -------------------------------
         # LOCK + GREY INPUTS DURING BUILD
         # -------------------------------
 
@@ -453,18 +454,19 @@ class ValidationController:
         state = self.validation_status_message()
 
         mapping = [
-            (app.python_entry_input, state["python_ok"]),
-            (app.script_path_input, state["script_ok"]),
-            (app.output_path_input, state["outdir_ok"]),
-            (app.exe_name_input, state["exe_ok"]),
-            (app.icon_path_input, state["icon_ok"]),
+        (app.python_entry_input, state["python_ok"]),
+        (app.script_path_input, state["script_ok"]),
+        (app.output_path_input, state["outdir_ok"]),
+        (app.exe_name_input, state["exe_ok"]),
+        (app.icon_path_input, state["icon_ok"]),
         ]
 
-        for widget, ok in mapping:
-            widget.setReadOnly(building)
-
-            if building and ok:
-                # grey ONLY valid ones
+        # -------------------------------
+        # BUILD MODE → force grey
+        # -------------------------------
+        if building:
+            for widget, _ in mapping:
+                widget.setReadOnly(True)
                 widget.setStyleSheet("""
                     QLineEdit {
                         background-color: #d3d3d3;
@@ -472,7 +474,13 @@ class ValidationController:
                         border: 2px solid #8a8a8a;
                     }
                 """)
-            else:
-                # normal mode → let validation handle everything
-                # 🔑 restore validation styling
-                self.validation_status_message()
+
+        else:
+            for widget, ok in mapping:
+                widget.setReadOnly(False)
+
+                # 🔑 FORCE FULL RESET FIRST (this is what you're missing)
+                widget.setStyleSheet("")
+
+            # 🔑 THEN reapply validation styling
+            self.validation_status_message()

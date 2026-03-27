@@ -50,6 +50,7 @@ class UIHandlers:
         app.output_path_input.setText(desktop)
         app.output_path = desktop
         app.state_ctrl.save_state()
+        app.validation_controller.update_ui_state()
     
     def reset_exe_name_from_script(self):
         app = self.app

@@ -2,7 +2,7 @@ import datetime,os,sys,subprocess,time
 from PySide6.QtGui import QFont
 from bundle_validation import validate_bundle_inputs
 from datetime import datetime
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Signal,QTimer
 import subprocess
 
 CREATE_NO_WINDOW = 0x08000000
@@ -10,6 +10,37 @@ CREATE_NO_WINDOW = 0x08000000
 class BuildController:
     def __init__(self, app):
         self.app = app
+
+    # ============================================================
+    # ETA LOOP
+    # ============================================================
+    def start_eta(self):
+        self.app._eta_running = True
+        self._tick_eta()
+
+    def stop_eta(self):
+        self.app._eta_running = False
+
+    def _tick_eta(self):
+        app = self.app
+
+        if not getattr(app, "_eta_running", False):
+            return
+
+        if not getattr(app, "building", False):
+            return
+
+        elapsed = int(time.time() - app.build_start_time)
+        est_total = app.last_build_seconds
+        remaining = max(est_total - elapsed, 0)
+
+        app.status_label.setFont(QFont("Rubik UI", 13, QFont.Bold))
+        app.status_label.setText(
+            f"Building... {elapsed}s elapsed\n — approx {remaining}s remaining"
+        )
+        app.status_label.setFixedSize(315, 100)
+
+        QTimer.singleShot(300, self._tick_eta)
 
     # -------------------------------------------------------------
     # Build EXE
@@ -100,7 +131,7 @@ class BuildController:
         app.validation_controller.update_ui_state()
         
         app.build_start_time = time.time()
-        app.state_ctrl.update_eta_loop()
+        self.start_eta()
         
         # ==================================================
         # Final validation
@@ -282,6 +313,8 @@ class BuildController:
     def on_build_complete(self, ret, out, err):
         app = self.app
 
+        app._status_locked = True
+
         if ret == 0:
             app.last_build_seconds = int(time.time() - app.build_start_time)
             app.state_ctrl.save_state()
@@ -292,10 +325,41 @@ class BuildController:
         app.status_label.setFont(QFont("Rubik UI", 11, QFont.Bold))
 
         # 🔑 STOP LOOP CLEANLY
-        app._eta_running = False
+        self.stop_eta()
         app.building = False
         app.build_process = None
+        self._unlock_status()
         app.validation_controller.update_ui_state()
+
+
+
+    def _unlock_status(self):
+        app = self.app
+        app._status_locked = False
+
+    
+    # ============================================================
+    # ETA time estimator
+    # ============================================================
+    def update_eta_loop(self):
+        if not getattr(self.app, "_eta_running", False):
+            return
+
+        if not getattr(self.app, "building", False):
+            return
+
+        
+        elapsed = int(time.time() - self.app.build_start_time)
+        est_total = self.app.last_build_seconds
+        remaining = max(est_total - elapsed, 0)
+            # 🔑 FORCE FONT EVERY TICK (kills jump)
+        self.app.status_label.setFont(QFont("Rubik UI", 13, QFont.Bold))
+        self.app.status_label.setText(
+            f"Building... {elapsed}s elapsed\n — approx {remaining}s remaining"
+        )
+        self.app.status_label.setFixedSize(315,100)
+
+        QTimer.singleShot(1, self.update_eta_loop)
 
         
 

@@ -93,9 +93,6 @@ def attach_tooltips(app):
     # Title / global controls
     # -----------------------------
 
-
- 
-
     QtTooltip(
         app.tooltips_checkbox,
         "Toggle all tooltips on or off.\n"

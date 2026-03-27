@@ -1,9 +1,6 @@
 import os
 import json
-import time
 import sys
-from PySide6.QtCore import QTimer
-from PySide6.QtGui import QFont
 
 class StateController:
     def __init__(self, app):
@@ -16,29 +13,7 @@ class StateController:
         else:
             base_dir = os.path.abspath(".")
         return os.path.join(base_dir, "exe_builder_state.json")
-    
-    # ============================================================
-    # ETA time estimator
-    # ============================================================
-    def update_eta_loop(self):
-        if not getattr(self.app, "_eta_running", False):
-            return
 
-        if not getattr(self.app, "building", False):
-            return
-
-        
-        elapsed = int(time.time() - self.app.build_start_time)
-        est_total = self.app.last_build_seconds
-        remaining = max(est_total - elapsed, 0)
-            # 🔑 FORCE FONT EVERY TICK (kills jump)
-        self.app.status_label.setFont(QFont("Rubik UI", 13, QFont.Bold))
-        self.app.status_label.setText(
-            f"Building... {elapsed}s elapsed\n — approx {remaining}s remaining"
-        )
-        self.app.status_label.setFixedSize(315,100)
-
-        QTimer.singleShot(1, self.update_eta_loop)
         
     # ============================================================
     # LOAD
