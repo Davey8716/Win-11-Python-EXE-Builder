@@ -218,9 +218,20 @@ class BuildController:
             fmt = getattr(app, "datetime_format", "")
             if fmt:
                 timestamp = datetime.now().strftime(fmt)
+        from pathlib import Path
+
+        script_path = Path(script)
+        script_name = script_path.stem.lower()
+
         parts = [exe_name]
 
-        # date/time (existing)
+        # 🔑 prevent overwrite for common entry files
+        if script_name in {"main", "app", "run"}:
+            parent_name = script_path.parent.name
+            if parent_name:
+                parts.append(parent_name)
+
+        # date/time
         if getattr(app, "append_datetime", False):
             parts.append(timestamp)
 
@@ -230,11 +241,14 @@ class BuildController:
             version = "py"
 
             if python_path:
-                parent = os.path.basename(os.path.dirname(python_path)).lower()
-                if parent.startswith("python"):
-                    raw = parent.replace("python", "")
-                    if raw.isdigit():
-                        version = f"py{raw[0]}.{raw[1:]}" if len(raw) > 1 else f"py{raw}"
+                try:
+                    parent = os.path.basename(os.path.dirname(python_path)).lower()
+                    if parent.startswith("python"):
+                        raw = parent.replace("python", "")
+                        if raw.isdigit():
+                            version = f"py{raw[0]}.{raw[1:]}" if len(raw) > 1 else f"py{raw}"
+                except:
+                    pass
 
             parts.append(version)
 
@@ -331,13 +345,10 @@ class BuildController:
         self._unlock_status()
         app.validation_controller.update_ui_state()
 
-
-
     def _unlock_status(self):
         app = self.app
         app._status_locked = False
 
-    
     # ============================================================
     # ETA time estimator
     # ============================================================
@@ -348,7 +359,6 @@ class BuildController:
         if not getattr(self.app, "building", False):
             return
 
-        
         elapsed = int(time.time() - self.app.build_start_time)
         est_total = self.app.last_build_seconds
         remaining = max(est_total - elapsed, 0)
@@ -361,7 +371,6 @@ class BuildController:
 
         QTimer.singleShot(1, self.update_eta_loop)
 
-        
 
 class BuildWorker(QObject):
     finished = Signal(int, str, str)  # ret, stdout, stderr
