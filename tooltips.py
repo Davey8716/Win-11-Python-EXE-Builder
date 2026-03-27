@@ -245,7 +245,7 @@ def attach_tooltips(app):
 
     QtTooltip(
         app.date_time_dropdown,
-        "Select a date time format to append to the file name."
+        "Select a date/time format to append to the file name.\nFormats without minutes will overwrite builds from the same day.\nFormats including minutes usually produce a unique file per build.\nAs most builds take longer than a minute.\nIf a name is reused, wait briefly before rebuilding."
     )
 
     QtTooltip(
