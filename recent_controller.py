@@ -178,6 +178,7 @@ class RecentController:
         app.validator.validation_status_message()
         self.app.validator.update_ui_state()
         self.app.validator.validation_status_message()
+        self.populate_recent_interpreters_dropdown()
 
     def all_interpreter_delete(self):
         app = self.app
@@ -223,6 +224,7 @@ class RecentController:
         app.validator.validation_status_message()
         self.app.validator.update_ui_state()
         self.app.validator.validation_status_message()
+        self.populate_recent_interpreters_dropdown()
 
 
     def add_recent_script(self, path):
