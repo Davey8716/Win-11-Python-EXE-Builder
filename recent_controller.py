@@ -8,8 +8,6 @@ class RecentController:
     def __init__(self, app):
         self.app = app
 
-
-    # python interpreter stuff 
     def on_recent_interpreter_selected(self, index):
         app = self.app
         if index <= 0:
@@ -22,25 +20,19 @@ class RecentController:
 
         path = os.path.abspath(os.path.normpath(path))
 
-        print("Selected interpreter:", path)
+        print("Selected:", path)
 
-        # 🔑 apply to UI + state
-        if hasattr(app, "python_entry_input"):
-            app.python_entry_input.setText(path)
-
+        # 🔑 APPLY DIRECTLY (same pattern as script/icon)
         app.python_interpreter_path = path
         app.python_path = path
 
-        if hasattr(app, "state_ctrl"):
-            app.state_ctrl.save_state()
         self.app.validator.update_ui_state()
         self.app.validator.validation_status_message()
 
         self.app.python_entry_input.setText(self.app.python_interpreter_path)
         QTimer.singleShot(0, lambda: self.app.python_entry_input.setCursorPosition(0))
-
-    
-
+        self.app.select_interpreter.setCurrentIndex(0)
+        
     def add_recent_interpreter(self, path):
         app = self.app
         ap = os.path.abspath(os.path.normpath(path)) if path else ""
@@ -81,28 +73,17 @@ class RecentController:
     def populate_recent_interpreters_dropdown(self):
         app = self.app
 
-        def extract_version(p):
-            try:
-                parent = os.path.basename(os.path.dirname(p)).lower()
-                if parent.startswith("python"):
-                    raw = parent.replace("python", "")
-                    if raw.isdigit():
-                        return int(raw)
-            except:
-                pass
-            return 0
-
         def _abs(p):
             return os.path.abspath(os.path.normpath(p)) if p else ""
 
         app.select_interpreter.blockSignals(True)
         app.select_interpreter.clear()
-
+        
         app.select_interpreter.addItem("Select Recent Interpreter")
         model = app.select_interpreter.model()
         item = model.item(0)
         item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
-
+    
         state_path = app.state_ctrl._state_file_path()
 
         try:
@@ -116,7 +97,10 @@ class RecentController:
 
         paths = sorted(
             data.get("recent_interpreters", []),
-            key=extract_version
+            key=lambda p: (
+                os.path.basename(os.path.dirname(p)).lower(),
+                os.path.basename(p).lower()
+            )
         )
 
         seen = set()
@@ -126,7 +110,7 @@ class RecentController:
 
             if not ap:
                 continue
-            if not os.path.exists(ap):
+            if not os.path.isfile(ap):
                 continue
             if ap in seen:
                 continue
