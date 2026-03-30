@@ -18,10 +18,8 @@ class JsonImportController(QObject):
         self.app.select_recent_icons.installEventFilter(self)
 
         self.app.select_interpreter.setAcceptDrops(True)
-        self.app.date_time_dropdown.setAcceptDrops(True)
 
         self.app.select_interpreter.installEventFilter(self)
-        self.app.date_time_dropdown.installEventFilter(self)
 
     # -------------------------------
     # Event filter (shared for both)

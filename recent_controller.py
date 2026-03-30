@@ -1,7 +1,8 @@
 
 import os, json
 from PySide6.QtWidgets import QMessageBox
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
+
 
 class RecentController:
     def __init__(self, app):
@@ -34,6 +35,9 @@ class RecentController:
             app.state_ctrl.save_state()
         self.app.validator.update_ui_state()
         self.app.validator.validation_status_message()
+
+        self.app.python_entry_input.setText(self.app.python_interpreter_path)
+        QTimer.singleShot(0, lambda: self.app.python_entry_input.setCursorPosition(0))
 
     
 
@@ -351,7 +355,10 @@ class RecentController:
 
         self.app.validator.update_ui_state()
         self.app.validator.validation_status_message()
-            
+
+        self.app.script_path_input.setText(self.app.script_path)
+        QTimer.singleShot(0, lambda: self.app.script_path_input.setCursorPosition(0))
+                    
     def confirm_delete_recent(self):
         app = self.app
         full_path = getattr(app, "entry_script", "") or getattr(app, "script_path", "")
@@ -402,7 +409,6 @@ class RecentController:
         app.validator.validation_status_message()
         self.app.validator.update_ui_state()
         
-        
     def confirm_delete_all_folder(self):
         app = self.app
 
@@ -452,12 +458,10 @@ class RecentController:
         app.validator.validation_status_message()
         self.app.validator.update_ui_state()
 
-
     #========================================
     #================================ Icons
     #========================================
     
-        
     def on_recent_icon_selected(self, index):
         app = self.app
         if index <= 0:
@@ -476,7 +480,10 @@ class RecentController:
             app.file_pickers._apply_selected_icon(path)
         
         self.app.validator.update_ui_state()
-            
+
+        self.app.icon_path_input.setText(self.app.icon_path)
+        QTimer.singleShot(0, lambda: self.app.icon_path_input.setCursorPosition(0))
+                            
    
         
     def add_recent_icon(self, path):

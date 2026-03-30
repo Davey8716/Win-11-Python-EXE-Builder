@@ -6,15 +6,9 @@ If this tool was useful, consider starring the repo, some feedback would be nice
 
 **Why this exists:**
 
-
-
 This tool is designed around the entire Windows EXE build workflow, not just invoking PyInstaller.
 
-
-
 **It provides a Windows GUI for:**
-
-
 
 * Selecting and validating Python interpreters.
 * Managing build inputs and outputs.
@@ -22,34 +16,20 @@ This tool is designed around the entire Windows EXE build workflow, not just inv
 * It also includes shortcuts to Windows Installed Apps for managing Python installations and direct links to Python.org, reducing context switching when configuring or repairing build environments.
 * Win 11 → Python → EXE Builder converts Python scripts and projects into standalone Windows executables by orchestrating interpreter selection, validation, build execution, and clean-up around PyInstaller.
 
-
-
 **Build requirements:**
-
-
 
 * Windows 11
 * Python 3.11 3.12 3.13 or 3.14
 * PyInstaller installed in the selected interpreter
 * Not tested or supported on other operating systems
 
-
-
 **The tool assumes a working Python environment and focuses on providing a safe, predictable build process, not dependency analysis or repair.**
-
-
 
 **At the time of testing:**
 
-
-
 **Python 3.11 3.12 3.13 and 3.14 produced stable builds**
 
-
-
 **Distribution:**
-
-
 
 * This repository contains source code only.
 

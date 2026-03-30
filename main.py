@@ -463,6 +463,7 @@ class EXEBuilderApp(QWidget):
         script_layout.setSpacing(3)
 
         self.script_path_input = QLineEdit()
+
         self.script_path_input.setPlaceholderText("No python file has been selected.")
         script_layout.addWidget(self.script_path_input)
 
@@ -646,6 +647,7 @@ class EXEBuilderApp(QWidget):
         build_layout.addWidget(self.build_btn, alignment=Qt.AlignLeft)
 
         self.main_layout.addWidget(build_title_frame)
+
 
         for dropdowns in [
             self.date_time_dropdown,
