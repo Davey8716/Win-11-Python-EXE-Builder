@@ -105,6 +105,8 @@ class RecentController:
 
         seen = set()
 
+        index = 1
+
         for p in paths:
             ap = _abs(p)
 
@@ -120,9 +122,14 @@ class RecentController:
             name = os.path.basename(ap)
             parent = os.path.basename(os.path.dirname(ap))
 
-            display = f"{parent}\\{name}" if parent else name
+            if parent:
+                display = f"{index}. {parent}\\{name}"
+            else:
+                display = f"{index}. {name}"
 
             app.select_interpreter.addItem(display, ap)
+            index += 1
+        
 
         app.select_interpreter.blockSignals(False)
         self.app.validator.update_ui_state()
@@ -299,6 +306,8 @@ class RecentController:
 
         seen = set()
 
+        index = 1
+
         for p in paths:
             ap = _abs(p)
 
@@ -314,9 +323,13 @@ class RecentController:
             name = os.path.basename(ap)
             parent = os.path.basename(os.path.dirname(ap))
 
-            display = f"{parent}\\{name}" if parent else name
+            if parent:
+                display = f"{index}. {parent}\\{name}"
+            else:
+                display = f"{index}. {name}"
 
             app.recent_folder_dropdown.addItem(display, ap)
+            index += 1
 
         app.recent_folder_dropdown.blockSignals(False)
         self.app.validator.update_ui_state()
@@ -540,12 +553,14 @@ class RecentController:
 
         seen = set()
 
+        index = 1
+            
         for p in paths:
             ap = _abs(p)
 
             if not ap:
                 continue
-            if not os.path.exists(ap):
+            if not os.path.isfile(ap):
                 continue
             if ap in seen:
                 continue
@@ -555,9 +570,14 @@ class RecentController:
             name = os.path.basename(ap)
             parent = os.path.basename(os.path.dirname(ap))
 
-            display = f"{parent}\\{name}" if parent else name
+            if parent:
+                display = f"{index}. {parent}\\{name}"
+            else:
+                display = f"{index}. {name}"
 
             app.select_recent_icons.addItem(display, ap)
+            index += 1
+
 
         app.select_recent_icons.blockSignals(False)
         self.app.validator.update_ui_state()
