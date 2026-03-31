@@ -1,5 +1,7 @@
 **Updated as of 31/3/26 to use PySide6 qtwidgets**,
 
+Dont build in protected folders like pictures/music etc, it will just show as building endlessly and not output the files to the folder.
+
 If you plan to build multiple versions of the same EXE:
 
 - Use a date/time format that includes minutes (HH-MM)
