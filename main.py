@@ -545,6 +545,12 @@ class EXEBuilderApp(QWidget):
             QPushButton:pressed {
                 background-color: #2e9e2e;
             }
+            QPushButton:disabled {
+                color: #7a7a7a;
+                background-color: #d3d3d3;
+                border: 1px solid #8a8a8a;
+                            
+            }
         """)
                 
         self.date_time_dropdown.clear()
@@ -966,7 +972,7 @@ if __name__ == "__main__":
     palette = QPalette()
 
     # Main background (empty space / non-widget areas)
-    palette.setColor(QPalette.Window, QColor("#BDBBBB"))
+    palette.setColor(QPalette.Window, QColor("#949494"))
 
     app.setPalette(palette)
 

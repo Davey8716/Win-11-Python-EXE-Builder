@@ -240,7 +240,7 @@ class BuildController:
             )
 
 
-            app.validation_controller_update_ui_state()
+            app.validation_controller.update_ui_state()
             return
         
         # ==================================================
