@@ -125,17 +125,24 @@ class EXEBuilderApp(QWidget):
         # -------------------------------
 
         toggles_frame = QFrame()
+        toggles_frame.setFixedSize(200,75)
         toggles_frame.setFrameShape(QFrame.StyledPanel)
         toggles_frame.setFrameShadow(QFrame.Raised)
-        # toggles_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        toggles_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
 
         toggles_layout = QVBoxLayout(toggles_frame)
-        toggles_layout.setContentsMargins(2,2,2,2)
-        toggles_layout.setSpacing(2)
+        toggles_layout.setContentsMargins(5,5,5,5)
+        toggles_layout.setSpacing(1)
 
         self.tooltips_checkbox = QCheckBox("Tooltips")
         self.dependency_notice = QCheckBox("Dependency Notice")
+
+        for cb in [
+            self.tooltips_checkbox,
+            self.dependency_notice,
+        ]:
+            cb.setFixedSize(200,15)
 
         toggles_layout.addWidget(self.tooltips_checkbox)
         toggles_layout.addWidget(self.dependency_notice)
