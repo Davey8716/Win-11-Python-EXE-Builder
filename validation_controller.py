@@ -224,12 +224,16 @@ class ValidationController:
         icon_ok = bool(icon_path and os.path.isfile(icon_path))
         exe_name = app.exe_name_input.text().strip()
 
+        python_path = getattr(app, "python_interpreter_path", "").strip()
+        interpreter_ok = bool(python_path and os.path.isfile(python_path))
+
         is_ready = (
             script_ok and
             outdir and os.path.isdir(outdir) and
             python_ok and
             exe_name
         )
+
 
         # -------------------------------
         # BUTTON HELPER
@@ -245,6 +249,48 @@ class ValidationController:
             else:
                 btn.setStyleSheet("")
 
+        # -------------------------------
+        # VALUE STATE (TEXT-BASED)
+        # -------------------------------
+        icon_has_value = bool(getattr(app, "icon_path", "").strip())
+        script_has_value = bool(getattr(app, "script_path", "").strip())
+        interpreter_has_value = bool(getattr(app, "python_interpreter_path", "").strip())
+
+        # -------------------------------
+        # RECENTS STATE (JSON-backed)
+        # -------------------------------
+        recent_scripts = app.state_data.get("recent_scripts", [])
+        recent_icons = app.state_data.get("recent_icons", [])
+        recent_interpreters = app.state_data.get("recent_interpreters", [])
+
+        has_recent_scripts = bool(recent_scripts)
+        has_recent_icons = bool(recent_icons)
+        has_recent_interpreters = bool(recent_interpreters)
+
+        # -------------------------------
+        # DELETE + DELETE ALL BUTTONS
+        # -------------------------------
+
+        # ICON
+        icon_enabled = not building and icon_has_value
+        set_btn(app.delete_recent_icons, icon_enabled)
+        app.delete_recent_icons.setText("❌" if icon_enabled else "")
+
+        # SCRIPT
+        script_enabled = not building and script_has_value
+        set_btn(app.delete_recent_folder, script_enabled)
+        app.delete_recent_folder.setText("❌" if script_enabled else "")
+
+        # INTERPRETER
+        interpreter_enabled = not building and interpreter_has_value
+
+        set_btn(app.python_delete_interpreter, interpreter_enabled)
+        app.python_delete_interpreter.setText("❌" if interpreter_enabled else "")
+
+        set_btn(app.delete_all_icons, not building and has_recent_icons)
+        set_btn(app.delete_all_folders, not building and has_recent_scripts)
+        set_btn(app.python_delete_all_interpreter, not building and has_recent_interpreters)
+                        
         # Tooltips
         set_btn(app.tooltips_checkbox, not building)
         set_btn(app.dependency_notice, not building)
@@ -253,35 +299,33 @@ class ValidationController:
         set_btn(app.open_python_site_btn, not building)
         set_btn(app.interpreter_btn, not building)
         set_btn(app.interpreter_refresh_btn, not building and python_ok)
-        set_btn(app.python_delete_interpreter, not building and python_ok)
-        set_btn(app.python_delete_all_interpreter, not building)
         app.select_interpreter.setEnabled(not building)
 
-        icon_has_value = bool(app.icon_path_input.text().strip())
-        script_has_value = bool(app.script_path_input.text().strip())
-        
+        # -------------------------------
+        # ICON SECTION
+        # -------------------------------
         set_btn(app.icon_btn, not building)
         set_btn(app.icon_clear_btn, not building and icon_has_value)
         set_btn(app.ico_convert_btn, not building)
-        set_btn(app.delete_all_icons, not building)
-        set_btn(app.delete_recent_icons, not building)
         app.select_recent_icons.setEnabled(not building)
 
-        # File
+        # -------------------------------
+        # FILE SECTION
+        # -------------------------------
         set_btn(app.folder_btn, not building)
         set_btn(app.script_clear_btn, not building and script_has_value)
-        set_btn(app.delete_recent_folder, not building)
-        set_btn(app.delete_all_folders, not building)
         app.recent_folder_dropdown.setEnabled(not building)
 
-        # Output
+        # -------------------------------
+        # OUTPUT SECTION
+        # -------------------------------
         set_btn(app.appened_py_version, not building)
         set_btn(app.output_btn, not building)
         app.date_time_dropdown.setEnabled(not building)
+
         is_desktop = outdir and os.path.normpath(outdir) == os.path.normpath(desktop)
-
-        set_btn(app.output_refresh_btn,not building and not is_desktop)
-
+        set_btn(app.output_refresh_btn, not building and not is_desktop)
+        
         # -------------------------------
         # EXE NAME REFRESH (revert to script name)
         # -------------------------------
@@ -301,10 +345,10 @@ class ValidationController:
 
         app.exe_name_input.setReadOnly(building)
 
-
         # -------------------------------
         # BUTTON COLOR: Python Interpreter
         # -------------------------------
+
         if building:
             app.interpreter_btn.setStyleSheet("background-color: #8a8a8a;")
         else:
@@ -329,6 +373,7 @@ class ValidationController:
         # -------------------------------
         # BUTTON COLOR: Output Folder
         # -------------------------------
+        
         output_ok = bool(outdir and os.path.isdir(outdir))
 
         if building:
@@ -391,23 +436,35 @@ class ValidationController:
 
         for btn in icon_buttons:
             if building:
-                btn.setText("")  # 🔑 remove symbol during build
+                btn.setText("")
             else:
-                # restore symbols
-                if btn in [
-                    app.delete_recent_icons,
-                    app.delete_recent_folder,
-                    app.python_delete_interpreter,
-                ]:
-                    btn.setText("❌")
-                elif btn in [
-                    app.delete_all_icons,
-                    app.delete_all_folders,
-                    app.python_delete_all_interpreter,
-                ]:
-                    btn.setText("💥")
-                else:
-                    btn.setText("🔃")
+                # DELETE BUTTONS → respect actual state
+                if btn == app.delete_recent_icons:
+                    btn.setText("❌" if icon_has_value else "")
+                elif btn == app.delete_recent_folder:
+                    btn.setText("❌" if script_has_value else "")
+                elif btn == app.python_delete_interpreter:
+                    btn.setText("❌" if interpreter_has_value else "")
+
+                elif btn == app.delete_all_icons:
+                    btn.setText("💥" if has_recent_icons else "")
+                elif btn == app.delete_all_folders:
+                    btn.setText("💥" if has_recent_scripts else "")
+                elif btn == app.python_delete_all_interpreter:
+                    btn.setText("💥" if has_recent_interpreters else "")
+
+                # REFRESH / CLEAR (state-driven)
+                elif btn == app.interpreter_refresh_btn:
+                    btn.setText("🔃" if interpreter_has_value else "")
+                elif btn == app.script_clear_btn:
+                    btn.setText("🔃" if script_has_value else "")
+                elif btn == app.icon_clear_btn:
+                    btn.setText("🔃" if icon_has_value else "")
+                elif btn == app.output_refresh_btn:
+                    btn.setText("🔃" if not is_desktop else "")
+                elif btn == app.refresh_btn:
+                    btn.setText("🔃" if exe_name else "")
+                            
 
         # -------------------------------
         # BUILD BUTTON (authoritative)

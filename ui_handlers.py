@@ -9,39 +9,86 @@ class UIHandlers:
     def clear_interpreter_path(self):
         app = self.app
 
-        # clear UI
+        # -------------------------------
+        # CLEAR STATE (source of truth FIRST)
+        # -------------------------------
+        app.python_interpreter_path = ""
+        app.python_path = ""
+
+        # -------------------------------
+        # CLEAR UI
+        # -------------------------------
         if hasattr(app, "python_entry_input"):
             app.python_entry_input.clear()
 
-        # 🔑 reset dropdown to header (match other dropdown behaviour)
+        # reset dropdown safely
         if hasattr(app, "select_interpreter"):
             app.select_interpreter.blockSignals(True)
             app.select_interpreter.setCurrentIndex(0)
             app.select_interpreter.blockSignals(False)
 
-        # clear state (single source of truth)
-        app.python_interpreter_path = ""
-        app.python_path = ""
-
+        # -------------------------------
+        # SAVE STATE
+        # -------------------------------
         app.state_ctrl.save_state()
 
-        # 🔑 force full UI + validation refresh
-        app.validator.validation_status_message()
+        # -------------------------------
+        # FORCE UI UPDATE (ORDER MATTERS)
+        # -------------------------------
         app.validator.update_ui_state()
+        app.validator.validation_status_message()
 
     def clear_script_path(self):
         app = self.app
-        app.script_path_input.clear()
+
+        # -------------------------------
+        # CLEAR STATE FIRST
+        # -------------------------------
         app.entry_script = None
         app.project_root = None
         app.script_path = ""
+
+        # -------------------------------
+        # CLEAR UI
+        # -------------------------------
+        if hasattr(app, "script_path_input"):
+            app.script_path_input.clear()
+
+        # -------------------------------
+        # SAVE STATE
+        # -------------------------------
         app.state_ctrl.save_state()
+
+        # -------------------------------
+        # FORCE UI UPDATE
+        # -------------------------------
+        app.validator.update_ui_state()
+        app.validator.validation_status_message()
 
     def clear_icon(self):
         app = self.app
-        app.icon_path_input.clear()
+
+        # -------------------------------
+        # CLEAR STATE FIRST
+        # -------------------------------
         app.icon_path = ""
+
+        # -------------------------------
+        # CLEAR UI
+        # -------------------------------
+        if hasattr(app, "icon_path_input"):
+            app.icon_path_input.clear()
+
+        # -------------------------------
+        # SAVE STATE
+        # -------------------------------
         app.state_ctrl.save_state()
+
+        # -------------------------------
+        # FORCE UI UPDATE
+        # -------------------------------
+        app.validator.update_ui_state()
+        app.validator.validation_status_message()
     
     def reset_output_to_desktop(self):
         app = self.app
