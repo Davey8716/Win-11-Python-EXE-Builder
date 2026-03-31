@@ -241,6 +241,10 @@ class ValidationController:
         def set_btn(btn, enabled, color=None):
             btn.setEnabled(enabled)
 
+             # 🔑 skip styling for toggle button
+            if btn is self.app.appened_py_version:
+                return
+
             if color:
                 btn.setStyleSheet(f"background-color: {color};")
 

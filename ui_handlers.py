@@ -203,6 +203,8 @@ class UIHandlers:
 
         app.append_py_version = checked
 
+    
+
         if hasattr(app, "state_ctrl"):
             app.state_ctrl.save_state()
 

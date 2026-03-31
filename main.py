@@ -127,7 +127,8 @@ class EXEBuilderApp(QWidget):
         toggles_frame = QFrame()
         toggles_frame.setFrameShape(QFrame.StyledPanel)
         toggles_frame.setFrameShadow(QFrame.Raised)
-        toggles_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        # toggles_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
 
         toggles_layout = QVBoxLayout(toggles_frame)
         toggles_layout.setContentsMargins(2,2,2,2)
@@ -520,7 +521,25 @@ class EXEBuilderApp(QWidget):
         self.appened_py_version = QPushButton("Append Py Version")
         self.appened_py_version.setFixedSize(125,35)
         self.appened_py_version.setCheckable(True)
-        
+
+        self.appened_py_version.setStyleSheet("""
+            QPushButton {
+                background-color: #e0e0e0;
+                color: black;
+                border: 1px solid #8a8a8a;
+            }
+
+            QPushButton:checked {
+                background-color: #3bbf3b;
+                color: black;
+                border: 1px solid #2e9e2e;
+            }
+
+            QPushButton:pressed {
+                background-color: #2e9e2e;
+            }
+        """)
+                
         self.date_time_dropdown.clear()
 
         def _add(label, data=None, enabled=True):
