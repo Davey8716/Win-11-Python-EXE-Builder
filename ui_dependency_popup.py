@@ -54,6 +54,7 @@ class DependencyPopup:
         )
         label1.setWordWrap(True)
         label1.setFont(QFont("Rubik UI", 11, QFont.Bold))
+        label1.setContentsMargins(5,5,5,5)
         frame_layout.addWidget(label1)
 
         pkg_text = ", ".join(packages)
@@ -61,6 +62,7 @@ class DependencyPopup:
         label2 = QLabel(pkg_text)
         label2.setWordWrap(True)
         label2.setFont(QFont("Rubik UI", 11, QFont.Bold))
+        label2.setContentsMargins(5,5,5,5)
         frame_layout.addWidget(label2)
 
         label3 = QLabel(
@@ -69,6 +71,7 @@ class DependencyPopup:
         )
         label3.setWordWrap(True)
         label3.setFont(QFont("Rubik UI", 11, QFont.Bold))
+        label3.setContentsMargins(5,5,5,5)
         frame_layout.addWidget(label3)
 
         ok_btn = QPushButton("OK")
