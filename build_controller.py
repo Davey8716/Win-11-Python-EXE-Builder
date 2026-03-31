@@ -52,15 +52,49 @@ class BuildController:
         app.building = True
         app._eta_running = True
 
-        # ==================================================
-        # Debug log (Desktop, user-visible)
-        # ==================================================
-
         timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+
+        # 🔑 match build naming logic
+        script = app.entry_script or ""
+        script = os.path.normpath(script) if script else ""
+
+        script_name = os.path.splitext(os.path.basename(script))[0].lower() if script else ""
+        parent = os.path.basename(os.path.dirname(script)) if script else ""
+
+        parts = ["EXE_BUILDER_DEBUG"]
+
+        if script:
+            parts.append(app.exe_name_input.text().strip() or "exe")
+
+            # parent (main/app/run case)
+            if script_name in {"main", "app", "run"} and parent:
+                parts.append(parent)
+
+        # 🔑 python version append (match build logic)
+        if getattr(app, "append_py_version", False):
+            python_path = getattr(app, "python_interpreter_path", "")
+            version = "py"
+
+            if python_path:
+                try:
+                    parent = os.path.basename(os.path.dirname(python_path)).lower()
+                    if parent.startswith("python"):
+                        raw = parent.replace("python", "")
+                        if raw.isdigit():
+                            version = f"py{raw[0]}.{raw[1:]}" if len(raw) > 1 else f"py{raw}"
+                except:
+                    pass
+
+            parts.append(version)
+
+        parts.append(timestamp)
+
+        log_name = "_".join(parts) + ".log"
+
         app.debug_log_path = os.path.join(
             os.path.expanduser("~"),
             "Desktop",
-            f"EXE_BUILDER_DEBUG_{timestamp}.log"
+            log_name
         )
 
         with open(app.debug_log_path, "w", encoding="utf-8") as f:
