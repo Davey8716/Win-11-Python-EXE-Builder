@@ -3,13 +3,19 @@ from PySide6.QtGui import QFont
 from bundle_validation import validate_bundle_inputs
 from datetime import datetime
 from PySide6.QtCore import QObject, Signal,QTimer
-import subprocess
+from PySide6.QtCore import QThread
+from pathlib import Path
 
 CREATE_NO_WINDOW = 0x08000000
 
-class BuildController:
+class BuildController(QObject):
+    build_complete_signal = Signal(int, str, str)
+
     def __init__(self, app):
+        super().__init__()
         self.app = app
+
+        self.build_complete_signal.connect(self._on_build_complete_ui)
 
     # ============================================================
     # ETA LOOP
@@ -253,7 +259,7 @@ class BuildController:
             fmt = getattr(app, "datetime_format", "")
             if fmt:
                 timestamp = datetime.now().strftime(fmt)
-        from pathlib import Path
+        
 
         script_path = Path(script)
         script_name = script_path.stem.lower()
@@ -342,7 +348,6 @@ class BuildController:
         app.status_label.setText("Building...")
         # ⛔ move this OUT of thread (safe here)
 
-        from PySide6.QtCore import QThread
 
         self.build_thread = QThread()
         self.worker = BuildWorker(app, cmd)
@@ -360,29 +365,34 @@ class BuildController:
         self.build_thread.start()
 
     def on_build_complete(self, ret, out, err):
-        app = self.app
+        # 🔑 ONLY emit — NO UI CODE HERE
+        self.build_complete_signal.emit(ret, out, err)
 
-        app._status_locked = True
+    def _on_build_complete_ui(self, ret, out, err):
+        app = self.app
 
         if ret == 0:
             app.last_build_seconds = int(time.time() - app.build_start_time)
             app.state_ctrl.save_state()
-            app.set_status("Build complete.")
+            msg = "Build complete."
         else:
-            app.set_status("Build failed. See debug log.")
+            msg = "Build failed. See debug log."
 
-        app.status_label.setFont(QFont("Rubik UI", 11, QFont.Bold))
-
-        # 🔑 STOP LOOP CLEANLY
         self.stop_eta()
         app.building = False
         app.build_process = None
-        self._unlock_status()
-        app.validation_controller.update_ui_state()
+
+        app._status_lock = True
+        app.status_label.setText(msg)
+
+        QTimer.singleShot(5000, self._unlock_status)
 
     def _unlock_status(self):
         app = self.app
-        app._status_locked = False
+
+
+        app._status_lock = False
+        app.validation_controller.update_ui_state()
 
     # ============================================================
     # ETA time estimator

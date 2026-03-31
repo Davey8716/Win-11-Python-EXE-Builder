@@ -42,6 +42,8 @@ class ValidationController:
         self.app.build_error = message
         self.validation_status_message()
         self.app.validator.update_ui_state()
+
+    
         
     # ==================================================
     # Can we build again?
@@ -234,14 +236,13 @@ class ValidationController:
             exe_name
         )
 
-
         # -------------------------------
         # BUTTON HELPER
         # -------------------------------
         def set_btn(btn, enabled, color=None):
             btn.setEnabled(enabled)
 
-             # 🔑 skip styling for toggle button
+            # 🔑 skip styling for toggle button
             if btn is self.app.appened_py_version:
                 return
 
@@ -390,17 +391,17 @@ class ValidationController:
                 app.output_btn.setStyleSheet("background-color: #be1a1a;")
 
         # -------------------------------
-        # STATUS LABEL
+        # STATUS ONLY (lock applies here ONLY)
         # -------------------------------
-        current_text = app.status_label.text()
-        
+        if getattr(app, "_status_lock", False):
+            return
 
         if building:
             status_text = "Building..."
-        elif current_text.startswith("Build"):
-            status_text = current_text  # 🔑 preserve "Build complete / failed"
+
         elif is_ready:
             status_text = "Ready to build."
+
         else:
             status_text = "Missing required inputs."
 
@@ -409,8 +410,8 @@ class ValidationController:
 
         if building:
             color = "#000000"
-        elif current_text.startswith("Build"):
-            color = "#000000" if "complete" in current_text.lower() else "#be1a1a"
+        elif status_text.startswith("Building..."):
+            color = "#000000" if "complete" in status_text.lower() else "#be1a1a"
         elif is_ready:
             color = "#3bbf3b"
         else:

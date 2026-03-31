@@ -71,6 +71,7 @@ class EXEBuilderApp(QWidget):
         self.validator = ValidationController(self)
         self.activation_controller = ActivationController(self)
         self.file_pickers = FilePickerController(self)
+        
 
         # ---------------------------------------------------------
         # SINGLE INSTANCE: Listen for activation events
@@ -129,7 +130,6 @@ class EXEBuilderApp(QWidget):
         toggles_frame.setFrameShape(QFrame.StyledPanel)
         toggles_frame.setFrameShadow(QFrame.Raised)
         toggles_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
 
         toggles_layout = QVBoxLayout(toggles_frame)
         toggles_layout.setContentsMargins(5,5,5,5)
