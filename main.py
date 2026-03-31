@@ -72,7 +72,6 @@ class EXEBuilderApp(QWidget):
         self.activation_controller = ActivationController(self)
         self.file_pickers = FilePickerController(self)
         
-
         # ---------------------------------------------------------
         # SINGLE INSTANCE: Listen for activation events
         # ---------------------------------------------------------

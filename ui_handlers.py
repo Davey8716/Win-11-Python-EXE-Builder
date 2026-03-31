@@ -6,7 +6,7 @@ class UIHandlers:
         self.app = app
 
 
-    def get_desktop_path():
+    def get_desktop_path(self):
         return os.path.join(os.path.expanduser("~"), "Desktop")
 
     def clear_interpreter_path(self):
