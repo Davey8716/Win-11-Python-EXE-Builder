@@ -36,7 +36,6 @@ if ctypes.GetLastError() == 183:
 
     if event:
         ctypes.windll.kernel32.SetEvent(event)
-
     sys.exit(0)
 
 def resource_path(relative_path):
@@ -980,6 +979,7 @@ class EXEBuilderApp(QWidget):
         self.close_after_build.stateChanged.connect(self.ui_handlers.on_close_toggle)
 
         self.validator.update_ui_state()
+        self.validation_controller.update_build_button()
 
     def close_app(self):
         QApplication.instance().quit()

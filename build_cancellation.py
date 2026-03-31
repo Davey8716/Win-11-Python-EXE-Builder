@@ -61,9 +61,6 @@ class BuildCancellation:
         # Reset build state
         self.app.build_process = None
         self.app.building = False
-
-        # Restore UI baseline
-        self.ui.set_status("Build cancelled.")
         self.app.validation_controller.update_ui_state()
         self.app.validation_controller.validation_status_message()
         

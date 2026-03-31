@@ -495,33 +495,6 @@ class ValidationController:
                 elif btn == app.refresh_btn:
                     btn.setText("🔃" if can_revert_name else "")
                             
-
-        # -------------------------------
-        # BUILD BUTTON (authoritative)
-        # -------------------------------
-        if hasattr(app, "build_btn"):
-
-            try:
-                app.build_btn.clicked.disconnect()
-            except:
-                pass
-
-            if building:
-                set_btn(app.build_btn, True, "#d43c3c")
-                app.build_btn.setText("Cancel")
-
-                app.build_btn.clicked.connect(app.build_cancellation.cancel_build)
-
-            else:
-                if is_ready:
-                    set_btn(app.build_btn, True, "#3bbf3b")
-                else:
-                    set_btn(app.build_btn, False, "#be1a1a")
-
-                app.build_btn.setText("Build EXE")
-
-                app.build_btn.clicked.connect(app.build_controller.build_exe)
-
         # -------------------------------
         # LOCK + GREY INPUTS DURING BUILD
         # -------------------------------
@@ -574,3 +547,43 @@ class ValidationController:
 
             # 🔑 THEN reapply validation styling
             self.validation_status_message()
+        self.update_build_button()
+
+    def update_build_button(self):
+        app = self.app
+
+        if not hasattr(app, "build_btn"):
+            return
+
+        state = self.validation_status_message()
+        building = getattr(app, "building", False)
+        is_ready = state["is_ready"]
+
+        def set_btn(btn, enabled, color=None):
+            btn.setEnabled(enabled)
+            if color:
+                btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {color};
+                        color: black;
+                        border: 1px solid #8a8a8a;
+                    }}
+                """)
+        try:
+            app.build_btn.clicked.disconnect()
+        except:
+            pass
+
+        if building:
+            set_btn(app.build_btn, True, "#be1a1a")
+            app.build_btn.setText("Cancel EXE")
+            app.build_btn.clicked.connect(app.build_cancellation.cancel_build)
+
+        else:
+            if is_ready:
+                set_btn(app.build_btn, True, "#3bbf3b")
+            else:
+                set_btn(app.build_btn, False, "#be1a1a")
+
+            app.build_btn.setText("Build EXE")
+            app.build_btn.clicked.connect(app.build_controller.build_exe)
