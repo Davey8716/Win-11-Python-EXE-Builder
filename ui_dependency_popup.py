@@ -72,9 +72,25 @@ class DependencyPopup:
         frame_layout.addWidget(label3)
 
         ok_btn = QPushButton("OK")
-        ok_btn.setFixedWidth(80)
-        ok_btn.clicked.connect(popup.close)
+        ok_btn.setFont(QFont("Rubik UI", 13, QFont.Bold))
+        ok_btn.setFixedSize(80, 30)
 
+        ok_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #3bbf3b;
+                color: #000000;
+                border: 1px solid #000000;
+            }
+            QPushButton:hover {
+                background-color: #2e9e2e;
+            }
+            QPushButton:disabled {
+                background-color: #8a8a8a;
+                color: #444;
+            }
+        """)
+
+        ok_btn.clicked.connect(popup.close)
         frame_layout.addWidget(ok_btn, alignment=Qt.AlignHCenter)
 
         # Position
