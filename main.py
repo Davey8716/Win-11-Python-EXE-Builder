@@ -255,7 +255,7 @@ class EXEBuilderApp(QWidget):
     
         self.select_interpreter = QComboBox()
         self.select_interpreter.setFixedSize(245,35)
-        self.select_interpreter.setFont(QFont("Rubik UI", 11))
+        self.select_interpreter.setFont(QFont("Rubik UI", 12))
 
         # 🔑 Header
         self.select_interpreter.addItem("Select Recent Interpreter")
@@ -347,7 +347,7 @@ class EXEBuilderApp(QWidget):
 
         self.select_recent_icons = QComboBox()
         self.select_recent_icons.setFixedSize(245,35)
-        self.select_recent_icons.setFont(QFont("Rubik UI", 11))
+        self.select_recent_icons.setFont(QFont("Rubik UI", 12))
         self.select_recent_icons.addItem("Select Recent Icon")
 
         model = self.select_recent_icons.model()
@@ -521,7 +521,7 @@ class EXEBuilderApp(QWidget):
         self.output_btn = QPushButton("Output Folder")
 
         self.date_time_dropdown = QComboBox()
-        self.date_time_dropdown.setFixedSize(200, 35)
+        self.date_time_dropdown.setFixedSize(245, 35)
         self.date_time_dropdown.setFont(QFont("Rubik UI", 12))
         self.date_time_dropdown.addItem("Date Time Append")
 
@@ -558,7 +558,7 @@ class EXEBuilderApp(QWidget):
         # Header
         _add("Append Date/Time", None, enabled=False)
 
-
+        _add("──────────", enabled=False)
         # Top option
         _add("None", None)
 
