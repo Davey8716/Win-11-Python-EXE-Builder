@@ -59,7 +59,7 @@ class QtTooltip(QObject):
                 padding: 6px;
                 border-radius: 4px;
                 font-family: "Rubik";
-                font-size: 13px;
+                font-size: 15px;
             }
         """)
 
@@ -92,8 +92,6 @@ def attach_tooltips(app):
     # -----------------------------
     # Title / global controls
     # -----------------------------
-    
- 
 
     QtTooltip(
         app.tooltips_checkbox,
@@ -117,13 +115,6 @@ def attach_tooltips(app):
         "File path to python script folder and file."
     )
 
-    QtTooltip(
-        app.apps_btn,
-        "Opens Windows Installed Apps.\n"
-        "Check or remove Python versions.\n"
-        "If builds fail due to environment issues,\n"
-        "Go to python.org for downloading specific releases."
-    )
     
     QtTooltip(
         app.open_python_site_btn,
@@ -156,6 +147,32 @@ def attach_tooltips(app):
     # -----------------------------
     # Python interpreter
     # -----------------------------
+
+    QtTooltip(
+        app.select_recent_icons,
+        "Select a recent Icon from this drop down list."
+    )
+
+    QtTooltip(
+        app.select_interpreter,
+        "Select a recent python interpreter from this drop down list."
+    )
+
+    QtTooltip(
+        app.python_delete_interpreter,
+        "Deletes current interpreter in the path line output."
+    )
+
+    QtTooltip(
+        app.python_delete_all_interpreter,
+        "Deletes all interpreters from the drop down"
+    )
+
+    QtTooltip(
+        app.interpreter_refresh_btn,
+        "Clear selected interpreter."
+
+    )
 
     QtTooltip(
         app.interpreter_btn,
@@ -217,8 +234,18 @@ def attach_tooltips(app):
     # -----------------------------
 
     QtTooltip(
+        app.appened_py_version,
+        "Append the python version to the file name."
+    )
+
+    QtTooltip(
         app.output_btn,
         "The file path to the folder the EXE is to be built in."
+    )
+
+    QtTooltip(
+        app.date_time_dropdown,
+        "Select a date/time format to append to the file name.\nFormats without minutes will overwrite builds from the same day.\nFormats including minutes usually produce a unique file per build.\nAs most builds take longer than a minute.\nIf a name is reused, wait briefly before rebuilding."
     )
 
     QtTooltip(

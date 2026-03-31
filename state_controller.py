@@ -1,14 +1,11 @@
 import os
 import json
-import time
 import sys
-from PySide6.QtCore import QTimer
-from PySide6.QtGui import QFont
 
 class StateController:
     def __init__(self, app):
         self.app = app
-        self.build_counter = 0
+        self.last_build_counter = 0
 
     def _state_file_path(self) -> str:
         if getattr(sys, "frozen", False):
@@ -16,29 +13,7 @@ class StateController:
         else:
             base_dir = os.path.abspath(".")
         return os.path.join(base_dir, "exe_builder_state.json")
-    
-    # ============================================================
-    # ETA time estimator
-    # ============================================================
-    def update_eta_loop(self):
-        if not getattr(self.app, "_eta_running", False):
-            return
 
-        if not getattr(self.app, "building", False):
-            return
-
-        
-        elapsed = int(time.time() - self.app.build_start_time)
-        est_total = self.app.last_build_seconds
-        remaining = max(est_total - elapsed, 0)
-            # 🔑 FORCE FONT EVERY TICK (kills jump)
-        self.app.status_label.setFont(QFont("Rubik UI", 15, QFont.Bold))
-        self.app.status_label.setText(
-            f"Building... {elapsed}s elapsed\n — approx {remaining}s remaining"
-        )
-        self.app.status_label.setFixedSize(315,100)
-
-        QTimer.singleShot(1, self.update_eta_loop)
         
     # ============================================================
     # LOAD
@@ -91,9 +66,10 @@ class StateController:
             self.app.python_interpreter_path = _norm(data.get("python_interpreter_path", ""))
             self.app.python_path = self.app.python_interpreter_path
             self.app.exe_name = data.get("last_exe_name", "")
+            self.app.append_datetime = data.get("append_datetime", False)
+            self.app.datetime_format = data.get("datetime_format", None)
 
             self.app.last_build_seconds = data.get("last_build_seconds", 45)
-            self.app.build_counter = data.get("build_counter", 0)
 
             self.app.icon_user_cleared = data.get("icon_user_cleared", False)
             self.app.script_user_cleared = data.get("script_user_cleared", False)
@@ -135,6 +111,22 @@ class StateController:
             if hasattr(self.app, "python_entry_input"):
                 self.app.python_entry_input.setText(self.app.python_interpreter_path)
 
+            # --- restore datetime dropdown ---
+            if hasattr(self.app, "date_time_dropdown"):
+                if self.app.datetime_format:
+                    index = self.app.date_time_dropdown.findData(self.app.datetime_format)
+                    if index != -1:
+                        self.app.date_time_dropdown.setCurrentIndex(index)
+
+            # --- restore toggle state ---
+            if hasattr(self.app, "appened_py_version"):  # (your naming)
+                self.app.appened_py_version.setChecked(
+                    getattr(self.app, "append_py_version", False)
+                )
+
+                
+            self.app.validator.update_ui_state()
+
         except Exception as e:
             self.app.state_data = {"recent_scripts": []}
             print("State load error:", e)
@@ -169,23 +161,36 @@ class StateController:
             existing_data.get("recent_icons", [])
         )
 
+        recent_interpreters =  getattr(self.app, "state_data", {}).get(
+            "recent_interpreters",
+            existing_data.get("recent_interpreters", [])
+        )
+
         data = {
-            "last_script_path": _norm(self.app.script_path),
-            "last_icon_path": _norm(self.app.icon_path),
-            "last_output_folder": _norm(self.app.output_path),
-            "last_build_seconds": self.app.last_build_seconds,
-            "build_counter": self.app.build_counter,
-            "last_exe_name": self.app.exe_name,
-            "icon_user_cleared": getattr(self.app, "icon_user_cleared", False),
-            "script_user_cleared": getattr(self.app, "script_user_cleared", False),
             "python_interpreter_path": _norm(
                 getattr(self.app, "python_interpreter_path", "")
             ),
-            "tooltips_enabled": getattr(self.app, "tooltips_enabled", True),
-            "dependency_notice_enabled": getattr(self.app, "dependency_notice_enabled", True),
+
+            "last_script_path": _norm(self.app.script_path),
+            "last_icon_path": _norm(self.app.icon_path),
+            "last_output_folder": _norm(self.app.output_path),
+            "last_exe_name": self.app.exe_name,
+
             "recent_scripts": recent_scripts,
             "recent_icons": recent_icons,
-        }
+            "recent_interpreters": recent_interpreters,
+
+            "last_build_seconds": self.app.last_build_seconds,
+        
+            "tooltips_enabled": getattr(self.app, "tooltips_enabled", True),
+            "dependency_notice_enabled": getattr(self.app, "dependency_notice_enabled", True),
+
+            "icon_user_cleared": getattr(self.app, "icon_user_cleared", False),
+            "script_user_cleared": getattr(self.app, "script_user_cleared", False),
+
+            "append_datetime": getattr(self.app, "append_datetime", False),
+            "datetime_format": getattr(self.app, "datetime_format", None),
+            }
 
         self.app.state_data = data
 

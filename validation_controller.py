@@ -1,7 +1,7 @@
 import os
 import sys
 import ast
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer,Qt
 
 class ValidationController:
     def __init__(self, app):
@@ -9,13 +9,40 @@ class ValidationController:
         app = EXEBuilderApp instance
         """
         self.app = app
-        
+
+    def extract_imports_from_file(self, py_file: str) -> set[str]:
+        imports = set()
+
+        try:
+            with open(py_file, "r", encoding="utf-8") as f:
+                tree = ast.parse(f.read(), filename=py_file)
+        except Exception:
+            return imports  # advisory only
+
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    imports.add(alias.name.split(".")[0])
+            elif isinstance(node, ast.ImportFrom):
+                if node.module:
+                    imports.add(node.module.split(".")[0])
+
+        return imports
+
+    def filter_external_imports(self, imports: set[str]) -> list[str]:
+        stdlib = set(sys.stdlib_module_names)
+        return sorted(i for i in imports if i not in stdlib)
+
+    def run_dependency_advisory(self, entry_file: str) -> list[str]:
+        imports = self.extract_imports_from_file(entry_file)
+        external = self.filter_external_imports(imports)
+        return external
+
     def set_build_error(self, message: str):
         self.app.build_error = message
-        self.update_build_button_state()
         self.validation_status_message()
+        self.app.validator.update_ui_state()
         
-
     # ==================================================
     # Can we build again?
     # =================================================
@@ -30,7 +57,6 @@ class ValidationController:
         script = os.path.normpath(script) if script else ""
         outdir = os.path.normpath(outdir) if outdir else ""
         python = os.path.normpath(python) if python else ""
-
 
         if not python or not os.path.isfile(python):
             return False
@@ -47,105 +73,51 @@ class ValidationController:
         return True
     
     def validation_status_message(self):
-        
-        script = self.app.script_path_input.text().strip()
-        outdir = self.app.output_path_input.text().strip()
+
+        script = os.path.normpath(self.app.script_path_input.text().strip() or "")
+        outdir = os.path.normpath(self.app.output_path_input.text().strip() or "")
         exe_name = self.app.exe_name_input.text().strip()
-    
-        python = getattr(self.app, "python_interpreter_path", "")
-        
-        # 🔑 NORMALIZE
-        script = os.path.normpath(script) if script else ""
-        outdir = os.path.normpath(outdir) if outdir else ""
-        python = os.path.normpath(python) if python else ""
+        python = os.path.normpath(getattr(self.app, "python_interpreter_path", "") or "")
+        icon_path = os.path.normpath(getattr(self.app, "icon_path", "").strip() or "")
 
-        # --------------------------------
-        # Resolve script folder validity
-        # --------------------------------
-
-        if script and os.path.isfile(script):
-            folder = os.path.dirname(script)
-            py_files = [
-                f for f in os.listdir(folder)
-                if f.endswith(".py") and os.path.isfile(os.path.join(folder, f))
-            ]
-            folder_ok = bool(py_files)
-        else:
-            folder_ok = False
-
-
-        # --------------------------------
-        # INLINE PYTHON STATUS (button row)
-        # --------------------------------
-
-        if hasattr(self.app, "python_status_label"):
-            if python and os.path.isfile(python):
-                self.app.python_status_label.setText("PYTHON INTERPRETER SET")
-                self.app.python_status_label.setStyleSheet("color: #3bbf3b;")
-                self.app.python_status_label.setFixedSize(210,35)
-            else:
-                self.app.python_status_label.setText("PYTHON INTERPRETER NOT SET")
-                self.app.python_status_label.setStyleSheet("color: #be1a1a;")
-                self.app.python_status_label.setFixedSize(245,35)
-                
-        # --------------------------------
-        # INLINE: Python folder
-        # --------------------------------
-
-        if hasattr(self.app, "script_folder_status_label"):
-            if folder_ok:
-                self.app.script_folder_status_label.setText("PYTHON FOLDER SET")
-                self.app.script_folder_status_label.setStyleSheet("color: #3bbf3b;")
-                self.app.script_folder_status_label.setFixedSize(170,35)
-            else:
-                self.app.script_folder_status_label.setText("PYTHON FOLDER NOT SET")
-                self.app.script_folder_status_label.setStyleSheet("color: #be1a1a;")
-                self.app.script_folder_status_label.setFixedSize(205,35)
-                
-        # --------------------------------
-        # INLINE: Output path
-        # --------------------------------
-        
+        # -------------------------------
+        # STATE
+        # -------------------------------
         state = {}
 
-        state["output_ok"] = bool(outdir and os.path.isdir(outdir))
-
-        # --------------------------------
-        # INLINE: EXE name
-        # --------------------------------
-
-        state["exe_ok"] = bool(exe_name)
-
-        # --------------------------------
-        # BUILD READINESS
-        # --------------------------------
-
-        script_ok = script and os.path.isfile(script)
-        outdir_ok = outdir and os.path.isdir(outdir)
+        script_ok = bool(script and os.path.isfile(script))
+        outdir_ok = bool(outdir and os.path.isdir(outdir))
         exe_ok = bool(exe_name)
-        python_ok = python and os.path.isfile(python)
+        python_ok = bool(python and os.path.isfile(python))
+        icon_ok = bool(icon_path and os.path.isfile(icon_path))
 
-        is_ready = bool(script_ok and outdir_ok and exe_ok and python_ok)
-        # 🔑 FORCE NOT READY if build error exists
+        state.update({
+            "script_ok": script_ok,
+            "outdir_ok": outdir_ok,
+            "exe_ok": exe_ok,
+            "python_ok": python_ok,
+            "icon_ok": icon_ok,
+            "output_ok": outdir_ok,
+        })
+
+        # -------------------------------
+        # BUILD READINESS
+        # -------------------------------
+        is_ready = script_ok and outdir_ok and exe_ok and python_ok
+
         if getattr(self.app, "build_error", None):
             is_ready = False
 
         state["is_ready"] = is_ready
-        state["script_ok"] = script_ok
-        state["outdir_ok"] = outdir_ok
-        state["exe_ok"] = exe_ok
-        state["python_ok"] = python_ok
 
         # Reset popup eligibility when leaving READY state
         if not is_ready:
             self.app._dependency_popup_shown = False
 
         if not is_ready:
-            self.app.status_label.setFixedSize(120,75)
+            self.app.status_label.setFixedSize(250,75)
         else:
-            self.app.status_label.setFixedSize(350,100)
-
-        
+            self.app.status_label.setFixedSize(250,75)
 
         # ==========================================================
         # Dependency advisory — fire ONCE when NOT READY → READY
@@ -177,8 +149,6 @@ class ValidationController:
                 state["external_packages"] = []
         else:
             self.app._last_advisory_script = None
-            state["external_packages"] = []
-            self.app._dependency_popup_shown = False  # 🔑 reset when leaving READY
 
         # Track previous state
         self.app._was_build_ready = is_ready
@@ -188,7 +158,7 @@ class ValidationController:
         # --------------------------------
 
         # Python version (Py 3.14)
-        python_path = getattr(self.app, "python_interpreter_path", "").strip()
+        python_path = python
         python_version = "Unknown"
         if python_path:
             parent = os.path.basename(os.path.dirname(python_path))
@@ -198,7 +168,6 @@ class ValidationController:
                     python_version = f"{raw[0]}.{raw[1:]}" if len(raw) > 1 else raw
                     
         # Icon (name or Default)
-        icon_path = getattr(self.app, "icon_path", "").strip()
         icon_display = os.path.basename(icon_path) if icon_path else "Default - (No User Icon)"
 
         # Script (parent\file)
@@ -209,389 +178,385 @@ class ValidationController:
             script_display = f"{parent}\\{name}" if parent else name
 
         # EXE name
-        exe_name_display = getattr(self.app, "exe_name", "").strip()
         exe_name_display = exe_name if exe_name else "No EXE name"
 
         # Output path
         outdir_display = outdir if outdir else "No output"
-
         error_msg = getattr(self.app, "build_error", None)
-        
         
         if error_msg:
             state["status_text"] = error_msg
             is_ready = False  # 🔑 force red + stop READY logic
         state["status_text"] = (
-            f"READY — Py {python_version} | {icon_display} \n"
-            f"------------------------------------------------\n"
-            f"{script_display}\n"
-            f"------------------------------------------------\n"
+            f"READY — Py {python_version} | {icon_display} |\n"
+            f"{script_display} |\n"
             f"{outdir_display} |{exe_name_display}"
             
             if is_ready else
             (
                 error_msg if error_msg else
                 "NOT READY\n"
-                f"----------------\n"
                 "TO BUILD"
-                
             )
-       
-            
         )
         
-                
-        # --------------------------------
-        # BUTTON COLOR: Python Interpreter
-        # --------------------------------
-        if hasattr(self.app, "interpreter_btn"):
-            if python and os.path.isfile(python):
-                self.app.interpreter_btn.setStyleSheet("background-color: #3bbf3b;")
-            else:
-                self.app.interpreter_btn.setStyleSheet("background-color: #be1a1a;")
-
-        # --------------------------------
-        # BUTTON COLOR: Python Folder
-        # --------------------------------
-        if hasattr(self.app, "folder_btn"):
-            if folder_ok:
-                self.app.folder_btn.setStyleSheet("background-color: #3bbf3b;")
-            else:
-                self.app.folder_btn.setStyleSheet("background-color: #be1a1a;")
-
-        # --------------------------------
-        # BUTTON COLOR: Output Folder
-        # --------------------------------
-        if hasattr(self.app, "output_btn"):
-            if outdir and os.path.isdir(outdir):
-                self.app.output_btn.setStyleSheet("background-color: #3bbf3b;")
-            else:
-                self.app.output_btn.setStyleSheet("background-color: #be1a1a;")
-
-        
-        # --------------------------------
-        # APPLY STATUS TO UI (MATCH QLINEEDIT STYLE)
-        # --------------------------------
-
-        if hasattr(self.app, "status_label"):
-            self.app.status_label.setText(state["status_text"])
-
-            if is_ready:
-                self.app.status_label.setStyleSheet("""
-                    QLabel {
-                        background-color: #202020;
-                        color: #3bbf3b;
-                        border: 1px solid #3a3a3a;
-                    }
-                """)
-            else:
-                self.app.status_label.setStyleSheet("""
-                    QLabel {
-                        background-color: #202020;
-                        color: #be1a1a;
-                        border: 1px solid #3a3a3a;
-                    }
-                """)
-
         return state
-    
-        # --------------------------------
-    def update_build_button_state(self):
-        state = self.validation_status_message()
-        
-        is_ready = state["is_ready"]
 
-        script = self.app.script_path_input.text().strip()
-        
-        
+    def update_ui_state(self):
+        app = self.app
+        building = getattr(app, "building", False)
+
+        # -------------------------------
+        # INPUT STATES
+        # -------------------------------
+        script = getattr(app, "entry_script", "")
         script_ok = bool(script and os.path.isfile(script))
 
-        outdir = self.app.output_path_input.text().strip()
-        
-        script = os.path.normpath(script) if script else ""
+        outdir = app.output_path_input.text().strip()
         outdir = os.path.normpath(outdir) if outdir else ""
+
         desktop = os.path.join(os.path.expanduser("~"), "Desktop")
-        
-            
+
+        python_path = getattr(app, "python_interpreter_path", "").strip()
+        python_ok = bool(python_path and os.path.isfile(python_path))
+
+        icon_path = getattr(app, "icon_path", "").strip()
+        icon_ok = bool(icon_path and os.path.isfile(icon_path))
+        exe_name = app.exe_name_input.text().strip()
+
+        python_path = getattr(app, "python_interpreter_path", "").strip()
+        interpreter_ok = bool(python_path and os.path.isfile(python_path))
+
+        is_ready = (
+            script_ok and
+            outdir and os.path.isdir(outdir) and
+            python_ok and
+            exe_name
+        )
+
+
         # -------------------------------
-        # UNIFIED BUTTON STATE HANDLER
+        # BUTTON HELPER
         # -------------------------------
+        def set_btn(btn, enabled, color=None):
+            btn.setEnabled(enabled)
 
-        def _set_btn(btn, enabled, active_style=True, text=None):
-            if text is not None:
-                btn.setText(text)
+             # 🔑 skip styling for toggle button
+            if btn is self.app.appened_py_version:
+                return
 
-            btn.setEnabled(bool(enabled))
+            if color:
+                btn.setStyleSheet(f"background-color: {color};")
 
-            if enabled and active_style:
-                btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #444444;
-                    }
-                    QPushButton:hover {
-                        background-color: #555555;
-                    }
-                """)
+            if color:
+                btn.setStyleSheet(f"background-color: {color};")
             else:
-                btn.setStyleSheet("""
-                    QPushButton {
-                        background-color:#1F1F1F;
-                        color: #777777;
-                    }
-                """)
+                btn.setStyleSheet("")
 
-        building = getattr(self.app, "building", False)
+        # -------------------------------
+        # VALUE STATE (TEXT-BASED)
+        # -------------------------------
+        icon_has_value = bool(getattr(app, "icon_path", "").strip())
+        script_has_value = bool(getattr(app, "script_path", "").strip())
+        interpreter_has_value = bool(getattr(app, "python_interpreter_path", "").strip())
+
+        # -------------------------------
+        # RECENTS STATE (JSON-backed)
+        # -------------------------------
+        recent_scripts = app.state_data.get("recent_scripts", [])
+        recent_icons = app.state_data.get("recent_icons", [])
+        recent_interpreters = app.state_data.get("recent_interpreters", [])
+
+        has_recent_scripts = bool(recent_scripts)
+        has_recent_icons = bool(recent_icons)
+        has_recent_interpreters = bool(recent_interpreters)
+
+        # -------------------------------
+        # DELETE + DELETE ALL BUTTONS
+        # -------------------------------
+
+        # ICON
+        icon_enabled = not building and icon_has_value
+        set_btn(app.delete_recent_icons, icon_enabled)
+        app.delete_recent_icons.setText("❌" if icon_enabled else "")
+
+        # SCRIPT
+        script_enabled = not building and script_has_value
+        set_btn(app.delete_recent_folder, script_enabled)
+        app.delete_recent_folder.setText("❌" if script_enabled else "")
+
+        # INTERPRETER
+        interpreter_enabled = not building and interpreter_has_value
+
+        set_btn(app.python_delete_interpreter, interpreter_enabled)
+        app.python_delete_interpreter.setText("❌" if interpreter_enabled else "")
+
+        set_btn(app.delete_all_icons, not building and has_recent_icons)
+        set_btn(app.delete_all_folders, not building and has_recent_scripts)
+        set_btn(app.python_delete_all_interpreter, not building and has_recent_interpreters)
+                        
+        # Tooltips
+        set_btn(app.tooltips_checkbox, not building)
+        set_btn(app.dependency_notice, not building)
+
+        # Apps
+        set_btn(app.open_python_site_btn, not building)
+        set_btn(app.interpreter_btn, not building)
+        set_btn(app.interpreter_refresh_btn, not building and python_ok)
+        app.select_interpreter.setEnabled(not building)
+
+        # -------------------------------
+        # ICON SECTION
+        # -------------------------------
+        set_btn(app.icon_btn, not building)
+        set_btn(app.icon_clear_btn, not building and icon_has_value)
+        set_btn(app.ico_convert_btn, not building)
+        app.select_recent_icons.setEnabled(not building)
+
+        # -------------------------------
+        # FILE SECTION
+        # -------------------------------
+        set_btn(app.folder_btn, not building)
+        set_btn(app.script_clear_btn, not building and script_has_value)
+        app.recent_folder_dropdown.setEnabled(not building)
+
+        # -------------------------------
+        # OUTPUT SECTION
+        # -------------------------------
+        set_btn(app.appened_py_version, not building)
+        set_btn(app.output_btn, not building)
+        app.date_time_dropdown.setEnabled(not building)
+
+        is_desktop = outdir and os.path.normpath(outdir) == os.path.normpath(desktop)
+        set_btn(app.output_refresh_btn, not building and not is_desktop)
         
         # -------------------------------
-        # RECENT DELETE BUTTONS (scripts + icons)
+        # EXE NAME REFRESH (revert to script name)
         # -------------------------------
-        for btn_name in [
-            "delete_recent_folder",
-            "delete_all_folders",
-            "delete_recent_icons",
-            "delete_all_icons",
-        ]:
-            if hasattr(self.app, btn_name):
-                btn = getattr(self.app, btn_name)
+        derived_name = ""
 
-                if building:
-                    _set_btn(btn, False)  # disable during build
+        if script_ok:
+            derived_name = os.path.splitext(os.path.basename(script))[0].strip().lower()
+
+        current_name = app.exe_name_input.text().strip().lower()
+
+        can_revert_name = bool(
+            derived_name and
+            current_name and
+            current_name != derived_name
+        )
+
+        set_btn(app.refresh_btn, not building and can_revert_name)
+
+        app.exe_name_input.setReadOnly(building)
+
+        # -------------------------------
+        # BUTTON COLOR: Python Interpreter
+        # -------------------------------
+
+        if building:
+            app.interpreter_btn.setStyleSheet("background-color: #8a8a8a;")
+        else:
+            if python_ok:
+                app.interpreter_btn.setStyleSheet("background-color: #3bbf3b;")
+            else:
+                app.interpreter_btn.setStyleSheet("background-color: #be1a1a;")
+
+        # -------------------------------
+        # BUTTON COLOR: Script Folder
+        # -------------------------------
+        folder_ok = bool(script_ok)
+
+        if building:
+            app.folder_btn.setStyleSheet("background-color: #8a8a8a;")
+        else:
+            if folder_ok:
+                app.folder_btn.setStyleSheet("background-color: #3bbf3b;")
+            else:
+                app.folder_btn.setStyleSheet("background-color: #be1a1a;")
+
+        # -------------------------------
+        # BUTTON COLOR: Output Folder
+        # -------------------------------
+        
+        output_ok = bool(outdir and os.path.isdir(outdir))
+
+        if building:
+            app.output_btn.setStyleSheet("background-color: #8a8a8a;")
+        else:
+            if output_ok:
+                app.output_btn.setStyleSheet("background-color: #3bbf3b;")
+            else:
+                app.output_btn.setStyleSheet("background-color: #be1a1a;")
+
+        # -------------------------------
+        # STATUS LABEL
+        # -------------------------------
+        current_text = app.status_label.text()
+        
+
+        if building:
+            status_text = "Building..."
+        elif current_text.startswith("Build"):
+            status_text = current_text  # 🔑 preserve "Build complete / failed"
+        elif is_ready:
+            status_text = "Ready to build."
+        else:
+            status_text = "Missing required inputs."
+
+        app.status_label.setText(status_text)
+        app.status_label.setAlignment(Qt.AlignCenter)
+
+        if building:
+            color = "#000000"
+        elif current_text.startswith("Build"):
+            color = "#000000" if "complete" in current_text.lower() else "#be1a1a"
+        elif is_ready:
+            color = "#3bbf3b"
+        else:
+            color = "#be1a1a"
+
+        app.status_label.setStyleSheet(f"""
+            QLabel {{
+                background-color: #FFFFFF;
+                color: {color};
+                border: 1px solid #3a3a3a;
+            }}
+        """)
+
+        if building:
+            app.status_label.setStyleSheet("""
+                QLabel {
+                    background-color: #FFFFFF;
+                    color: #3bbf3b;
+                    border: 1px solid #3a3a3a;
+                }
+            """)
+
+        # -------------------------------
+        # ICON BUTTON TEXT (match grey state)
+        # -------------------------------
+        icon_buttons = [
+            app.delete_recent_icons,
+            app.delete_recent_folder,
+            app.delete_all_icons,
+            app.delete_all_folders,
+            app.python_delete_all_interpreter,
+            app.python_delete_interpreter,
+            app.refresh_btn,
+            app.output_refresh_btn,
+            app.icon_clear_btn,
+            app.script_clear_btn,
+            app.interpreter_refresh_btn,
+        ]
+
+        for btn in icon_buttons:
+            if building:
+                btn.setText("")
+            else:
+                # DELETE BUTTONS → respect actual state
+                if btn == app.delete_recent_icons:
+                    btn.setText("❌" if icon_has_value else "")
+                elif btn == app.delete_recent_folder:
+                    btn.setText("❌" if script_has_value else "")
+                elif btn == app.python_delete_interpreter:
+                    btn.setText("❌" if interpreter_has_value else "")
+
+                elif btn == app.delete_all_icons:
+                    btn.setText("💥" if has_recent_icons else "")
+                elif btn == app.delete_all_folders:
+                    btn.setText("💥" if has_recent_scripts else "")
+                elif btn == app.python_delete_all_interpreter:
+                    btn.setText("💥" if has_recent_interpreters else "")
+
+                # REFRESH / CLEAR (state-driven)
+                elif btn == app.interpreter_refresh_btn:
+                    btn.setText("🔃" if interpreter_has_value else "")
+                elif btn == app.script_clear_btn:
+                    btn.setText("🔃" if script_has_value else "")
+                elif btn == app.icon_clear_btn:
+                    btn.setText("🔃" if icon_has_value else "")
+                elif btn == app.output_refresh_btn:
+                    btn.setText("🔃" if not is_desktop else "")
+                elif btn == app.refresh_btn:
+                    btn.setText("🔃" if can_revert_name else "")
+                            
+
+        # -------------------------------
+        # BUILD BUTTON (authoritative)
+        # -------------------------------
+        if hasattr(app, "build_btn"):
+
+            try:
+                app.build_btn.clicked.disconnect()
+            except:
+                pass
+
+            if building:
+                set_btn(app.build_btn, True, "#d43c3c")
+                app.build_btn.setText("Cancel")
+
+                app.build_btn.clicked.connect(app.build_cancellation.cancel_build)
+
+            else:
+                if is_ready:
+                    set_btn(app.build_btn, True, "#3bbf3b")
                 else:
-                    _set_btn(btn, True)   # re-enable after build
+                    set_btn(app.build_btn, False, "#be1a1a")
+
+                app.build_btn.setText("Build EXE")
+
+                app.build_btn.clicked.connect(app.build_controller.build_exe)
 
         # -------------------------------
-        # ICON CLEAR
+        # LOCK + GREY INPUTS DURING BUILD
         # -------------------------------
-        if hasattr(self.app, "icon_clear_btn"):
-            if building:
-                _set_btn(self.app.icon_clear_btn, False)
-            else:
-                icon_path = getattr(self.app, "icon_path", "").strip()
-                if not icon_path and hasattr(self.app, "icon_path_input"):
-                    icon_path = self.app.icon_path_input.text().strip()
 
-                _set_btn(self.app.icon_clear_btn, bool(icon_path), text="🔃")
+        script = app.script_path_input.text().strip()
+        outdir = app.output_path_input.text().strip()
+        python_path = getattr(app, "python_interpreter_path", "").strip()
+        exe_name = app.exe_name_input.text().strip()
+        icon_path = getattr(app, "icon_path", "").strip()
 
-        # -------------------------------
-        # EXE NAME REFRESH
-        # -------------------------------
-        if hasattr(self.app, "refresh_btn"):
-            if building:
-                _set_btn(self.app.refresh_btn, False)
-            else:
-                exe_name = self.app.exe_name_input.text().strip()
-                can_refresh = script_ok and exe_name and exe_name != "main"
-
-                _set_btn(self.app.refresh_btn, can_refresh, text="🔃")
+        script_ok = bool(script and os.path.isfile(os.path.normpath(script)))
+        outdir_ok = bool(outdir and os.path.isdir(os.path.normpath(outdir)))
+        python_ok = bool(python_path and os.path.isfile(os.path.normpath(python_path)))
+        exe_ok = bool(exe_name)
+        icon_ok = bool(icon_path and os.path.isfile(os.path.normpath(icon_path)))
 
         # -------------------------------
-        # OUTPUT REFRESH
+        # LOCK + GREY (respect validation)
         # -------------------------------
-        if hasattr(self.app, "output_refresh_btn"):
-            if building:
-                _set_btn(self.app.output_refresh_btn, False)
-            else:
-                python_path = getattr(self.app, "python_interpreter_path", "")
-                python_ok = python_path and os.path.isfile(python_path)
+        state = self.validation_status_message()
 
-                is_desktop = (
-                    outdir and
-                    os.path.normpath(outdir) == os.path.normpath(desktop)
-                )
-
-                can_revert_output = (
-                    script_ok and
-                    python_ok and
-                    not is_desktop
-                )
-
-                _set_btn(self.app.output_refresh_btn, can_revert_output)
+        mapping = [
+        (app.python_entry_input, state["python_ok"]),
+        (app.script_path_input, state["script_ok"]),
+        (app.output_path_input, state["outdir_ok"]),
+        (app.exe_name_input, state["exe_ok"]),
+        (app.icon_path_input, state["icon_ok"]),
+        ]
 
         # -------------------------------
-        # SCRIPT CLEAR
+        # BUILD MODE → force grey
         # -------------------------------
-        if hasattr(self.app, "script_clear_btn"):
-            if building:
-                _set_btn(self.app.script_clear_btn, False)
-            else:
-                _set_btn(self.app.script_clear_btn, script_ok)
+        if building:
+            for widget, _ in mapping:
 
-        # -------------------------------
-        # BUILD BUTTON (separate styling)
-        # -------------------------------
-        if hasattr(self.app, "build_btn"):
-
-            # 🔴 BUILDING → Cancel mode
-            if building:
-                self.app.build_btn.setEnabled(True)
-                self.app.build_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #d43c3c;
-                        color: white;
-                    }
-                    QPushButton:hover {
-                        background-color: #d43c3c;
-                    }
-                """)
-
-            # 🟢 READY → Build
-            elif is_ready:
-                self.app.build_btn.setEnabled(True)
-                self.app.build_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #3bbf3b;
-                        color: white;
-                    }
-                    QPushButton:hover {
-                        background-color: #2e9e2e;
-                    }
-                """)
-
-            # 🔴 NOT READY → disabled (grey text)
-            else:
-                self.app.build_btn.setEnabled(False)
-                self.app.build_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #be1a1a;
-                        color: white;
-                    }
-                    QPushButton:disabled {
-                        background-color: #be1a1a;
-                        color: white;
-                    }
-                """)
-                                        
-        # -------------------------------
-        # EXE NAME REFRESH (🔃)
-        # -------------------------------
-        if hasattr(self.app, "refresh_btn"):
-            if building:
-                _set_btn(self.app.refresh_btn, False)
-            else:
-                exe_name = self.app.exe_name_input.text().strip()
-                can_refresh = (
-                    script_ok and
-                    exe_name and
-                    exe_name != "main"
-                )
-
-                _set_btn(self.app.refresh_btn, can_refresh, text="🔃")
-                
-        # -------------------------------
-        # EXE NAME FIELD (LOCK DURING BUILD)
-        # -------------------------------
-        if hasattr(self.app, "exe_name_input"):
-            if getattr(self.app, "building", False):
-                self.app.exe_name_input.setReadOnly(True)
-                self.app.exe_name_input.setStyleSheet("""
+                widget.setStyleSheet("""
                     QLineEdit {
-                        background-color: #202020;
-                        color: #777777;
-                        border: 1px solid #3a3a3a;
-                    }
-                """)
-            else:
-                self.app.exe_name_input.setReadOnly(False)
-                self.app.exe_name_input.setStyleSheet("""
-                    QLineEdit {
-                        background-color: #252525;
-                        color: #e0e0e0;
-                        border: 1px solid #3a3a3a;
+                        background-color: #d3d3d3;
+                        color: #7a7a7a;
+                        border: 2px solid #8a8a8a;
                     }
                 """)
 
-
-        # --------------------------------
-        # HARD RESET when script removed
-        # --------------------------------
-        if not script_ok:
-            if hasattr(self.app, "output_path_input"):
-                self.app.output_path_input.clear()
-
-            if hasattr(self.app, "exe_name_input"):
-                self.app.exe_name_input.clear()
-
-        # --------------------------------
-        # INLINE: Output path status
-        # --------------------------------
-        if hasattr(self.app, "output_path_status_label"):
-            if outdir and os.path.isdir(outdir):
-                self.app.output_path_status_label.setText("OUTPUT PATH SET")
-                self.app.output_path_status_label.setStyleSheet("color: #3bbf3b;")
-                self.app.output_path_status_label.setFixedSize(155,35)
-            else:
-                self.app.output_path_status_label.setText("OUTPUT PATH NOT SET")
-                self.app.output_path_status_label.setStyleSheet("color: #be1a1a;")
-                self.app.output_path_status_label.setFixedSize(185,35)
-
-        # --------------------------------
-        # INLINE: EXE name status
-        # --------------------------------
-        exe_name = self.app.exe_name_input.text().strip()
-
-        if hasattr(self.app, "exe_name_status_label"):
-            if exe_name:
-                self.app.exe_name_status_label.setText("EXE NAME SET")
-                self.app.exe_name_status_label.setStyleSheet("color: #3bbf3b;")
-                self.app.exe_name_status_label.setFixedSize(125,35)
-            else:
-                self.app.exe_name_status_label.setText("EXE NAME NOT SET")
-                self.app.exe_name_status_label.setStyleSheet("color: #be1a1a;")
-                self.app.exe_name_status_label.setFixedSize(155,35)
-                
-
-        # -------------------------------
-        # Icon clear state
-        # -------------------------------
-        
-        state = {}
-
-        icon_path = getattr(self.app, "icon_path", "").strip()
-        state["has_icon"] = bool(icon_path)
-
-        # -------------------------------
-        # Validation state
-        # -------------------------------
+        else:
+            for widget, ok in mapping:
 
 
-        validation = self.validation_status_message()
-        state.update(validation)
+                # 🔑 FORCE FULL RESET FIRST (this is what you're missing)
+                widget.setStyleSheet("")
 
-        # Build button state
-        state["can_build"] = self.inputs_are_valid()
-
-        return state
-
-
-    def extract_imports_from_file(self, py_file: str) -> set[str]:
-        imports = set()
-
-        try:
-            with open(py_file, "r", encoding="utf-8") as f:
-                tree = ast.parse(f.read(), filename=py_file)
-        except Exception:
-            return imports  # advisory only
-
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import):
-                for alias in node.names:
-                    imports.add(alias.name.split(".")[0])
-            elif isinstance(node, ast.ImportFrom):
-                if node.module:
-                    imports.add(node.module.split(".")[0])
-
-        return imports
-
-    def filter_external_imports(self, imports: set[str]) -> list[str]:
-        stdlib = set(sys.stdlib_module_names)
-        return sorted(i for i in imports if i not in stdlib)
-
-
-    def run_dependency_advisory(self, entry_file: str) -> list[str]:
-        imports = self.extract_imports_from_file(entry_file)
-        external = self.filter_external_imports(imports)
-        return external
-
-
-
-
+            # 🔑 THEN reapply validation styling
+            self.validation_status_message()

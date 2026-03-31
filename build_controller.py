@@ -1,8 +1,9 @@
-import datetime,os,sys,subprocess,time,threading
-from PySide6.QtCore import  QTimer
+import datetime,os,sys,subprocess,time
 from PySide6.QtGui import QFont
 from bundle_validation import validate_bundle_inputs
 from datetime import datetime
+from PySide6.QtCore import QObject, Signal,QTimer
+import subprocess
 
 CREATE_NO_WINDOW = 0x08000000
 
@@ -10,25 +11,90 @@ class BuildController:
     def __init__(self, app):
         self.app = app
 
+    # ============================================================
+    # ETA LOOP
+    # ============================================================
+    def start_eta(self):
+        self.app._eta_running = True
+        self._tick_eta()
+
+    def stop_eta(self):
+        self.app._eta_running = False
+
+    def _tick_eta(self):
+        app = self.app
+
+        if not getattr(app, "_eta_running", False):
+            return
+
+        if not getattr(app, "building", False):
+            return
+
+        elapsed = int(time.time() - app.build_start_time)
+        est_total = app.last_build_seconds
+        remaining = max(est_total - elapsed, 0)
+
+        app.status_label.setFont(QFont("Rubik UI", 13, QFont.Bold))
+        app.status_label.setText(
+            f"Building... {elapsed}s elapsed\n — approx {remaining}s remaining"
+        )
+
+        
+
+        QTimer.singleShot(300, self._tick_eta)
+
     # -------------------------------------------------------------
     # Build EXE
     # -------------------------------------------------------------
 
     def build_exe(self, app):
         app = self.app
-        app.building = False
+        app.building = True
         app._eta_running = True
 
-
-        # ==================================================
-        # Debug log (Desktop, user-visible)
-        # ==================================================
-
         timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+
+        # 🔑 match build naming logic
+        script = app.entry_script or ""
+        script = os.path.normpath(script) if script else ""
+
+        script_name = os.path.splitext(os.path.basename(script))[0].lower() if script else ""
+        parent = os.path.basename(os.path.dirname(script)) if script else ""
+
+        parts = ["EXE_BUILDER_DEBUG"]
+
+        if script:
+            parts.append(app.exe_name_input.text().strip() or "exe")
+
+            # parent (main/app/run case)
+            if script_name in {"main", "app", "run"} and parent:
+                parts.append(parent)
+
+        # 🔑 python version append (match build logic)
+        if getattr(app, "append_py_version", False):
+            python_path = getattr(app, "python_interpreter_path", "")
+            version = "py"
+
+            if python_path:
+                try:
+                    parent = os.path.basename(os.path.dirname(python_path)).lower()
+                    if parent.startswith("python"):
+                        raw = parent.replace("python", "")
+                        if raw.isdigit():
+                            version = f"py{raw[0]}.{raw[1:]}" if len(raw) > 1 else f"py{raw}"
+                except:
+                    pass
+
+            parts.append(version)
+
+        parts.append(timestamp)
+
+        log_name = "_".join(parts) + ".log"
+
         app.debug_log_path = os.path.join(
             os.path.expanduser("~"),
             "Desktop",
-            f"EXE_BUILDER_DEBUG_{timestamp}.log"
+            log_name
         )
 
         with open(app.debug_log_path, "w", encoding="utf-8") as f:
@@ -46,15 +112,17 @@ class BuildController:
         # CANCEL MODE
         # ==================================================
 
-        if app.build_process:
-            app.build_cancellation.cancel_build()
-            return
-
         import build_cancellation
         app.build_cancellation = build_cancellation.BuildCancellation(
             app=app, ui=app
         )
 
+
+        if app.build_process:
+            app.build_cancellation.cancel_build()
+            return
+
+      
         # ==================================================
         # READ UI VALUES
         # ==================================================
@@ -91,18 +159,14 @@ class BuildController:
         # ENTER BUILD MODE
         # ==================================================
 
-        app.building = True
-        if hasattr(app, "script_clear_btn"):
-            app.script_clear_btn.setDisabled(True)
         app.build_btn.setText("Cancel EXE")
         app.build_btn.clicked.disconnect()
         app.build_btn.clicked.connect(self.build_exe)
-        app.status_label.setFixedWidth(425)
-        
-       
+        app.status_label.setFixedWidth(250)
+        app.validation_controller.update_ui_state()
         
         app.build_start_time = time.time()
-        app.state_ctrl.update_eta_loop()
+        self.start_eta()
         
         # ==================================================
         # Final validation
@@ -159,9 +223,8 @@ class BuildController:
 
         if not outdir or not os.path.isdir(outdir):
             app.set_status("Output folder does not exist.")
-            app.building = False
             app.build_ui_controller.restore_build_ui()
-            app.validator.validation_status_message()  # 🔑 force red
+            app.validation_controller.validation_status_message()  # 🔑 force red
             return
 
         # 🔑 Test write access (handles protected folders)
@@ -171,22 +234,60 @@ class BuildController:
                 f.write("test")
             os.remove(test_file)
         except Exception:
-            app.validator.set_build_error(
+            app.validation_controller.set_build_error(
                 f"ERROR — Cannot write to this folder\n{outdir}\n"
                 "This location is read-only. Choose another."
             )
 
-            app.building = False
-            app.build_ui_controller.restore_build_ui()
+
+            app.validation_controller_update_ui_state()
             return
         
         # ==================================================
         # Build paths
         # ==================================================
 
-        app.build_counter += 1
-        timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M")
-        final_exe_name = f"{exe_name}_{timestamp}"
+        app.last_build_counter += 1
+        timestamp = ""
+        if getattr(app, "append_datetime", False):
+            fmt = getattr(app, "datetime_format", "")
+            if fmt:
+                timestamp = datetime.now().strftime(fmt)
+        from pathlib import Path
+
+        script_path = Path(script)
+        script_name = script_path.stem.lower()
+
+        parts = [exe_name]
+
+        # 🔑 prevent overwrite for common entry files
+        if script_name in {"main", "app", "run"}:
+            parent_name = script_path.parent.name
+            if parent_name:
+                parts.append(parent_name)
+
+        # date/time
+        if getattr(app, "append_datetime", False):
+            parts.append(timestamp)
+
+        # python version
+        if getattr(app, "append_py_version", False):
+            python_path = getattr(app, "python_interpreter_path", "")
+            version = "py"
+
+            if python_path:
+                try:
+                    parent = os.path.basename(os.path.dirname(python_path)).lower()
+                    if parent.startswith("python"):
+                        raw = parent.replace("python", "")
+                        if raw.isdigit():
+                            version = f"py{raw[0]}.{raw[1:]}" if len(raw) > 1 else f"py{raw}"
+                except:
+                    pass
+
+            parts.append(version)
+
+        final_exe_name = "_".join(parts)
 
         build_path = os.path.join(outdir, "build", final_exe_name)
         spec_path = os.path.join(outdir, "spec", final_exe_name)
@@ -240,86 +341,106 @@ class BuildController:
 
         app.status_label.setText("Building...")
         # ⛔ move this OUT of thread (safe here)
-        app.build_ui_controller.set_controls_enabled(False)
-        
-        def run_build(cmd):
-            app.recent_folder_dropdown.setEnabled(False)
-            app.refresh_btn.setEnabled(False)
-            app.exe_name_input.setReadOnly(False)
-            app.icon_clear_btn.setEnabled(False)
-            
 
-            try:
-                with open(app.debug_log_path, "a", encoding="utf-8") as f:
-                    f.write("ENTERED run_build\n")
-                    f.write("CMD: " + " ".join(cmd) + "\n")
+        from PySide6.QtCore import QThread
 
-                proc = subprocess.Popen(
-                    cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    creationflags=CREATE_NO_WINDOW
-                )
+        self.build_thread = QThread()
+        self.worker = BuildWorker(app, cmd)
 
-                app.build_process = proc
+        self.worker.moveToThread(self.build_thread)
 
-                out, err = proc.communicate()
-                ret = proc.returncode
+        self.build_thread.started.connect(self.worker.run)
+        self.worker.finished.connect(self.on_build_complete)
 
-                with open(app.debug_log_path, "a", encoding="utf-8") as f:
-                    f.write(f"RETURN CODE: {ret}\n")
-                    f.write("STDERR:\n" + (err or "<empty>") + "\n")
+        # cleanup
+        self.worker.finished.connect(self.build_thread.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.build_thread.finished.connect(self.build_thread.deleteLater)
 
-                # ✅ SAFE HANDOFF TO UI THREAD
-                def on_complete():
-                    if not app.building:
-                        return
+        self.build_thread.start()
 
-                    if ret == 0:
-                        app.last_build_seconds = int(time.time() - app.build_start_time)
-                        app.state_ctrl.save_state()
+    def on_build_complete(self, ret, out, err):
+        app = self.app
 
-                        app.set_status("Build complete.")
-                        QTimer.singleShot(5000, app.showMinimized)
-                    else:
-                        app.set_status("Build failed. See debug log.")
-                    
-                    app.building = False
-                        
-                app.icon_clear_btn.setEnabled(True)
-                app.refresh_btn.setEnabled(True)
-                app.exe_name_input.setReadOnly(True)
-                app._eta_running = False
-                app.recent_folder_dropdown.setEnabled(True)
-                app.build_btn.setText("Build EXE")
-                self.app.build_btn.setStyleSheet("background-color:#3bbf3b;")
-                app.set_status("Build complete." if ret == 0 else "Build failed. See debug log.")
-           
-                app.status_label.setFont(QFont("Rubik UI", 11, QFont.Bold))
+        app._status_locked = True
 
-                try:
-                    app.build_btn.clicked.disconnect()
-                except:
-                    pass
+        if ret == 0:
+            app.last_build_seconds = int(time.time() - app.build_start_time)
+            app.state_ctrl.save_state()
+            app.set_status("Build complete.")
+        else:
+            app.set_status("Build failed. See debug log.")
 
-                app.build_btn.clicked.connect(self.build_exe)
-                QTimer.singleShot(0, lambda: on_complete())  # ← SAFE
+        app.status_label.setFont(QFont("Rubik UI", 11, QFont.Bold))
 
-            finally:
-                # ✅ SAFE UI CLEANUP
-                def finalize_ui():
-                    app.build_process = None
-                    app.restore_build_ui()
-                    
-                QTimer.singleShot(0, lambda: finalize_ui())  # ← SAFE
+        # 🔑 STOP LOOP CLEANLY
+        self.stop_eta()
+        app.building = False
+        app.build_process = None
+        self._unlock_status()
+        app.validation_controller.update_ui_state()
 
-        # ✅ THIS MUST BE RIGHT AFTER THE FUNCTION
-        threading.Thread(
-            target=run_build,
-            args=(cmd,),
-            daemon=True
-        ).start()
-        
-        app.build_ui_controller.set_controls_enabled(True)
-        app.validator.update_build_button_state()
+    def _unlock_status(self):
+        app = self.app
+        app._status_locked = False
+
+    # ============================================================
+    # ETA time estimator
+    # ============================================================
+    def update_eta_loop(self):
+        if not getattr(self.app, "_eta_running", False):
+            return
+
+        if not getattr(self.app, "building", False):
+            return
+
+        elapsed = int(time.time() - self.app.build_start_time)
+        est_total = self.app.last_build_seconds
+        remaining = max(est_total - elapsed, 0)
+            # 🔑 FORCE FONT EVERY TICK (kills jump)
+        self.app.status_label.setFont(QFont("Rubik UI", 13, QFont.Bold))
+        self.app.status_label.setText(
+            f"Building... {elapsed}s elapsed\n — approx {remaining}s remaining"
+        )
+        self.app.status_label.setFixedSize(200,100)
+
+        QTimer.singleShot(1, self.update_eta_loop)
+
+
+class BuildWorker(QObject):
+    finished = Signal(int, str, str)  # ret, stdout, stderr
+
+    def __init__(self, app, cmd):
+        super().__init__()
+        self.app = app
+        self.cmd = cmd
+
+    def run(self):
+        try:
+            with open(self.app.debug_log_path, "a", encoding="utf-8") as f:
+                f.write("ENTERED run_build\n")
+                f.write("CMD: " + " ".join(self.cmd) + "\n")
+
+            proc = subprocess.Popen(
+                self.cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                creationflags=CREATE_NO_WINDOW
+            )
+
+            self.app.build_process = proc
+
+            out, err = proc.communicate()
+            ret = proc.returncode
+
+            with open(self.app.debug_log_path, "a", encoding="utf-8") as f:
+                f.write(f"RETURN CODE: {ret}\n")
+                f.write("STDERR:\n" + (err or "<empty>") + "\n")
+
+        except Exception as e:
+            ret = -1
+            out = ""
+            err = str(e)
+
+        self.finished.emit(ret, out, err)

@@ -1,6 +1,6 @@
 import os
 import subprocess
-from PySide6.QtWidgets import QFileDialog, QDialog, QVBoxLayout, QPushButton, QLabel, QComboBox, QVBoxLayout, QPushButton
+from PySide6.QtWidgets import QFileDialog, QDialog, QVBoxLayout, QPushButton, QLabel, QComboBox, QVBoxLayout, QPushButton,QFrame
 from PySide6.QtCore import Qt
 
 # -------------------------------------------------------------
@@ -16,17 +16,6 @@ class FilePickerController:
 
     def _derive_exe_name_from_script(self, script_path):
         return os.path.splitext(os.path.basename(script_path))[0]
-
-    # ============================================================
-    # Open Installed Apps
-    # ============================================================
-
-    def open_installed_apps(self):
-        """Open Windows Installed Apps (Programs and Features)."""
-        try:
-            subprocess.Popen(["appwiz.cpl"], shell=True)
-        except Exception as e:
-            print("Failed to open Installed Apps:", e)
 
     # ============================================================
     # Locate python installs
@@ -68,18 +57,21 @@ class FilePickerController:
         if not path:
             return
 
-        # 🔑 NORMALIZE HERE
+        # 🔑 NORMALIZE
         path = os.path.normpath(path)
 
-        # ✅ SINGLE SOURCE OF TRUTH
+        # ✅ SINGLE SOURCE OF TRUTH (current)
         self.app.python_interpreter_path = path
-
-        # optional alias (safe to keep if used elsewhere)
         self.app.python_path = path
 
         # ✅ UI update
         if hasattr(self.app, "python_entry_input"):
             self.app.python_entry_input.setText(path)
+
+        # 🔑 ADD → recents system
+        if hasattr(self.app, "recent_controller"):
+            self.app.recent_controller.add_recent_interpreter(path)
+            self.app.recent_controller.populate_recent_interpreters_dropdown()
 
         # remember last dir
         self.app.last_python_dir = os.path.dirname(path)
@@ -91,6 +83,7 @@ class FilePickerController:
         # refresh validation
         if hasattr(self.app, "validator"):
             self.app.validator.validation_status_message()
+            self.app.validator.update_ui_state()
             
     def _resolve_python_start_dir(self):
         """Best directory to open the interpreter picker in."""
@@ -254,6 +247,7 @@ class FilePickerController:
 
         self.app.state_ctrl.save_state()
         self.app.validator.validation_status_message()
+        self.app.validator.update_ui_state()
         
     def _apply_selected_icon(self, full_path):
     # 🔑 NORMALIZE
@@ -279,6 +273,7 @@ class FilePickerController:
 
         self.app.state_ctrl.save_state()
         self.app.validator.validation_status_message()
+        self.app.validator.update_ui_state()
 
     # ============================================================
     # Select icon
@@ -308,6 +303,7 @@ class FilePickerController:
 
             self.app.state_ctrl.save_state()
             self.app.validator.validation_status_message()
+            self.app.validator.update_ui_state()
 
     # ============================================================
     # Select output folder
@@ -347,6 +343,7 @@ class FilePickerController:
 
         self.app.state_ctrl.save_state()
         self.app.validator.validation_status_message()
+        self.app.validator.update_ui_state()
     
 class ScriptPickerPopup(QDialog):
     def __init__(self, parent, folder_path, py_files, callback):
@@ -370,11 +367,28 @@ class ScriptPickerPopup(QDialog):
 
         self.move(x, y)
 
-        # -------------------------------------------------------------
+    # -------------------------------------------------------------
         # Layout
         # -------------------------------------------------------------
 
         layout = QVBoxLayout(self)
+
+        self.frame = QFrame()
+        self.frame.setFrameShape(QFrame.StyledPanel)
+        self.frame.setFrameShadow(QFrame.Raised)
+        self.frame.setLineWidth(1)
+
+        self.frame.setStyleSheet("""
+            QFrame {
+                border: 2px solid #080B12;
+                border-radius: 2px;
+                background-color: #DCDBDB;
+            }
+        """)
+
+        frame_layout = QVBoxLayout(self.frame)
+        frame_layout.setContentsMargins(8, 8, 8, 8)
+        frame_layout.setSpacing(6)
 
         label = QLabel("Select the script\nthat starts your program:")
         label.setWordWrap(True)
@@ -383,7 +397,7 @@ class ScriptPickerPopup(QDialog):
             font-size: 13px;
             font-weight: bold;
         """)
-        layout.addWidget(label)
+        frame_layout.addWidget(label, alignment=Qt.AlignHCenter)
 
         self.dropdown = QComboBox()
         self.dropdown.addItems(py_files)
@@ -391,7 +405,7 @@ class ScriptPickerPopup(QDialog):
             font-family: "Rubik";
             font-size: 13px;
         """)
-        layout.addWidget(self.dropdown, alignment=Qt.AlignHCenter)
+        frame_layout.addWidget(self.dropdown, alignment=Qt.AlignHCenter)
 
         confirm_btn = QPushButton("Confirm")
         confirm_btn.setFixedWidth(120)
@@ -401,7 +415,9 @@ class ScriptPickerPopup(QDialog):
             font-size: 13px;
             font-weight: bold;
         """)
-        layout.addWidget(confirm_btn, alignment=Qt.AlignHCenter)
+        frame_layout.addWidget(confirm_btn, alignment=Qt.AlignHCenter)
+
+        layout.addWidget(self.frame, alignment=Qt.AlignHCenter)
 
     def confirm(self):
         selected_file = self.dropdown.currentText()

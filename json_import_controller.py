@@ -17,6 +17,9 @@ class JsonImportController(QObject):
         self.app.recent_folder_dropdown.installEventFilter(self)
         self.app.select_recent_icons.installEventFilter(self)
 
+        self.app.select_interpreter.setAcceptDrops(True)
+        self.app.select_interpreter.installEventFilter(self)
+
     # -------------------------------
     # Event filter (shared for both)
     # -------------------------------
@@ -64,6 +67,12 @@ class JsonImportController(QObject):
             if os.path.exists(p)
         ]
 
+        data["python_interpreter_path"] = (
+            data.get("python_interpreter_path", "")
+            if os.path.isfile(data.get("python_interpreter_path", ""))
+            else ""
+        )
+
         # 🔑 overwrite state
         app.state_data = data
 
@@ -78,6 +87,7 @@ class JsonImportController(QObject):
         app.recent_controller.populate_recent_dropdown()
         app.recent_controller.populate_recent_icons_dropdown()
 
+
         # 🔑 restore selections
         if data.get("last_script_path"):
             app.file_pickers._apply_selected_entry(data["last_script_path"])
@@ -85,5 +95,16 @@ class JsonImportController(QObject):
         if data.get("last_icon_path"):
             app.file_pickers._apply_selected_icon(data["last_icon_path"])
 
+        if data.get("python_interpreter_path"):
+            app.python_interpreter_path = data["python_interpreter_path"]
+
+        if data.get("datetime_format"):
+            app.datetime_format = data["datetime_format"]
+            for i in range(app.date_time_dropdown.count()):
+                if app.date_time_dropdown.itemData(i) == data["datetime_format"]:
+                    app.date_time_dropdown.setCurrentIndex(i)
+                    break
+
         app.validator.validation_status_message()
-        app.validator.update_build_button_state()
+        self.app.validator.update_ui_state()
+        
