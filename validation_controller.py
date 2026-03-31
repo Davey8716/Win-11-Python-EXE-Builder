@@ -1,7 +1,7 @@
 import os
 import sys
 import ast
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer,Qt
 
 class ValidationController:
     def __init__(self, app):
@@ -115,9 +115,9 @@ class ValidationController:
             self.app._dependency_popup_shown = False
 
         if not is_ready:
-            self.app.status_label.setFixedSize(200,75)
+            self.app.status_label.setFixedSize(250,75)
         else:
-            self.app.status_label.setFixedSize(350,75)
+            self.app.status_label.setFixedSize(250,75)
 
         # ==========================================================
         # Dependency advisory — fire ONCE when NOT READY → READY
@@ -345,7 +345,7 @@ class ValidationController:
         set_btn(app.refresh_btn, not building and can_revert_name)
 
         app.exe_name_input.setReadOnly(building)
-        
+
         # -------------------------------
         # BUTTON COLOR: Python Interpreter
         # -------------------------------
@@ -389,6 +389,7 @@ class ValidationController:
         # STATUS LABEL
         # -------------------------------
         current_text = app.status_label.text()
+        
 
         if building:
             status_text = "Building..."
@@ -400,6 +401,7 @@ class ValidationController:
             status_text = "Missing required inputs."
 
         app.status_label.setText(status_text)
+        app.status_label.setAlignment(Qt.AlignCenter)
 
         if building:
             color = "#000000"
@@ -417,6 +419,15 @@ class ValidationController:
                 border: 1px solid #3a3a3a;
             }}
         """)
+
+        if building:
+            app.status_label.setStyleSheet("""
+                QLabel {
+                    background-color: #FFFFFF;
+                    color: #3bbf3b;
+                    border: 1px solid #3a3a3a;
+                }
+            """)
 
         # -------------------------------
         # ICON BUTTON TEXT (match grey state)

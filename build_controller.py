@@ -38,7 +38,8 @@ class BuildController:
         app.status_label.setText(
             f"Building... {elapsed}s elapsed\n — approx {remaining}s remaining"
         )
-        app.status_label.setFixedSize(315, 100)
+
+        
 
         QTimer.singleShot(300, self._tick_eta)
 
@@ -127,7 +128,7 @@ class BuildController:
         app.build_btn.setText("Cancel EXE")
         app.build_btn.clicked.disconnect()
         app.build_btn.clicked.connect(self.build_exe)
-        app.status_label.setFixedWidth(425)
+        app.status_label.setFixedWidth(250)
         app.validation_controller.update_ui_state()
         
         app.build_start_time = time.time()
@@ -367,7 +368,7 @@ class BuildController:
         self.app.status_label.setText(
             f"Building... {elapsed}s elapsed\n — approx {remaining}s remaining"
         )
-        self.app.status_label.setFixedSize(315,100)
+        self.app.status_label.setFixedSize(200,100)
 
         QTimer.singleShot(1, self.update_eta_loop)
 
