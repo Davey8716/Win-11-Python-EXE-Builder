@@ -140,6 +140,32 @@ class UIHandlers:
         app.tooltips_enabled = bool(state)
         app.state_ctrl.save_state()
 
+    def on_minimize_toggle(self, state):
+        app = self.app
+        app.minimize_after_build_enabled = bool(state)
+
+        # 🔑 enforce mutual exclusion immediately
+        if state:
+            app.close_after_build.setChecked(False)
+            app.close_after_build_enabled = False
+
+        app.state_ctrl.save_state()
+        app.validator.update_ui_state()   # 🔑 THIS WAS MISSING
+
+
+    def on_close_toggle(self, state):
+        app = self.app
+        app.close_after_build_enabled = bool(state)
+
+        # 🔑 enforce mutual exclusion immediately
+        if state:
+            app.minimize_after_build.setChecked(False)
+            app.minimize_after_build_enabled = False
+
+        app.state_ctrl.save_state()
+        app.validator.update_ui_state()   
+        
+
     def on_script_path_change(self, text):
         app = self.app
         if getattr(app, "_loading_state", False):

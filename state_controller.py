@@ -59,6 +59,8 @@ class StateController:
             # -------------------------
             self.app.tooltips_enabled = data.get("tooltips_enabled", True)
             self.app.dependency_notice_enabled = data.get("dependency_notice_enabled", True)
+            self.app.close_after_build_enabled = data.get("close_after_build_enabled", True)
+            self.app.minimize_after_build_enabled = data.get("minimize_after_build_enabled", True)
 
             self.app.script_path = _norm(data.get("last_script_path", ""))
             self.app.icon_path = _norm(data.get("last_icon_path", ""))
@@ -90,6 +92,23 @@ class StateController:
             # -------------------------
             # Sync state -> UI
             # -------------------------
+            # 🔑 restore + enforce mutual exclusion (hasattr style)
+
+            close_val = getattr(self.app, "close_after_build_enabled", True)
+            min_val = getattr(self.app, "minimize_after_build_enabled", True)
+
+            # enforce rule (close wins if both True)
+            if close_val and min_val:
+                min_val = False
+                self.app.minimize_after_build_enabled = False
+
+            if hasattr(self.app, "close_after_build"):
+                self.app.close_after_build.setChecked(close_val)
+
+            if hasattr(self.app, "minimize_after_build"):
+                self.app.minimize_after_build.setChecked(min_val)
+
+
             if hasattr(self.app, "tooltips_checkbox"):
                 self.app.tooltips_checkbox.setChecked(self.app.tooltips_enabled)
 
@@ -181,9 +200,11 @@ class StateController:
             "recent_interpreters": recent_interpreters,
 
             "last_build_seconds": self.app.last_build_seconds,
-        
+
+            "close_after_build_enabled": getattr(self.app, "close_after_build_enabled", True),
             "tooltips_enabled": getattr(self.app, "tooltips_enabled", True),
             "dependency_notice_enabled": getattr(self.app, "dependency_notice_enabled", True),
+            "minimize_after_build_enabled": getattr(self.app, "minimize_after_build_enabled", True),
 
             "icon_user_cleared": getattr(self.app, "icon_user_cleared", False),
             "script_user_cleared": getattr(self.app, "script_user_cleared", False),

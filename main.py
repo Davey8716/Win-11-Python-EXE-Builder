@@ -91,8 +91,9 @@ class EXEBuilderApp(QWidget):
         self.last_build_counter = 0
         
         self.setFixedSize(500, 985)
-    
 
+        self.close_after_build_enabled = getattr(self, "close_after_build_enabled", True)
+        self.minimize_after_build_enabled = getattr(self, "minimize_after_build_enabled", True)
         self.tooltips_enabled = getattr(self, "tooltips_enabled", True)
         self.dependency_notice_enabled = getattr(self, "dependency_notice_enabled", True)
         self.script_path = getattr(self, "script_path", "")
@@ -125,26 +126,55 @@ class EXEBuilderApp(QWidget):
         # -------------------------------
 
         toggles_frame = QFrame()
-        toggles_frame.setFixedSize(200,75)
+        toggles_frame.setFixedSize(430, 75)
         toggles_frame.setFrameShape(QFrame.StyledPanel)
         toggles_frame.setFrameShadow(QFrame.Raised)
         toggles_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         toggles_layout = QVBoxLayout(toggles_frame)
-        toggles_layout.setContentsMargins(5,5,5,5)
-        toggles_layout.setSpacing(1)
+        toggles_layout.setContentsMargins(5, 5, 5, 5)
+        toggles_layout.setSpacing(2)
+
+        # -------------------------------
+        # ROW 1
+        # -------------------------------
+
+        row1 = QHBoxLayout()
+        row1.setContentsMargins(0, 0, 0, 0)
+        row1.setSpacing(10)
 
         self.tooltips_checkbox = QCheckBox("Tooltips")
         self.dependency_notice = QCheckBox("Dependency Notice")
 
-        for cb in [
-            self.tooltips_checkbox,
-            self.dependency_notice,
-        ]:
-            cb.setFixedSize(200,15)
+        row1.addStretch()
+        row1.addWidget(self.tooltips_checkbox)
+        row1.addWidget(self.dependency_notice)
+        row1.addStretch()
 
-        toggles_layout.addWidget(self.tooltips_checkbox)
-        toggles_layout.addWidget(self.dependency_notice)
+        # -------------------------------
+        # ROW 2
+        # -------------------------------
+
+        row2 = QHBoxLayout()
+        row2.setContentsMargins(0, 0, 0, 0)
+        row2.setSpacing(10)
+
+        self.minimize_after_build = QCheckBox("Minimize After Build")
+        self.close_after_build = QCheckBox("Close After Build")
+
+        row2.addStretch()
+        row2.addWidget(self.minimize_after_build)
+        row2.addWidget(self.close_after_build)
+
+        # 🔑 spacer for future toggle (4th slot)
+        row2.addStretch()
+
+        # -------------------------------
+        # ATTACH
+        # -------------------------------
+
+        toggles_layout.addLayout(row1)
+        toggles_layout.addLayout(row2)
 
         # -------------------------------
         # WRAPPER (forces vertical alignment)
@@ -807,23 +837,22 @@ class EXEBuilderApp(QWidget):
                 widget.setPlaceholderText(text)
                 widget.setFont(font)
 
-        for checkbox in [
+        for cb in [
             self.tooltips_checkbox,
-            self.dependency_notice
-            
+            self.dependency_notice,
+            self.minimize_after_build,
+            self.close_after_build,
         ]:
-            checkbox.setFont(QFont("Rubik Ui",12, QFont.Bold))
-            checkbox.setChecked(True)
-            checkbox.setFixedSize(185,35)
+            cb.setFixedSize(200,15)
+            cb.setChecked(True)
+            cb.setFont(QFont("Rubik UI", 13, QFont.Bold))
 
         for widget in [
             self.folder_btn,
             self.recent_folder_dropdown,
             self.delete_recent_folder,
             self.delete_all_folders,
-            
         ]:  
-            
             folder_row.addWidget(widget)
             
         folder_row.addStretch()
@@ -945,8 +974,13 @@ class EXEBuilderApp(QWidget):
         self.exe_name_input.textChanged.connect(self.ui_handlers._on_exe_name_user_edit)
         self.exe_name_input.textChanged.connect(self.ui_handlers.on_exe_name_change)
         self.script_path_input.textChanged.connect(self.ui_handlers.on_script_path_change)
+        self.minimize_after_build.stateChanged.connect(self.ui_handlers.on_minimize_toggle)
+        self.close_after_build.stateChanged.connect(self.ui_handlers.on_close_toggle)
 
         self.validator.update_ui_state()
+
+    def close_app(self):
+        QApplication.instance().quit()
 
     def set_status(self, text):
         self.status_label.setText(text)

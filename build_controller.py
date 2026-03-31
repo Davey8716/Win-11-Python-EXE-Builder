@@ -373,8 +373,13 @@ class BuildController(QObject):
 
         if ret == 0:
             app.last_build_seconds = int(time.time() - app.build_start_time)
-            app.state_ctrl.save_state()
             msg = "Build complete."
+            if getattr(app, "minimize_after_build_enabled", False):
+                app.showMinimized()
+            if getattr(app, "close_after_build_enabled", False):
+                app.close_app()
+            app.state_ctrl.save_state()
+
         else:
             msg = "Build failed. See debug log."
 
@@ -384,13 +389,11 @@ class BuildController(QObject):
 
         app._status_lock = True
         app.status_label.setText(msg)
-
+    
         QTimer.singleShot(5000, self._unlock_status)
 
     def _unlock_status(self):
         app = self.app
-
-
         app._status_lock = False
         app.validation_controller.update_ui_state()
 
