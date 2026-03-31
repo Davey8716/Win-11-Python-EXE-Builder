@@ -522,18 +522,37 @@ class EXEBuilderApp(QWidget):
         self.appened_py_version.setCheckable(True)
         
         self.date_time_dropdown.clear()
-        self.date_time_dropdown.addItem("Append Date/Time")  # header
 
-        formats = [
-            ("None", None),
-            ("YYYY-MM-DD", "%Y-%m-%d"),
-            ("DD-MM-YYYY", "%d-%m-%Y"),
-            ("YYYY-MM-DD_HH-MM", "%Y-%m-%d_%H-%M"),
-            ("DD-MM-YYYY_HH-MM", "%d-%m-%Y_%H-%M"),
-        ]
+        def _add(label, data=None, enabled=True):
+            self.date_time_dropdown.addItem(label, data)
+            item = self.date_time_dropdown.model().item(self.date_time_dropdown.count() - 1)
+            if not enabled:
+                item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
 
-        for label, fmt in formats:
-            self.date_time_dropdown.addItem(label, fmt)
+        # Header
+        _add("Append Date/Time", None, enabled=False)
+
+
+        # Top option
+        _add("None", None)
+
+        # ISO
+        _add("──────────", enabled=False)
+        _add("ISO", enabled=False)
+        _add("YYYY-MM-DD", "%Y-%m-%d")
+        _add("YYYY-MM-DD_HH-MM", "%Y-%m-%d_%H-%M")
+
+        # UK
+        _add("──────────", enabled=False)
+        _add("UK", enabled=False)
+        _add("DD-MM-YYYY", "%d-%m-%Y")
+        _add("DD-MM-YYYY_HH-MM", "%d-%m-%Y_%H-%M")
+
+        # USA
+        _add("──────────", enabled=False)
+        _add("USA", enabled=False)
+        _add("MM-DD-YYYY", "%m-%d-%Y")
+        _add("MM-DD-YYYY_HH-MM", "%m-%d-%Y_%H-%M")
 
         model = self.date_time_dropdown.model()
         item = model.item(0)
