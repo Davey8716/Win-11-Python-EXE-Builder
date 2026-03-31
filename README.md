@@ -1,4 +1,12 @@
-**Updated as of 22/3/26 to use PySide6 qtwidgets**,
+**Updated as of 31/3/26 to use PySide6 qtwidgets**,
+
+If you plan to build multiple versions of the same EXE:
+
+- Use a date/time format that includes minutes (HH-MM)
+- Builds created within the same minute will share the same name
+- If you need another build, wait for the next minute before rebuilding
+
+This ensures each build generates a unique output folder and EXE.
 
 **Win 11 → Python → EXE Builder**
 
