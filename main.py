@@ -151,6 +151,8 @@ class EXEBuilderApp(QWidget):
         row1.addWidget(self.dependency_notice)
         row1.addStretch()
 
+
+
         # -------------------------------
         # ROW 2
         # -------------------------------

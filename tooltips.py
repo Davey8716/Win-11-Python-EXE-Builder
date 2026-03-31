@@ -106,6 +106,18 @@ def attach_tooltips(app):
         "For a build to succeed."
     )
 
+    QtTooltip(
+        app.minimize_after_build,
+        "If toggled the app will minimize after a build.\n"
+        "Mutually excluse to the close after build toggle."
+    )
+
+    QtTooltip(
+        app.close_after_build,
+        "If toggled the app will close after a build.\n"
+        "Mutually excluse to the minimize after build toggle."
+    )
+
     # -----------------------------
     # Script picker
     # -----------------------------
@@ -115,7 +127,6 @@ def attach_tooltips(app):
         "File path to python script folder and file."
     )
 
-    
     QtTooltip(
         app.open_python_site_btn,
         "Direct link to python.org."
