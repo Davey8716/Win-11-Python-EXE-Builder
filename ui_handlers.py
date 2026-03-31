@@ -1,10 +1,13 @@
 
 import os,webbrowser
-from utils import *
 
 class UIHandlers:
     def __init__(self, app):
         self.app = app
+
+
+    def get_desktop_path():
+        return os.path.join(os.path.expanduser("~"), "Desktop")
 
     def clear_interpreter_path(self):
         app = self.app
@@ -93,7 +96,7 @@ class UIHandlers:
     def reset_output_to_desktop(self):
         app = self.app
         app.build_error = None
-        desktop = get_desktop_path()
+        desktop = self.get_desktop_path()
         app.output_path_input.setText(desktop)
         app.output_path = desktop
         app.state_ctrl.save_state()
