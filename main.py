@@ -91,6 +91,7 @@ class EXEBuilderApp(QWidget):
         self.last_build_counter = 0
         
         self.setFixedSize(500, 985)
+    
 
         self.tooltips_enabled = getattr(self, "tooltips_enabled", True)
         self.dependency_notice_enabled = getattr(self, "dependency_notice_enabled", True)
@@ -116,7 +117,7 @@ class EXEBuilderApp(QWidget):
         title_label.setFont(QFont("Rubik UI", 15, QFont.Bold))
         title_label.setFixedSize(350,35)
 
-        title_layout.addWidget(title_label)   # ✅ MISSING LINE
+        title_layout.addWidget(title_label)  
         title_layout.addStretch()
 
         # -------------------------------
@@ -148,7 +149,7 @@ class EXEBuilderApp(QWidget):
         toggles_wrapper_layout.setSpacing(0)
 
         toggles_wrapper_layout.addStretch()  # 🔑 pushes toggles DOWN
-        toggles_wrapper_layout.addWidget(toggles_frame)
+        toggles_wrapper_layout.addWidget(toggles_frame, alignment=Qt.AlignLeft)
 
         # -------------------------------
         # MAIN LAYOUT
@@ -157,7 +158,7 @@ class EXEBuilderApp(QWidget):
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(1, 1, 1, 1)
         self.main_layout.setSpacing(2)
-        self.main_layout.addWidget(title_frame)
+        self.main_layout.addWidget(title_frame, alignment= Qt.AlignCenter)
 
         # =============================================================
         # Script / Buttons Section
@@ -183,10 +184,10 @@ class EXEBuilderApp(QWidget):
         apps_title_frame = QFrame()
         apps_title_frame.setFrameShape(QFrame.StyledPanel)
         apps_title_frame.setFrameShadow(QFrame.Raised)
-        apps_title_frame.setFixedHeight(36)
+        apps_title_frame.setFixedHeight(40)
 
         apps_title_layout = QHBoxLayout(apps_title_frame)
-        apps_title_layout.setContentsMargins(3,3,3,3)
+        apps_title_layout.setContentsMargins(5,5,5,5)
 
         self.apps_title = QLabel("Apps Section")
         self.apps_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
@@ -200,12 +201,11 @@ class EXEBuilderApp(QWidget):
 
         apps_toggles_row = QWidget()
         apps_toggles_layout = QHBoxLayout(apps_toggles_row)
-        apps_toggles_layout.setContentsMargins(6,0,6,0)
+        apps_toggles_layout.setContentsMargins(5,5,5,5)
         apps_toggles_layout.setSpacing(1)
 
-        apps_toggles_layout.addWidget(apps_title_frame,alignment=Qt.AlignLeft | Qt.AlignBottom)
-        apps_toggles_layout.addStretch()
-        apps_toggles_layout.addWidget(toggles_wrapper,alignment=Qt.AlignRight)
+        apps_toggles_layout.addWidget(apps_title_frame,alignment=Qt.AlignRight | Qt.AlignBottom)
+        apps_toggles_layout.addWidget(toggles_wrapper,alignment=Qt.AlignRight | Qt.AlignBottom)
 
         # =================================================
         # Apps ROW (buttons)
@@ -214,7 +214,7 @@ class EXEBuilderApp(QWidget):
         apps_row = QWidget()
         apps_layout = QHBoxLayout(apps_row)
         apps_layout.setContentsMargins(1,1,1,1)
-        apps_layout.setSpacing(5)
+        apps_layout.setSpacing(1)
 
         self.open_python_site_btn = QPushButton("Python.org")
         apps_layout.addWidget(self.open_python_site_btn)
@@ -275,7 +275,7 @@ class EXEBuilderApp(QWidget):
         # --- Path row (input + refresh inline) ---
         interpreter_entry_row = QWidget()
         interpreter_entry_layout = QHBoxLayout(interpreter_entry_row)
-        interpreter_entry_layout.setContentsMargins(1,1,1,1)
+        interpreter_entry_layout.setContentsMargins(3,3,3,3)
         interpreter_entry_layout.setSpacing(5)
 
         self.python_entry_input = QLineEdit()
@@ -353,6 +353,7 @@ class EXEBuilderApp(QWidget):
         # placeholder behavior
         self.select_recent_icons.setEditable(True)
         self.select_recent_icons.lineEdit().setReadOnly(True)
+        self.select_recent_icons.setEnabled(True)
 
         self.delete_recent_icons = QPushButton("❌")
         self.delete_all_icons = QPushButton("💥")
@@ -402,7 +403,6 @@ class EXEBuilderApp(QWidget):
         python_title_frame = QFrame()
         python_title_frame.setFrameShape(QFrame.StyledPanel)
         python_title_frame.setFrameShadow(QFrame.Raised)
-     
 
         python_title_layout = QHBoxLayout(python_title_frame)
         python_title_layout.setContentsMargins(3,3,3,3)
@@ -441,7 +441,6 @@ class EXEBuilderApp(QWidget):
         
         self.recent_folder_dropdown.setEditable(True)
         self.recent_folder_dropdown.lineEdit().setReadOnly(True)
-        self.recent_folder_dropdown.setCurrentIndex(-1)
         self.recent_folder_dropdown.setEnabled(True)
         
         self.delete_recent_folder = QPushButton("❌")
@@ -615,7 +614,7 @@ class EXEBuilderApp(QWidget):
 
 
         build_title_layout = QHBoxLayout(build_title_frame)
-        build_title_layout.setContentsMargins(4,4,4,4)
+        build_title_layout.setContentsMargins(6,6,6,6)
         build_title_layout.setSpacing(2)
 
         self.build_title = QLabel("Build Section")
@@ -632,7 +631,7 @@ class EXEBuilderApp(QWidget):
 
         build_layout = QVBoxLayout(build_frame)
         build_layout.setContentsMargins(6,6,6,6)
-        build_layout.setSpacing(2)
+        build_layout.setSpacing(1)
 
         self.status_label = QLabel("Ready")
         self.status_label.setFixedSize(315,100)

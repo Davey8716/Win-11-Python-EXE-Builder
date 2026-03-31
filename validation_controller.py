@@ -332,19 +332,20 @@ class ValidationController:
         derived_name = ""
 
         if script_ok:
-            derived_name = os.path.splitext(os.path.basename(script))[0]
+            derived_name = os.path.splitext(os.path.basename(script))[0].strip().lower()
 
-        current_name = app.exe_name_input.text().strip()
+        current_name = app.exe_name_input.text().strip().lower()
 
         can_revert_name = bool(
             derived_name and
+            current_name and
             current_name != derived_name
         )
 
-        set_btn(app.refresh_btn,not building and can_revert_name)
+        set_btn(app.refresh_btn, not building and can_revert_name)
 
         app.exe_name_input.setReadOnly(building)
-
+        
         # -------------------------------
         # BUTTON COLOR: Python Interpreter
         # -------------------------------
@@ -463,7 +464,7 @@ class ValidationController:
                 elif btn == app.output_refresh_btn:
                     btn.setText("🔃" if not is_desktop else "")
                 elif btn == app.refresh_btn:
-                    btn.setText("🔃" if exe_name else "")
+                    btn.setText("🔃" if can_revert_name else "")
                             
 
         # -------------------------------
