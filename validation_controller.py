@@ -412,7 +412,7 @@ class ValidationController:
         elif current_text.startswith("Build"):
             color = "#000000" if "complete" in current_text.lower() else "#be1a1a"
         elif is_ready:
-            color = "#00ff00"
+            color = "#3bbf3b"
         else:
             color = "#be1a1a"
 
