@@ -1,4 +1,24 @@
-**Updated as of 1/3/26 to use PySide6 qtwidgets**
+Updated as of 1/3/26 to use PySide6 QtWidgets
+
+
+
+Win 11 → Python → EXE Builder
+
+If this tool was useful, consider starring the repo — feedback is appreciated.
+
+Why this exists
+
+This tool is designed around the full Windows EXE build workflow, not just invoking PyInstaller.
+
+It provides a Windows GUI for:
+
+Selecting and validating Python interpreters
+Managing build inputs and outputs
+Executing PyInstaller in a controlled, predictable way
+
+It also includes shortcuts to Windows Installed Apps and direct links to Python.org, reducing context switching when configuring or repairing build environments.
+
+Win 11 → Python → EXE Builder converts Python scripts and projects into standalone Windows executables by orchestrating interpreter selection, validation, build execution, and cleanup around PyInstaller.
 
 Dependency Notice
 
@@ -12,126 +32,84 @@ Classifies results into:
   ? Uncertain — ambiguous or optional imports
 Displays results in a categorized, color-coded popup with legend
 Runs asynchronously to avoid blocking the UI
-Automatically updates when the selected script changes (if enabled)
+Runs when the selected script changes (if enabled), with safeguards to prevent repeated scans
+Limitations
+May include false positives (e.g. indirect or optional imports)
+Does not resolve exact package names or versions
+Does not detect dynamic imports or runtime dependencies
 
-Limitations:
-- May include false positives (e.g. indirect or optional imports)
-- Does not resolve exact package names or versions
-- Does not detect dynamic imports or runtime dependencies
+This feature is a lightweight advisory to help catch missing packages before building, not a full dependency resolver.
 
-This feature is designed as a lightweight advisory to help catch
-missing packages before building, not as a full dependency manager.
+Protected folders
 
-Dont build in protected folders like pictures/music etc, it will just show as building endlessly and not output the files to the folder.
+Avoid building in protected folders (e.g. Pictures, Music). These locations may prevent file writes and cause build failures or stalled output.
+
+Multiple builds
 
 If you plan to build multiple versions of the same EXE:
 
-- Use a date/time format that includes minutes (HH-MM)
-- Builds created within the same minute will share the same name
-- If you need another build, wait for the next minute before rebuilding
+Use a date/time format that includes minutes (HH-MM)
+Builds created within the same minute will share the same name
+If you need another build, wait for the next minute before rebuilding
 
 This ensures each build generates a unique output folder and EXE.
 
-**Win 11 → Python → EXE Builder**
+Build requirements
+Windows 11
+Python 3.11, 3.12, 3.13, or 3.14
+PyInstaller installed in the selected interpreter
 
-If this tool was useful, consider starring the repo, some feedback would be nice.
+Not tested or supported on other operating systems.
 
-**Why this exists:**
+The tool assumes a working Python environment and focuses on providing a safe, predictable build process, not full dependency resolution or repair.
 
-This tool is designed around the entire Windows EXE build workflow, not just invoking PyInstaller.
+Tested versions
 
-**It provides a Windows GUI for:**
+At the time of testing:
 
-* Selecting and validating Python interpreters.
-* Managing build inputs and outputs.
-* Executing PyInstaller in a controlled, predictable way.
-* It also includes shortcuts to Windows Installed Apps for managing Python installations and direct links to Python.org, reducing context switching when configuring or repairing build environments.
-* Win 11 → Python → EXE Builder converts Python scripts and projects into standalone Windows executables by orchestrating interpreter selection, validation, build execution, and clean-up around PyInstaller.
+Python 3.11, 3.12, 3.13, and 3.14 produced stable builds
+Distribution
 
-**Build requirements:**
+This repository contains source code only.
 
-* Windows 11
-* Python 3.11 3.12 3.13 or 3.14
-* PyInstaller installed in the selected interpreter
-* Not tested or supported on other operating systems
+Users must run the application locally or build their own executable using the tool.
 
-**The tool assumes a working Python environment and focuses on providing a safe, predictable build process, not dependency analysis or repair.**
+Local state & portability
+Each user’s settings are stored locally on their machine
+No user configuration or state is embedded inside any executable binary
+The _internal folder, JSON state files, and EXE must remain in the same directory
+The application can be moved freely as long as this structure is preserved
+No configuration or data is shared, uploaded, or transmitted
 
-**At the time of testing:**
+Pin to taskbar works
+Copy shortcut works
 
-**Python 3.11 3.12 3.13 and 3.14 produced stable builds**
+Important limitations
 
-**Distribution:**
+This tool does not:
 
-* This repository contains source code only.
+Determine whether third-party libraries are compatible with specific Python versions (e.g. 3.13 vs 3.14)
+Fix broken or unsupported dependencies
+Modify, downgrade, or patch Python packages
+Automatically resolve PyInstaller-specific compatibility issues
+Building and running from source
+Install a recent Python version (3.11+)
 
+Install PyInstaller:
 
+py -3.14 -m pip install pyinstaller
+Clone this repository
+In the GUI, select the Python interpreter that has PyInstaller installed
+Start the build
+Build the EXE for the EXE Builder itself
+Debug log path
 
-* Prebuilt executables are not distributed through this repository.
+The application writes its debug log to a predefined Desktop location during builds.
 
-* Users must run the application from source using a local Python installation.
+This path is used for diagnostics and troubleshooting.
 
+Do not change the debug log path in the source code unless you fully understand the build workflow.
 
+Altering this path can interfere with diagnostics and may cause builds to fail or behave unpredictably.
 
-**Local state \& portability:**
-
-
-
-* Each user’s settings are stored locally on their own machine.
-* No user configuration or state is embedded inside any executable binary.
-* Must have \_internal folder and any json state and the app EXE in the same folder, can then just move it all wherever you want.
-* No configuration or data is shared, uploaded, or transmitted.
-* Pin to taskbar works
-* Copy shortcut works
-
-
-
-**Important limitations:**
-
-
-
-**This tool does not:**
-
-
-
-* **Determine whether third-party libraries are compatible with specific Python versions (e.g. 3.13 vs 3.14)**
-* **Fix broken or unsupported dependencies**
-* **Modify, downgrade, or patch Python packages**
-* **Automatically resolve PyInstaller-specific compatibility issues**
-
-
-
-**Building and running from source:**
-
-
-
-* **Install a recent python (haven't tested it on earier versions before 3.11)**
-* **py -3.14 -m pip install pyinstaller**
-* **Clone this repository**
-* **In the GUI, select the Python interpreter that has PyInstaller installed, then start the build**
-* **Build the EXE for the EXE builder itself**
-
-
-
-**Debug log path**
-
-
-
-**The application writes its debug log to a predefined Desktop location during builds.**
-
-
-
-**This path is used for diagnostics and troubleshooting.**
-
-
-
-**Do not change the debug log path in the source code unless you fully understand the build workflow.**
-
-**Altering this path can interfere with diagnostics and may cause builds to fail or behave unpredictably.**
-
-
-
-**If you need logs stored elsewhere, modify the path only after confirming the application builds and runs correctly.**
-
-
-
+If you need logs stored elsewhere, modify the path only after confirming the application builds and runs correctly.
