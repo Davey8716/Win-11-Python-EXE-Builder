@@ -367,7 +367,15 @@ class RecentController:
 
         self.app.script_path_input.setText(self.app.script_path)
         QTimer.singleShot(0, lambda: self.app.script_path_input.setCursorPosition(0))
-                    
+
+        # 🔑 dependency popup on recent change
+        if getattr(app, "dependency_notice_enabled", True):
+            script = app.entry_script
+            if script and os.path.isfile(script):
+                packages = app.validator.run_dependency_advisory(script)
+                if packages:
+                    app.ui_dependency_popup.show_dependency_warning_popup(packages)
+                            
     def confirm_delete_recent(self):
         app = self.app
         full_path = getattr(app, "entry_script", "") or getattr(app, "script_path", "")
