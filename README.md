@@ -2,11 +2,17 @@
 
 Dependency Notice
 
-The dependency notice scans your project for imported modules and
-highlights external packages that may need to be installed.
+Scans your project for imported modules and highlights external packages that may need to be installed.
 
-- Scans all Python files in the project folder (including subfolders)
-- Filters out standard library and local modules
+Recursively scans all Python files in the project folder
+Filters out standard library and local modules
+Classifies results into:
+  ✔ External — likely required packages
+  ⚠ Maybe — common/internal names to verify
+  ? Uncertain — ambiguous or optional imports
+Displays results in a categorized, color-coded popup with legend
+Runs asynchronously to avoid blocking the UI
+Automatically updates when the selected script changes (if enabled)
 
 Limitations:
 - May include false positives (e.g. indirect or optional imports)
