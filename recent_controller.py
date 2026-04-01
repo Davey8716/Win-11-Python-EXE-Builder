@@ -26,6 +26,9 @@ class RecentController:
         app.python_interpreter_path = path
         app.python_path = path
 
+        self.add_recent_interpreter(path)  # ← ADD THIS
+
+
         self.app.validator.update_ui_state()
         self.app.validator.validation_status_message()
 
@@ -67,8 +70,10 @@ class RecentController:
             print("Recent interpreters save error:", e)
 
         app.state_data = data
+        self.populate_recent_interpreters_dropdown()
         self.app.validator.update_ui_state()
         self.app.validator.validation_status_message()
+
 
     def populate_recent_interpreters_dropdown(self):
         app = self.app
@@ -183,9 +188,10 @@ class RecentController:
             json.dump(data, f, indent=4)
 
         app.validator.validation_status_message()
+        self.populate_recent_interpreters_dropdown()
         self.app.validator.update_ui_state()
         self.app.validator.validation_status_message()
-        self.populate_recent_interpreters_dropdown()
+        
 
     def all_interpreter_delete(self):
         app = self.app
@@ -228,12 +234,13 @@ class RecentController:
         app.python_interpreter_path = ""
         app.python_path = ""
 
+        self.populate_recent_interpreters_dropdown()
         app.validator.validation_status_message()
         self.app.validator.update_ui_state()
         self.app.validator.validation_status_message()
-        self.populate_recent_interpreters_dropdown()
+       
 
-
+    # Files ####################################################################################################################################################################################################################################################################################################################
     def add_recent_script(self, path):
         app = self.app
         ap = os.path.abspath(os.path.normpath(path)) if path else ""
@@ -268,6 +275,7 @@ class RecentController:
             print("Recent scripts save error:", e)
 
         app.state_data = data
+        self.populate_recent_dropdown() 
         self.app.validator.update_ui_state()
         self.app.validator.validation_status_message()
         
@@ -351,6 +359,8 @@ class RecentController:
 
         if hasattr(app, "file_pickers"):
             app.file_pickers._apply_selected_entry(path)
+                    # ← add
+        self.populate_recent_dropdown()    # ← add
 
         self.app.validator.update_ui_state()
         self.app.validator.validation_status_message()
@@ -453,7 +463,6 @@ class RecentController:
 
         # 🔑 refresh dropdown
         self.populate_recent_dropdown()
-
         app.validator.validation_status_message()
         self.app.validator.update_ui_state()
 
@@ -479,12 +488,10 @@ class RecentController:
             app.file_pickers._apply_selected_icon(path)
         
         self.app.validator.update_ui_state()
-
         self.app.icon_path_input.setText(self.app.icon_path)
         QTimer.singleShot(0, lambda: self.app.icon_path_input.setCursorPosition(0))
                             
-   
-        
+
     def add_recent_icon(self, path):
         app = self.app
         ap = os.path.abspath(os.path.normpath(path)) if path else ""
@@ -518,6 +525,7 @@ class RecentController:
         except Exception as e:
             print("Recent icons save error:", e)
 
+        self.populate_recent_icons_dropdown()
         app.state_data = data
         self.app.validator.update_ui_state()
         
@@ -671,6 +679,5 @@ class RecentController:
         app.icon_path = ""
 
         self.populate_recent_icons_dropdown()
-
         app.validator.validation_status_message()
         self.app.validator.update_ui_state()
