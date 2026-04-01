@@ -21,7 +21,7 @@ class DependencyPopup:
             self.popup.close()
 
         popup = QDialog(self.app)
-        popup.setFixedSize(300, 300)
+        popup.setFixedSize(500,500)
         popup.setWindowTitle("Dependency Notice")
         popup.setModal(False)
         popup.setWindowFlag(Qt.WindowStaysOnTopHint, True)

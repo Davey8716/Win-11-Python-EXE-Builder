@@ -186,34 +186,69 @@ class StateController:
         )
 
         data = {
-            "python_interpreter_path": _norm(
-                getattr(self.app, "python_interpreter_path", "")
-            ),
-
+            # --- Paths / core selections ---
             "last_script_path": _norm(self.app.script_path),
             "last_icon_path": _norm(self.app.icon_path),
             "last_output_folder": _norm(self.app.output_path),
+            "python_interpreter_path": _norm(
+                getattr(self.app, "python_interpreter_path", "")
+            ),
             "last_exe_name": self.app.exe_name,
 
+            # --- Recents ---
             "recent_scripts": recent_scripts,
             "recent_icons": recent_icons,
             "recent_interpreters": recent_interpreters,
 
+            # --- Build info ---
             "last_build_seconds": self.app.last_build_seconds,
 
-            "close_after_build_enabled": getattr(self.app, "close_after_build_enabled", True),
+            # --- Toggles / settings ---
             "tooltips_enabled": getattr(self.app, "tooltips_enabled", True),
             "dependency_notice_enabled": getattr(self.app, "dependency_notice_enabled", True),
+            "close_after_build_enabled": getattr(self.app, "close_after_build_enabled", True),
             "minimize_after_build_enabled": getattr(self.app, "minimize_after_build_enabled", True),
 
+            # --- User flags ---
             "icon_user_cleared": getattr(self.app, "icon_user_cleared", False),
             "script_user_cleared": getattr(self.app, "script_user_cleared", False),
 
+            # --- Datetime ---
             "append_datetime": getattr(self.app, "append_datetime", False),
             "datetime_format": getattr(self.app, "datetime_format", None),
-            }
+        }
 
         self.app.state_data = data
+
+        # data = {
+        #     "python_interpreter_path": _norm(
+        #         getattr(self.app, "python_interpreter_path", "")
+        #     ),
+
+        #     "last_script_path": _norm(self.app.script_path),
+        #     "last_icon_path": _norm(self.app.icon_path),
+        #     "last_output_folder": _norm(self.app.output_path),
+        #     "last_exe_name": self.app.exe_name,
+
+        #     "recent_scripts": recent_scripts,
+        #     "recent_icons": recent_icons,
+        #     "recent_interpreters": recent_interpreters,
+
+        #     "last_build_seconds": self.app.last_build_seconds,
+
+        #     "close_after_build_enabled": getattr(self.app, "close_after_build_enabled", True),
+        #     "tooltips_enabled": getattr(self.app, "tooltips_enabled", True),
+        #     "dependency_notice_enabled": getattr(self.app, "dependency_notice_enabled", True),
+        #     "minimize_after_build_enabled": getattr(self.app, "minimize_after_build_enabled", True),
+
+        #     "icon_user_cleared": getattr(self.app, "icon_user_cleared", False),
+        #     "script_user_cleared": getattr(self.app, "script_user_cleared", False),
+
+        #     "append_datetime": getattr(self.app, "append_datetime", False),
+        #     "datetime_format": getattr(self.app, "datetime_format", None),
+        #     }
+
+        # self.app.state_data = data
 
         try:
             with open(state_path, "w", encoding="utf-8") as f:

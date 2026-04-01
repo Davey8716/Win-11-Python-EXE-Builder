@@ -687,7 +687,6 @@ class EXEBuilderApp(QWidget):
         build_title_frame.setFrameShape(QFrame.StyledPanel)
         build_title_frame.setFrameShadow(QFrame.Raised)
 
-
         build_title_layout = QHBoxLayout(build_title_frame)
         build_title_layout.setContentsMargins(3,3,3,3)
         build_title_layout.setSpacing(3)

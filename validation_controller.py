@@ -34,9 +34,47 @@ class ValidationController:
         return sorted(i for i in imports if i not in stdlib)
 
     def run_dependency_advisory(self, entry_file: str) -> list[str]:
-        imports = self.extract_imports_from_file(entry_file)
-        external = self.filter_external_imports(imports)
+        root = os.path.dirname(os.path.normpath(entry_file))
+
+        all_imports = set()
+        local_modules = set()
+
+        # -----------------------------
+        # 1. collect local module names (recursive)
+        # -----------------------------
+        for root_dir, _, files in os.walk(root):
+            for file in files:
+                if file.endswith(".py"):
+                    name = os.path.splitext(file)[0]
+                    local_modules.add(name)
+
+        # -----------------------------
+        # 2. collect all imports (recursive)
+        # -----------------------------
+        for root_dir, _, files in os.walk(root):
+            for file in files:
+                if not file.endswith(".py"):
+                    continue
+
+                full_path = os.path.join(root_dir, file)
+
+                if not os.path.isfile(full_path):
+                    continue
+
+                all_imports |= self.extract_imports_from_file(full_path)
+
+        # -----------------------------
+        # 3. filter out stdlib + local modules
+        # -----------------------------
+        stdlib = set(sys.stdlib_module_names)
+
+        external = sorted(
+            i for i in all_imports
+            if i not in stdlib and i not in local_modules
+        )
+
         return external
+    
 
     def set_build_error(self, message: str):
         self.app.build_error = message
