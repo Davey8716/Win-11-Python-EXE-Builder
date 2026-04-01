@@ -10,9 +10,9 @@ This tool is designed around the full Windows EXE build workflow, not just invok
 
 It provides a Windows GUI for:
 
-Selecting and validating Python interpreters
-Managing build inputs and outputs
-Executing PyInstaller in a controlled, predictable way
+	Selecting and validating Python interpreters
+	Managing build inputs and outputs
+	Executing PyInstaller in a controlled, predictable way
 
 It also includes shortcuts to Windows Installed Apps and direct links to Python.org, reducing context switching when configuring or repairing build environments.
 
