@@ -8,9 +8,9 @@ Why this exists:
 This tool is designed around the full Windows EXE build workflow, not just invoking PyInstaller.
 It provides a Windows GUI for:
 
-	Selecting and validating Python interpreters
-	Managing build inputs and outputs
-	Executing PyInstaller in a controlled, predictable way
+	Selecting and validating Python interpreters.
+	Managing build inputs and outputs.
+	Executing PyInstaller in a controlled, predictable way.
 
 It also includes shortcuts to Windows Installed Apps and direct links to Python.org, reducing context switching when configuring or repairing build environments.
 
@@ -84,21 +84,21 @@ Copy shortcut works.
 Important limitations:
 This tool does not:
 
-	Determine whether third-party libraries are compatible with specific Python versions (e.g. 3.13 vs 3.14)
-	Fix broken or unsupported dependencies
-	Modify, downgrade, or patch Python packages
-	Automatically resolve PyInstaller-specific compatibility issues
+	Determine whether third-party libraries are compatible with specific Python versions (e.g. 3.13 vs 3.14).
+	Fix broken or unsupported dependencies.
+	Modify, downgrade, or patch Python packages.
+	Automatically resolve PyInstaller-specific compatibility issues.
 
 Building and running from source:
 Install a recent Python version (3.11+)
 
 Install PyInstaller:
 
-	py -3.14 -m pip install pyinstaller
-	Clone this repository
-	In the GUI, select the Python interpreter that has PyInstaller installed
-	Start the build
-	Build the EXE for the EXE Builder itself
+	py -3.14 -m pip install pyinstaller.
+	Clone this repository.
+	In the GUI, select the Python interpreter that has PyInstaller installed.
+	Start the build.
+	Build the EXE for the EXE Builder itself.
 
 Debug log path:
 
@@ -107,3 +107,4 @@ Debug log path:
 	Do not change the debug log path in the source code unless you fully understand the build workflow.
 	Altering this path can interfere with diagnostics and may cause builds to fail or behave unpredictably.
 	If you need logs stored elsewhere, modify the path only after confirming the application builds and runs correctly.
+		
