@@ -113,28 +113,31 @@ class UIHandlers:
         app.exe_name_input.setText(derived)
         app.state_ctrl.save_state()
         
-
     def on_dependency_toggle(self, state):
         app = self.app
         app.dependency_notice_enabled = bool(state)
 
-        if app.dependency_notice_enabled:
-            script = app.script_path
-            if script and os.path.isfile(script):
-                packages = app.validator.run_dependency_advisory(script)
-                if packages:
-                    self.app.ui_dependency_popup.show_dependency_warning_popup(packages)
+        script = app.entry_script
 
-        else:
+        # 🔒 TURN OFF → close popup immediately
+        if not app.dependency_notice_enabled:
             popup_ctrl = getattr(app, "ui_dependency_popup", None)
 
             if popup_ctrl and popup_ctrl.popup:
                 popup_ctrl.popup.close()
                 popup_ctrl.popup = None
-        # 🔑 block re-trigger while disabled
-        app._dependency_popup_shown = True
-        app.state_ctrl.save_state()
 
+            app._dependency_popup_shown = True  # block further triggers
+            app.state_ctrl.save_state()
+            return
+
+        # 🔑 TURN ON → re-run advisory
+        if script and os.path.isfile(script):
+            app._dependency_popup_shown = False  # allow popup again
+            app.validation_controller.run_dependency_advisory_async(script)
+
+        app.state_ctrl.save_state()
+    
     def on_tooltips_toggle(self, state):
         app = self.app
         app.tooltips_enabled = bool(state)

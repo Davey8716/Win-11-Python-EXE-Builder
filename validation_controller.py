@@ -2,6 +2,25 @@ import os
 import sys
 import ast
 from PySide6.QtCore import QTimer,Qt
+from PySide6.QtCore import QThread
+from PySide6.QtCore import QObject, Signal
+
+class DependencyWorker(QObject):
+    finished = Signal(dict)  # returns packages dict
+
+    def __init__(self, controller, entry_file):
+        super().__init__()
+        self.controller = controller
+        self.entry_file = entry_file
+
+    def run(self):
+        try:
+            result = self.controller.run_dependency_advisory(self.entry_file)
+        except Exception:
+            result = {"external": [], "maybe": [], "uncertain": []}
+
+        self.finished.emit(result)
+
 
 class ValidationController:
     def __init__(self, app):
@@ -64,17 +83,37 @@ class ValidationController:
                 all_imports |= self.extract_imports_from_file(full_path)
 
         # -----------------------------
-        # 3. filter out stdlib + local modules
+        # 3. classify imports
         # -----------------------------
         stdlib = set(sys.stdlib_module_names)
 
-        external = sorted(
-            i for i in all_imports
-            if i not in stdlib and i not in local_modules
-        )
+        external = []
+        maybe = []
+        uncertain = []
 
-        return external
-    
+        for i in all_imports:
+            if i in stdlib or i in local_modules:
+                continue
+
+            # simple heuristics
+            if i.startswith("_"):
+                uncertain.append(i)
+
+            elif len(i) <= 3:
+                uncertain.append(i)
+
+            elif i in {"utils", "helpers", "common", "core"}:
+                maybe.append(i)
+
+            else:
+                external.append(i)
+
+        return {
+            "external": sorted(external),
+            "maybe": sorted(maybe),
+            "uncertain": sorted(uncertain),
+        }
+            
 
     def set_build_error(self, message: str):
         self.app.build_error = message
@@ -164,33 +203,29 @@ class ValidationController:
         # ==========================================================
         if is_ready:
             current_script = script
-
             script_changed = current_script != self.app._last_advisory_script
 
             if script_changed:
-                external_packages = self.run_dependency_advisory(current_script)
-
-                if (
-                    external_packages
-                    and getattr(self.app, "dependency_notice_enabled", True)
-                    and not getattr(self.app, "_dependency_popup_shown", False)
-                ):
-                    QTimer.singleShot(
-                        0,
-                        lambda: self.app.ui_dependency_popup.show_dependency_warning_popup(external_packages)
-                    )
-
-                    # 🔑 prevent re-trigger spam
-                    self.app._dependency_popup_shown = True
-
                 self.app._last_advisory_script = current_script
-                state["external_packages"] = external_packages
+
+                if getattr(self.app, "dependency_notice_enabled", True):
+
+                    # 🔑 HARD GUARD (prevents spam / freezing)
+                    if current_script != getattr(self.app, "_dep_last_requested", None):
+                        self.app._dep_last_requested = current_script
+
+                        # 🔑 ASYNC ONLY (no blocking UI)
+                        self.run_dependency_advisory_async(current_script)
+
+                state["external_packages"] = []
             else:
                 state["external_packages"] = []
         else:
             self.app._last_advisory_script = None
 
         # Track previous state
+        self.app._was_build_ready = is_ready
+                # Track previous state
         self.app._was_build_ready = is_ready
                 
         # --------------------------------
@@ -629,3 +664,45 @@ class ValidationController:
 
             app.build_btn.setText("Build EXE")
             app.build_btn.clicked.connect(app.build_controller.build_exe)
+
+    def run_dependency_advisory_async(self, entry_file: str):
+        app = self.app
+
+        # stop duplicate runs
+        if getattr(app, "_dep_thread_running", False):
+            return
+
+        app._dep_thread_running = True
+
+        self.dep_thread = QThread()
+        self.dep_worker = DependencyWorker(self, entry_file)
+
+        self.dep_worker.moveToThread(self.dep_thread)
+
+        self.dep_thread.started.connect(self.dep_worker.run)
+
+        self.dep_worker.finished.connect(self._on_dependency_result)
+
+        # cleanup
+        self.dep_worker.finished.connect(self.dep_thread.quit)
+        self.dep_worker.finished.connect(self.dep_worker.deleteLater)
+        self.dep_thread.finished.connect(self.dep_thread.deleteLater)
+
+        self.dep_thread.start()
+
+    def _on_dependency_result(self, packages: dict):
+        app = self.app
+
+        app._dep_thread_running = False
+
+        if (
+            packages
+            and getattr(app, "dependency_notice_enabled", True)
+            and not getattr(app, "_dependency_popup_shown", False)
+        ):
+            QTimer.singleShot(
+                0,
+                self.app,
+                lambda: self.app.ui_dependency_popup.show_dependency_warning_popup(packages)
+            )
+            app._dependency_popup_shown = True

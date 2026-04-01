@@ -1,5 +1,5 @@
 
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton,QFrame
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton,QFrame,QTextEdit,QScrollArea
 from PySide6.QtGui import QFont
 from PySide6.QtCore import Qt
 
@@ -21,7 +21,7 @@ class DependencyPopup:
             self.popup.close()
 
         popup = QDialog(self.app)
-        popup.setFixedSize(500,500)
+        popup.setFixedSize(600,800)
         popup.setWindowTitle("Dependency Notice")
         popup.setModal(False)
         popup.setWindowFlag(Qt.WindowStaysOnTopHint, True)
@@ -43,7 +43,48 @@ class DependencyPopup:
         frame_layout.setContentsMargins(10, 10, 10, 10)
         frame_layout.setSpacing(8)
 
-        layout.addWidget(popup_frame)
+        # 🔑 SCROLL AREA
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setWidget(popup_frame)
+
+        layout.addWidget(scroll)
+
+        # -------------------------------
+        # LEGEND FRAME
+        # -------------------------------
+        legend_frame = QFrame()
+        legend_frame.setStyleSheet("""
+            QFrame {
+                border: 1px solid #3a3a3a;
+                background-color: #F3F2F2;
+                border-radius: 4px;
+            }
+        """)
+        legend_frame.setFixedSize(260,160)
+
+        legend_layout = QVBoxLayout(legend_frame)
+        legend_layout.setContentsMargins(6, 6, 6, 6)
+        legend_layout.setSpacing(2)
+
+        legend_title = QLabel("Legend")
+        legend_title.setFont(QFont("Rubik UI", 11, QFont.Bold))
+        legend_layout.addWidget(legend_title)
+
+        legend_items = [
+            ("✔ External dependency", "#3bbf3b"),
+            ("⚠ May be required (check)", "#e6a23c"),
+            ("? Uncertain / optional", "#8a8a8a"),
+        ]
+
+        for text, color in legend_items:
+            lbl = QLabel(text)
+            lbl.setFont(QFont("Rubik UI", 12, QFont.Bold))
+            lbl.setStyleSheet(f"color: {color};")
+            legend_layout.addWidget(lbl)
+
+        frame_layout.addWidget(legend_frame)
 
         # -------------------------------
         # CONTENT (INSIDE FRAME)
@@ -53,17 +94,42 @@ class DependencyPopup:
             "This script references the following external packages:"
         )
         label1.setWordWrap(True)
-        label1.setFont(QFont("Rubik UI", 11, QFont.Bold))
+        label1.setFont(QFont("Rubik UI", 12, QFont.Bold))
         label1.setContentsMargins(5,5,5,5)
+        label1.setFixedSize(400,60)
         frame_layout.addWidget(label1)
 
-        pkg_text = ", ".join(packages)
+        def make_section(title, items, color):
+            if not items:
+                return None
 
-        label2 = QLabel(pkg_text)
-        label2.setWordWrap(True)
-        label2.setFont(QFont("Rubik UI", 11, QFont.Bold))
-        label2.setContentsMargins(5,5,5,5)
-        frame_layout.addWidget(label2)
+            text = "\n".join(items)
+
+            box = QTextEdit()
+            box.setReadOnly(True)
+            box.setText(f"{title}:\n{text}")
+            box.setFont(QFont("Rubik UI", 12, QFont.Bold))
+            box.setStyleSheet(f"""
+                QTextEdit {{
+                    color: {color};
+                    background-color: #F3F2F2;
+                    border: 1px solid #8a8a8a;
+                }}
+            """)
+            box.setMinimumHeight(80)
+
+            return box
+
+        sections = [
+            ("✔ External", packages.get("external", []), "#3bbf3b"),
+            ("⚠ Check", packages.get("maybe", []), "#e6a23c"),
+            ("? Uncertain", packages.get("uncertain", []), "#8a8a8a"),
+        ]
+
+        for title, items, color in sections:
+            section = make_section(title, items, color)
+            if section:
+                frame_layout.addWidget(section)
 
         label3 = QLabel(
             "Ensure they are installed in the selected Python environment. "

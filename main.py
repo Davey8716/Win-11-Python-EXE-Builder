@@ -50,6 +50,7 @@ def resource_path(relative_path):
 class EXEBuilderApp(QWidget):
     def __init__(self):
         super().__init__()
+        self._dep_last_requested = None
 
         self._last_advisory_script = None
         self._eta_running = False
