@@ -55,7 +55,7 @@ class StateController:
                     blocked_widgets.append(widget)
 
             # -------------------------
-            # Rehydrate app state FIRST
+            # Load JSON app state
             # -------------------------
             self.app.tooltips_enabled = data.get("tooltips_enabled", True)
             self.app.dependency_notice_enabled = data.get("dependency_notice_enabled", True)
@@ -90,7 +90,7 @@ class StateController:
                 self.app.project_root = None
 
             # -------------------------
-            # Sync state -> UI
+            # Sync state -> UI rehdration
             # -------------------------
             # 🔑 restore + enforce mutual exclusion (hasattr style)
 

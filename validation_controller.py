@@ -343,6 +343,8 @@ class ValidationController:
 
         is_desktop = outdir and os.path.normpath(outdir) == os.path.normpath(desktop)
         set_btn(app.output_refresh_btn, not building and not is_desktop)
+
+        
         
         # -------------------------------
         # EXE NAME REFRESH (revert to script name)
@@ -545,6 +547,8 @@ class ValidationController:
                 # 🔑 FORCE FULL RESET FIRST (this is what you're missing)
                 widget.setStyleSheet("")
 
+                
+
             # 🔑 THEN reapply validation styling
             self.validation_status_message()
         self.update_build_button()
@@ -566,7 +570,7 @@ class ValidationController:
                     QPushButton {{
                         background-color: {color};
                         color: black;
-                        border: 1px solid #8a8a8a;
+                        border: 2px solid #000000;
                     }}
                 """)
         try:
@@ -575,7 +579,7 @@ class ValidationController:
             pass
 
         if building:
-            set_btn(app.build_btn, True, "#be1a1a")
+            set_btn(app.build_btn, True, "#FF0000")
             app.build_btn.setText("Cancel EXE")
             app.build_btn.clicked.connect(app.build_cancellation.cancel_build)
 

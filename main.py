@@ -561,15 +561,15 @@ class EXEBuilderApp(QWidget):
 
         self.appened_py_version.setStyleSheet("""
             QPushButton {
-                background-color: #e0e0e0;
+                background-color: #FFFFFF;
                 color: black;
-                border: 1px solid #8a8a8a;
+                border: 1px solid #000000;
             }
 
             QPushButton:checked {
                 background-color: #3bbf3b;
                 color: black;
-                border: 1px solid #2e9e2e;
+                border: 1px solid #000000;
             }
 
             QPushButton:pressed {
@@ -578,7 +578,7 @@ class EXEBuilderApp(QWidget):
             QPushButton:disabled {
                 color: #7a7a7a;
                 background-color: #d3d3d3;
-                border: 1px solid #8a8a8a;
+                border: 2px solid #000000;
                             
             }
         """)
