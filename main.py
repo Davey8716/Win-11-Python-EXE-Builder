@@ -732,13 +732,14 @@ class EXEBuilderApp(QWidget):
                 QComboBox {
                     background-color: #F3F2F2;   /* matches title frames */
                     color: #2a2a2a;              /* dark readable text */
-                    border: 1px solid #8a8a8a;   /* soft grey border */
-                    padding: 4px;
+                    border: 2px solid #2B2B2B;   /* soft grey border */
+                    padding: 2px;
                 }
 
                 QComboBox::drop-down {
                     border: none;
-                    background: #817E7E;
+                    background: #2B2B2B;
+                    padding: 10px;
                 }
 
                 QComboBox QAbstractItemView {
@@ -770,9 +771,9 @@ class EXEBuilderApp(QWidget):
             if frame:
                 frame.setStyleSheet("""
                     QFrame {
-                        border: 2px solid #080B12;   /* thickness */
+                        border: 2px solid #696969;   /* thickness */
                         border-radius: 2px;
-                        background-color:   #DCDBDB;
+                        background-color:   #8A8A8A;
                     }
         """)
                 
@@ -858,12 +859,6 @@ class EXEBuilderApp(QWidget):
             
         folder_row.addStretch()
 
-        for btns in [
-            self.delete_recent_folder,
-            self.delete_all_folders,
-        ]:
-            btns.setFixedSize(35,35)
-            btns.setEnabled(True)
 
         for delete_btns in [
             self.delete_recent_icons,
@@ -899,30 +894,19 @@ class EXEBuilderApp(QWidget):
     
         self.exe_name_input.setReadOnly(False)
 
-        for btns in [
+        buttons = [
             self.open_python_site_btn,
-            self.appened_py_version, 
-        ]:
-            
-            btns.setFont(QFont("Rubik UI", 11,QFont.Bold))
-            btns.setFixedSize(160,35)
-
-        for btns in [
+            self.appened_py_version,
             self.icon_btn,
             self.ico_convert_btn,
-        ]:
-            btns.setFont(QFont("Rubik UI",11, QFont.Bold))
-            btns.setFixedSize(160,35)
-
-        for btns in [
             self.interpreter_btn,
             self.folder_btn,
             self.output_btn
+        ]
 
-        ]:
-            btns.setFixedSize(160,35)
-            btns.setFont(QFont("Rubik Ui",11, QFont.Bold))
-            font.setBold(True)
+        for btn in buttons:
+            btn.setFixedSize(160, 35)
+            btn.setFont(QFont("Rubik UI", 11, QFont.Bold))
         
         self.recent_folder_dropdown.setFixedSize(245,35)
             
@@ -1007,7 +991,7 @@ if __name__ == "__main__":
     palette = QPalette()
 
     # Main background (empty space / non-widget areas)
-    palette.setColor(QPalette.Window, QColor("#949494"))
+    palette.setColor(QPalette.Window, QColor("#2B2B2B"))
 
     app.setPalette(palette)
 
