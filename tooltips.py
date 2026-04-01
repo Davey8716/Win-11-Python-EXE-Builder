@@ -176,13 +176,12 @@ def attach_tooltips(app):
 
     QtTooltip(
         app.python_delete_all_interpreter,
-        "Deletes all interpreters from the drop down"
+        "Deletes all interpreters from the drop down."
     )
 
     QtTooltip(
         app.interpreter_refresh_btn,
         "Clear selected interpreter."
-
     )
 
     QtTooltip(
@@ -211,7 +210,7 @@ def attach_tooltips(app):
 
     QtTooltip(
         app.ico_convert_btn,
-        "Opens 3 websites that convert PNG/JPG images into .ico files\n"
+        "Opens 3 websites that convert PNG/JPG images into .ico files.\n"
         "For use as custom EXE icons."
     )
 
@@ -256,7 +255,10 @@ def attach_tooltips(app):
 
     QtTooltip(
         app.date_time_dropdown,
-        "Select a date/time format to append to the file name.\nFormats without minutes will overwrite builds from the same day.\nFormats including minutes usually produce a unique file per build.\nAs most builds take longer than a minute.\nIf a name is reused, wait briefly before rebuilding."
+        "Select a date/time format to append to the file name." 
+        "\nFormats without minutes will overwrite builds from the same day." 
+        "\nFormats including minutes usually produce a unique file per build." 
+        "\nAs most builds take longer than a minute.\nIf a name is reused, wait briefly before rebuilding."
     )
 
     QtTooltip(
@@ -280,10 +282,6 @@ def attach_tooltips(app):
         "Reset EXE name to match the entry script name.\n"
         "A python folder must be selected to for this to be ungryed and resettable.\n"
     )
-
-    # -----------------------------
-    # Build
-    # -----------------------------
 
     QtTooltip(
         app.build_btn,
