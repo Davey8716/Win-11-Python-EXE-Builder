@@ -1,4 +1,20 @@
-**Updated as of 31/3/26 to use PySide6 qtwidgets**,
+**Updated as of 1/3/26 to use PySide6 qtwidgets**
+
+Dependency Notice
+
+The dependency notice scans your project for imported modules and
+highlights external packages that may need to be installed.
+
+- Scans all Python files in the project folder (including subfolders)
+- Filters out standard library and local modules
+
+Limitations:
+- May include false positives (e.g. indirect or optional imports)
+- Does not resolve exact package names or versions
+- Does not detect dynamic imports or runtime dependencies
+
+This feature is designed as a lightweight advisory to help catch
+missing packages before building, not as a full dependency manager.
 
 Dont build in protected folders like pictures/music etc, it will just show as building endlessly and not output the files to the folder.
 
