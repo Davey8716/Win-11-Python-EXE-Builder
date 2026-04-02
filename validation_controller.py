@@ -21,7 +21,6 @@ class DependencyWorker(QObject):
 
         self.finished.emit(result)
 
-
 class ValidationController:
     def __init__(self, app):
         """
@@ -296,11 +295,11 @@ class ValidationController:
         python_ok = bool(python_path and os.path.isfile(python_path))
 
         icon_path = getattr(app, "icon_path", "").strip()
-        icon_ok = bool(icon_path and os.path.isfile(icon_path))
+        # icon_ok = bool(icon_path and os.path.isfile(icon_path))
         exe_name = app.exe_name_input.text().strip()
 
         python_path = getattr(app, "python_interpreter_path", "").strip()
-        interpreter_ok = bool(python_path and os.path.isfile(python_path))
+        # interpreter_ok = bool(python_path and os.path.isfile(python_path))
 
         is_ready = (
             script_ok and
@@ -417,8 +416,7 @@ class ValidationController:
         is_desktop = outdir and os.path.normpath(outdir) == os.path.normpath(desktop)
         set_btn(app.output_refresh_btn, not building and not is_desktop)
 
-        
-        
+    
         # -------------------------------
         # EXE NAME REFRESH (revert to script name)
         # -------------------------------
@@ -489,7 +487,6 @@ class ValidationController:
 
         elif is_ready:
             status_text = "Ready to build."
-
         else:
             status_text = "Missing required inputs."
 
@@ -604,24 +601,45 @@ class ValidationController:
         # -------------------------------
         if building:
             for widget, _ in mapping:
-
                 widget.setStyleSheet("""
                     QLineEdit {
-                        background-color: #d3d3d3;
+                        background-color: #FFFFFF;
                         color: #7a7a7a;
                         border: 2px solid #8a8a8a;
                     }
                 """)
-
         else:
             for widget, ok in mapping:
 
+                widget.setStyleSheet("")  # reset first
 
-                # 🔑 FORCE FULL RESET FIRST (this is what you're missing)
-                widget.setStyleSheet("")
+                # 🔑 ICON (optional → grey if empty)
+                if widget is app.icon_path_input and not widget.text().strip():
+                    widget.setStyleSheet("""
+                        QLineEdit {
+                            background-color: #FFFFFF;
+                            color: #8a8a8a;
+                            border: 2px solid #2B2B2B;
+                        }
+                    """)
 
-                
-
+                elif ok:
+                    widget.setStyleSheet("""
+                        QLineEdit {
+                            background-color: #FFFFFF;
+                            color: #3bbf3b;
+                            border: 2px solid #2B2B2B;
+                        }
+                    """)
+                else:
+                    widget.setStyleSheet("""
+                        QLineEdit {
+                            background-color: #FFFFFF;
+                            color: #be1a1a;
+                            border: 2px solid #2B2B2B;
+                        }
+                    """)
+                    
             # 🔑 THEN reapply validation styling
             self.validation_status_message()
         self.update_build_button()

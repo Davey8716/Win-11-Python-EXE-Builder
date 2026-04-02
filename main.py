@@ -722,6 +722,7 @@ class EXEBuilderApp(QWidget):
 
         self.main_layout.addWidget(build_title_frame, alignment= Qt.AlignCenter)
 
+
         for dropdowns in [
             self.date_time_dropdown,
             self.recent_folder_dropdown,
