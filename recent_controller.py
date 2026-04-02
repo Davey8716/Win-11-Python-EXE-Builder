@@ -19,6 +19,7 @@ class RecentController:
             return
 
         path = os.path.abspath(os.path.normpath(path))
+        app.interpreter_user_cleared = False
 
         print("Selected:", path)
 
@@ -35,6 +36,7 @@ class RecentController:
         self.app.python_entry_input.setText(self.app.python_interpreter_path)
         QTimer.singleShot(0, lambda: self.app.python_entry_input.setCursorPosition(0))
         self.app.select_interpreter.setCurrentIndex(0)
+        app.state_ctrl.save_state()
         
     def add_recent_interpreter(self, path):
         app = self.app
@@ -352,6 +354,8 @@ class RecentController:
 
         if not path:
             return
+        
+        app.script_user_cleared = False
 
         path = os.path.abspath(os.path.normpath(path))
 
@@ -489,6 +493,8 @@ class RecentController:
             return
 
         path = os.path.abspath(os.path.normpath(path))
+
+        app.icon_user_cleared = False
 
         print("Selected:", path)
 

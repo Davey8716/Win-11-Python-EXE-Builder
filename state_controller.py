@@ -90,6 +90,7 @@ class StateController:
 
             self.app.icon_user_cleared = data.get("icon_user_cleared", False)
             self.app.script_user_cleared = data.get("script_user_cleared", False)
+            self.app.interpreter_user_cleared = data.get("interpreter_user_cleared", False)
 
             if self.app.python_interpreter_path:
                 self.app.last_python_dir = os.path.dirname(self.app.python_interpreter_path)
@@ -157,6 +158,16 @@ class StateController:
                 self.app.appened_py_version.setChecked(
                     getattr(self.app, "append_py_version", False)
                 )
+
+            if getattr(self.app, "interpreter_user_cleared", False):
+                self.app.python_interpreter_path = ""
+                self.app.python_path = ""
+
+                if hasattr(self.app, "python_entry_input"):
+                    self.app.python_entry_input.clear()
+
+                if hasattr(self.app, "select_interpreter"):
+                    self.app.select_interpreter.setCurrentIndex(0)
 
                 
             self.app.validator.update_ui_state()
@@ -227,6 +238,7 @@ class StateController:
             # --- User flags ---
             "icon_user_cleared": getattr(self.app, "icon_user_cleared", False),
             "script_user_cleared": getattr(self.app, "script_user_cleared", False),
+            "interpreter_user_cleared": getattr(self.app, "interpreter_user_cleared", False),
 
             # --- Datetime ---
             "append_datetime": getattr(self.app, "append_datetime", False),
@@ -235,35 +247,6 @@ class StateController:
 
         self.app.state_data = data
 
-        # data = {
-        #     "python_interpreter_path": _norm(
-        #         getattr(self.app, "python_interpreter_path", "")
-        #     ),
-
-        #     "last_script_path": _norm(self.app.script_path),
-        #     "last_icon_path": _norm(self.app.icon_path),
-        #     "last_output_folder": _norm(self.app.output_path),
-        #     "last_exe_name": self.app.exe_name,
-
-        #     "recent_scripts": recent_scripts,
-        #     "recent_icons": recent_icons,
-        #     "recent_interpreters": recent_interpreters,
-
-        #     "last_build_seconds": self.app.last_build_seconds,
-
-        #     "close_after_build_enabled": getattr(self.app, "close_after_build_enabled", True),
-        #     "tooltips_enabled": getattr(self.app, "tooltips_enabled", True),
-        #     "dependency_notice_enabled": getattr(self.app, "dependency_notice_enabled", True),
-        #     "minimize_after_build_enabled": getattr(self.app, "minimize_after_build_enabled", True),
-
-        #     "icon_user_cleared": getattr(self.app, "icon_user_cleared", False),
-        #     "script_user_cleared": getattr(self.app, "script_user_cleared", False),
-
-        #     "append_datetime": getattr(self.app, "append_datetime", False),
-        #     "datetime_format": getattr(self.app, "datetime_format", None),
-        #     }
-
-        # self.app.state_data = data
 
         try:
             with open(state_path, "w", encoding="utf-8") as f:

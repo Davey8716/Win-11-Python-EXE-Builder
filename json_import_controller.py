@@ -106,6 +106,15 @@ class JsonImportController(QObject):
                     app.date_time_dropdown.setCurrentIndex(i)
                     break
 
+        # 1. UPDATE SOURCE OF TRUTH
+        app.entry_script = path
+        app.script_path = path
+        app.project_root = os.path.dirname(path)
+
+        # 2. UPDATE UI
+        app.script_path_input.setText(path)
+
+        app.state_ctrl.save_state()
         app.validator.validation_status_message()
         self.app.validator.update_ui_state()
         

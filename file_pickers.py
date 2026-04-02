@@ -84,6 +84,8 @@ class FilePickerController:
         if hasattr(self.app, "validator"):
             self.app.validator.validation_status_message()
             self.app.validator.update_ui_state()
+
+        self.app.state_ctrl.save_state()
             
     def _resolve_python_start_dir(self):
         """Best directory to open the interpreter picker in."""

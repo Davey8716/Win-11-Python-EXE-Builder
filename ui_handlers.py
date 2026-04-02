@@ -17,6 +17,7 @@ class UIHandlers:
         # -------------------------------
         app.python_interpreter_path = ""
         app.python_path = ""
+        app.interpreter_user_cleared = True
 
         # -------------------------------
         # CLEAR UI
@@ -38,8 +39,8 @@ class UIHandlers:
         # -------------------------------
         # FORCE UI UPDATE (ORDER MATTERS)
         # -------------------------------
-        app.validator.update_ui_state()
         app.validator.validation_status_message()
+        app.validator.update_ui_state()
 
     def clear_script_path(self):
         app = self.app
@@ -50,6 +51,7 @@ class UIHandlers:
         app.entry_script = None
         app.project_root = None
         app.script_path = ""
+        app.script_user_cleared = True
 
         # -------------------------------
         # CLEAR UI
@@ -65,8 +67,8 @@ class UIHandlers:
         # -------------------------------
         # FORCE UI UPDATE
         # -------------------------------
-        app.validator.update_ui_state()
         app.validator.validation_status_message()
+        app.validator.update_ui_state()
 
     def clear_icon(self):
         app = self.app
@@ -75,6 +77,7 @@ class UIHandlers:
         # CLEAR STATE FIRST
         # -------------------------------
         app.icon_path = ""
+        app.icon_user_cleared = True
 
         # -------------------------------
         # CLEAR UI
@@ -90,9 +93,9 @@ class UIHandlers:
         # -------------------------------
         # FORCE UI UPDATE
         # -------------------------------
-        app.validator.update_ui_state()
         app.validator.validation_status_message()
-    
+        app.validator.update_ui_state()
+        
     def reset_output_to_desktop(self):
         app = self.app
         app.build_error = None
@@ -207,21 +210,29 @@ class UIHandlers:
             app.validator.validation_status_message()
             app.validator.update_ui_state()
 
+        app.exe_name = value  # 🔑 ensure source of truth is updated
+        app.state_ctrl.save_state()
+
     def on_datetime_format_changed(self, index):
         app = self.app
 
-        if index == 0:
-            # 🔴 OFF
+        data = app.date_time_dropdown.currentData()
+
+        if data is None:
+            # 🔴 OFF (None selected)
             app.append_datetime = False
             app.datetime_format = ""
 
-            # visually clear selection
-            app.date_time_dropdown.setCurrentIndex(0)
+            # visually set to "None" (index 2 in your setup)
+            if app.date_time_dropdown.currentIndex() != 2:
+                app.date_time_dropdown.blockSignals(True)
+                app.date_time_dropdown.setCurrentIndex(2)
+                app.date_time_dropdown.blockSignals(False)
 
         else:
             # 🟢 ON
             app.append_datetime = True
-            app.datetime_format = app.date_time_dropdown.currentData()
+            app.datetime_format = data
 
         if hasattr(app, "state_ctrl"):
             app.state_ctrl.save_state()
