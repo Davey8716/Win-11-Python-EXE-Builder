@@ -52,6 +52,35 @@ class DependencyPopup:
         layout.addWidget(scroll)
 
         # -------------------------------
+        # BUILD REQUIREMENTS (NEW)
+        # -------------------------------
+
+        build_frame = QFrame()
+        build_frame.setStyleSheet("""
+            QFrame {
+                border: 1px solid #3a3a3a;
+                background-color: #F3F2F2;
+                border-radius: 4px;
+            }
+        """)
+        build_frame.setFixedSize(260,90)
+
+        build_layout = QVBoxLayout(build_frame)
+        build_layout.setContentsMargins(6, 6, 6, 6)
+        build_layout.setSpacing(2)
+
+        build_title = QLabel("Build Requirements")
+        build_title.setFont(QFont("Rubik UI", 12, QFont.Bold))
+        build_layout.addWidget(build_title)
+
+        build_text = QLabel("PyInstaller\n(required to build the .exe)")
+        build_text.setFont(QFont("Rubik UI", 11, QFont.Bold))
+        build_text.setStyleSheet("color: #3bbf3b;")
+        build_layout.addWidget(build_text)
+
+        frame_layout.addWidget(build_frame)
+
+        # -------------------------------
         # LEGEND FRAME
         # -------------------------------
         legend_frame = QFrame()
@@ -69,7 +98,7 @@ class DependencyPopup:
         legend_layout.setSpacing(2)
 
         legend_title = QLabel("Legend")
-        legend_title.setFont(QFont("Rubik UI", 11, QFont.Bold))
+        legend_title.setFont(QFont("Rubik UI", 12, QFont.Bold))
         legend_layout.addWidget(legend_title)
 
         legend_items = [
@@ -80,7 +109,7 @@ class DependencyPopup:
 
         for text, color in legend_items:
             lbl = QLabel(text)
-            lbl.setFont(QFont("Rubik UI", 12, QFont.Bold))
+            lbl.setFont(QFont("Rubik UI", 11, QFont.Bold))
             lbl.setStyleSheet(f"color: {color};")
             legend_layout.addWidget(lbl)
 
@@ -94,7 +123,7 @@ class DependencyPopup:
             "This script references the following external packages:"
         )
         label1.setWordWrap(True)
-        label1.setFont(QFont("Rubik UI", 12, QFont.Bold))
+        label1.setFont(QFont("Rubik UI", 11, QFont.Bold))
         label1.setContentsMargins(5,5,5,5)
         label1.setFixedSize(400,60)
         frame_layout.addWidget(label1)
@@ -108,7 +137,7 @@ class DependencyPopup:
             box = QTextEdit()
             box.setReadOnly(True)
             box.setText(f"{title}:\n{text}")
-            box.setFont(QFont("Rubik UI", 12, QFont.Bold))
+            box.setFont(QFont("Rubik UI", 11, QFont.Bold))
             box.setStyleSheet(f"""
                 QTextEdit {{
                     color: {color};
@@ -141,7 +170,7 @@ class DependencyPopup:
         frame_layout.addWidget(label3)
 
         ok_btn = QPushButton("OK")
-        ok_btn.setFont(QFont("Rubik UI", 13, QFont.Bold))
+        ok_btn.setFont(QFont("Rubik UI", 12, QFont.Bold))
         ok_btn.setFixedSize(80, 30)
 
         ok_btn.setStyleSheet("""
