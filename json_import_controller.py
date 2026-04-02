@@ -86,6 +86,7 @@ class JsonImportController(QObject):
         # 🔑 sync BOTH dropdowns
         app.recent_controller.populate_recent_dropdown()
         app.recent_controller.populate_recent_icons_dropdown()
+        app.recent_controller.populate_recent_interpreters_dropdown()
 
 
         # 🔑 restore selections
