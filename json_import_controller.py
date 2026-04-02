@@ -97,7 +97,12 @@ class JsonImportController(QObject):
             app.file_pickers._apply_selected_icon(data["last_icon_path"])
 
         if data.get("python_interpreter_path"):
-            app.python_interpreter_path = data["python_interpreter_path"]
+            path = data["python_interpreter_path"]
+
+            app.python_interpreter_path = path
+            app.python_path = path
+
+            app.python_entry_input.setText(path)
 
         if data.get("datetime_format"):
             app.datetime_format = data["datetime_format"]
@@ -106,14 +111,19 @@ class JsonImportController(QObject):
                     app.date_time_dropdown.setCurrentIndex(i)
                     break
 
-        # 1. UPDATE SOURCE OF TRUTH
-        app.entry_script = path
-        app.script_path = path
-        app.project_root = os.path.dirname(path)
+        # -------------------------------
+        # Restore script correctly
+        # -------------------------------
+        script_path = data.get("last_script_path", "")
 
-        # 2. UPDATE UI
-        app.script_path_input.setText(path)
+        if script_path and os.path.isfile(script_path):
+            script_path = os.path.normpath(script_path)
 
+            app.entry_script = script_path
+            app.script_path = script_path
+            app.project_root = os.path.dirname(script_path)
+            app.script_path_input.setText(script_path)
+            app.project_root = os.path.dirname(path)
         app.state_ctrl.save_state()
         app.validator.validation_status_message()
         self.app.validator.update_ui_state()
