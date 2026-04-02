@@ -1,17 +1,32 @@
 import os
 import json
-import sys
 
 class StateController:
     def __init__(self, app):
         self.app = app
         self.last_build_counter = 0
 
+    # def _state_file_path(self) -> str:
+    #     if getattr(sys, "frozen", False):
+    #         base_dir = os.path.dirname(sys.executable)
+    #     else:
+    #         base_dir = os.path.abspath(".")
+    #     return os.path.join(base_dir, "exe_builder_state.json")
+
     def _state_file_path(self) -> str:
-        if getattr(sys, "frozen", False):
-            base_dir = os.path.dirname(sys.executable)
-        else:
-            base_dir = os.path.abspath(".")
+
+        # -------------------------------
+        # ALWAYS use user-writable location
+        # -------------------------------
+        app_name = "EXEBuilder"
+
+        base_dir = os.path.join(
+            os.getenv("LOCALAPPDATA") or os.path.expanduser("~"),
+            app_name
+        )
+
+        os.makedirs(base_dir, exist_ok=True)
+
         return os.path.join(base_dir, "exe_builder_state.json")
 
         
