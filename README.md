@@ -1,4 +1,4 @@
-**Updated as of 1/3/26 to use PySide6 QtWidgets**
+**Updated as of 1/4/26 to use PySide6 QtWidgets**
 
 Win 11 → Python → EXE Builder
 If this tool was useful, consider starring the repo — feedback is appreciated.
