@@ -384,7 +384,7 @@ class BuildController(QObject):
             app.last_build_seconds = int(time.time() - app.build_start_time)
             msg = "Build complete."
             app.status_label.setStyleSheet("""
-                QLabel {
+                QTextEdit {
                     background-color: #FFFFFF;
                     color: #3bbf3b;
                     border: 1px solid #3a3a3a;
@@ -399,7 +399,7 @@ class BuildController(QObject):
         else:
             msg = "Build failed. See debug log."
             app.status_label.setStyleSheet("""
-                QLabel {
+                QTextEdit {
                     background-color: #FFFFFF;
                     color: #be1a1a;
                     border: 1px solid #3a3a3a;

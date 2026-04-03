@@ -7,7 +7,7 @@ from ctypes import wintypes
 from build_controller import BuildController
 from tooltips import attach_tooltips
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit,QHBoxLayout, QComboBox
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit,QHBoxLayout, QComboBox,QTextEdit
 from validation_controller import ValidationController
 from activation_controller import ActivationController
 from PySide6.QtGui import QFont, QPalette,QColor
@@ -19,6 +19,7 @@ from ui_handlers import UIHandlers
 from ui_dependency_popup import DependencyPopup
 from json_import_controller import JsonImportController
 from PySide6.QtGui import QFontMetrics
+from PySide6.QtGui import QTextCursor, QTextBlockFormat
 
 mutex = ctypes.windll.kernel32.CreateMutexW(
     None,
@@ -119,7 +120,6 @@ class EXEBuilderApp(QWidget):
         title_label = QLabel(" Win 11 → Python → EXE Builder")
         title_label.setFont(QFont("Rubik UI", 15, QFont.Bold))
         title_label.setFixedSize(350,30)
-        title_label.setContentsMargins(5,5,5,5)
 
         title_layout.addStretch()
         title_layout.addWidget(title_label)  
@@ -199,7 +199,7 @@ class EXEBuilderApp(QWidget):
         # -------------------------------
 
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(2,2,2,2)
+        self.main_layout.setContentsMargins(1, 1, 1, 1)
         self.main_layout.setSpacing(2)
         self.main_layout.addWidget(title_frame, alignment= Qt.AlignCenter)
 
@@ -229,7 +229,7 @@ class EXEBuilderApp(QWidget):
         apps_title_frame.setFrameShadow(QFrame.Raised)
 
         apps_title_layout = QHBoxLayout(apps_title_frame)
-        apps_title_layout.setContentsMargins(2,2,2,2)
+        apps_title_layout.setContentsMargins(3,3,3,3)
 
         self.apps_title = QLabel("Apps Section")
         self.apps_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
@@ -433,7 +433,8 @@ class EXEBuilderApp(QWidget):
         icon_block_layout.addWidget(icon_entry_row)
         
         icon_frame_layout.addWidget(icon_block)
-        
+        self.main_layout.addWidget(icons_title_frame,alignment=Qt.AlignCenter)
+        self.main_layout.addWidget(icon_frame, alignment= Qt.AlignCenter)
 
         # =================================================
         # PYTHON FILE TITLE FRAME
@@ -715,9 +716,22 @@ class EXEBuilderApp(QWidget):
         build_layout.setContentsMargins(5,5,5,5)
         build_layout.setSpacing(4)
 
-        self.status_label = QLabel("Ready")
+        self.status_label = QTextEdit("Ready")
+        self.status_label.setReadOnly(True)
         self.status_label.setFixedSize(200,100)
         self.status_label.setFont(QFont("Rubik UI", 12, QFont.Bold))
+
+        # 🔑 center text
+        cursor = self.status_label.textCursor()
+        cursor.select(QTextCursor.Document)
+
+        fmt = QTextBlockFormat()
+        fmt.setAlignment(Qt.AlignCenter)
+
+        cursor.mergeBlockFormat(fmt)
+        self.status_label.setTextCursor(cursor)
+
+        
 
         self.build_btn = QPushButton("Build EXE")
         self.build_btn.setFont(QFont("Rubik UI", 13, QFont.Bold))
@@ -951,8 +965,7 @@ class EXEBuilderApp(QWidget):
             widget.setAcceptDrops(True)
             widget.installEventFilter(self)
         
-        self.main_layout.addWidget(icons_title_frame,alignment=Qt.AlignCenter)
-        self.main_layout.addWidget(icon_frame, alignment= Qt.AlignCenter)
+        
         self.main_layout.addWidget(build_title_frame, alignment= Qt.AlignCenter)
         self.main_layout.addWidget(build_frame,alignment=Qt.AlignCenter)
 
@@ -1006,7 +1019,27 @@ class EXEBuilderApp(QWidget):
         QApplication.instance().quit()
 
     def set_status(self, text):
-        self.status_label.setText(text)
+        self.status_label.setPlainText(text)
+
+        doc_height = self.status_label.document().size().height()
+        box_height = self.status_label.viewport().height()
+
+        padding = max((box_height - doc_height) / 2, 0)
+
+        self.status_label.setStyleSheet(f"""
+            QTextEdit {{
+                padding-top: {int(padding)}px;
+            }}
+        """)
+
+        cursor = self.status_label.textCursor()
+        cursor.select(QTextCursor.Document)
+
+        fmt = QTextBlockFormat()
+        fmt.setAlignment(Qt.AlignCenter)
+
+        cursor.mergeBlockFormat(fmt)
+        self.status_label.setTextCursor(cursor)
 
     def closeEvent(self, event):
         self.state_ctrl.save_state()

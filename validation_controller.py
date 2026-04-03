@@ -503,7 +503,7 @@ class ValidationController:
             color = "#be1a1a"
 
         app.status_label.setStyleSheet(f"""
-            QLabel {{
+            QTextEdit {{
                 background-color: #FFFFFF;
                 color: {color};
                 border: 1px solid #3a3a3a;
@@ -512,7 +512,7 @@ class ValidationController:
 
         if building:
             app.status_label.setStyleSheet("""
-                QLabel {
+                QTextEdit {
                     background-color: #FFFFFF;
                     color: #3bbf3b;
                     border: 1px solid #3a3a3a;
@@ -623,6 +623,16 @@ class ValidationController:
                         }
                     """)
 
+                elif widget is app.output_path_input and not widget.text().strip():
+                    # output = required → force RED if empty
+                    widget.setStyleSheet("""
+                        QLineEdit {
+                            background-color: #FFFFFF;
+                            color: #be1a1a;
+                            border: 2px solid #2B2B2B;
+                        }
+                    """)
+
                 elif ok:
                     widget.setStyleSheet("""
                         QLineEdit {
@@ -639,7 +649,7 @@ class ValidationController:
                             border: 2px solid #2B2B2B;
                         }
                     """)
-                    
+
             # 🔑 THEN reapply validation styling
             self.validation_status_message()
         self.update_build_button()
