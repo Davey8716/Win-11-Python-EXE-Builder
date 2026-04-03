@@ -40,24 +40,36 @@ Limitations
 This feature is a lightweight advisory to help catch missing packages before building, not a full dependency resolver.
 
 Protected folders:
-Avoid building in protected folders (e.g. Pictures, Music). These locations may prevent file writes and cause build failures or stalled output.
+
+	Avoid building in protected folders (e.g. Pictures, Music). These locations may prevent file writes and cause build failures or stalled output.
+
 Icon Behavior (Important)
+
+	Windows caches application icons very aggressively. When you rebuild an EXE using the same filename, the file is correctly overwritten, but Windows may continue to display the old cached icon.
 	
-	Windows caches application icons very aggressively. This means that when building multiple EXEs with the same filename, the icon shown in File Explorer may not update correctly — even though the build itself is successful and the correct icon is embedded.
+	This creates a mismatch:
 	
-	What you may see:
+	The EXE is updated ✅
+	The icon inside the EXE is updated ✅
+	Windows Explorer still shows the old icon ❌
+	What actually happens
+	Rebuilding to the same name → previous EXE is overwritten
+	However → Windows may keep showing the old icon
+	The icon will appear “stuck” until the file is renamed
 	
-	Changing from one icon to another → old icon still appears
-	Removing an icon → previous icon still appears
-	Rebuilding to the same name → icon appears “stuck”
+Examples:
+	
+	Changing icon → old icon still appears
+	Removing icon → previous icon still appears
+	Rebuilding same name → correct build, wrong icon shown
 	
 	This is a Windows Explorer caching behavior, not an issue with the builder or PyInstaller.
 	
-	Recommended Solution
+Recommended Solution
 	
 	To ensure icons always display correctly, use a unique filename for each build.
 	
-	The builder provides built-in options for this:
+	The builder provides built-in options:
 	
 	Append Date/Time (HH-MM) ✅ recommended
 	Append Python Version (optional)
@@ -71,17 +83,14 @@ Icon Behavior (Important)
 	
 	If you plan to build multiple versions of the same EXE:
 	
-	Use a date/time format that includes minutes (HH-MM)
-	Builds created within the same minute will share the same filename
-	If you need another build, wait until the next minute before rebuilding
+	Use a date/time format that includes minutes (HH-MM) ✅ recommended
+	Builds created within the same minute will share the same filename and be overwritten
+	If you need another distinct build, wait until the next minute before rebuilding
 	Practical Rule
-	Same filename → icon may appear incorrect
+	Same filename → file is overwritten, but icon may appear incorrect
+	Renaming the file → forces Windows to refresh the icon
 	Unique filename → icon will always display correctly
-	Note
-
-If you must reuse the same filename, renaming the EXE manually will force Windows to refresh the icon. However, using timestamped builds is the most reliable and intended workflow.
-
-This ensures each build generates a unique output folder and EXE.
+	
 
 Build requirements:
 
