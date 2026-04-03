@@ -102,13 +102,46 @@ class RecentController:
         except:
             data = {}
 
+        # paths = sorted(
+        #     data.get("recent_interpreters", []),
+        #     key=lambda p: (
+        #         os.path.basename(os.path.dirname(p)).lower(),
+        #         os.path.basename(p).lower()
+        #     )
+        # )
+
+        raw_paths = data.get("recent_interpreters", [])
+
+        # 🔑 CLEAN STALE ENTRIES
+        valid_paths = [
+            os.path.abspath(os.path.normpath(p))
+            for p in raw_paths
+            if p and os.path.isfile(os.path.abspath(os.path.normpath(p)))
+        ]
+
+        # 🔑 WRITE BACK CLEANED LIST
+        if len(valid_paths) != len(raw_paths):
+            data["recent_interpreters"] = valid_paths
+            try:
+                with open(state_path, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=4)
+            except:
+                pass
+
+        # 🔑 USE CLEAN LIST
         paths = sorted(
-            data.get("recent_interpreters", []),
+            valid_paths,
             key=lambda p: (
                 os.path.basename(os.path.dirname(p)).lower(),
                 os.path.basename(p).lower()
             )
         )
+
+        current = os.path.abspath(os.path.normpath(getattr(app, "python_interpreter_path", "") or ""))
+
+        if current and current not in valid_paths:
+            if hasattr(app, "ui_handlers"):
+                app.ui_handlers.clear_interpreter_path()
 
         seen = set()
 
@@ -306,13 +339,46 @@ class RecentController:
         except:
             data = {}
 
+        # paths = sorted(
+        #     data.get("recent_scripts", []),
+        #     key=lambda p: (
+        #         os.path.basename(os.path.dirname(p)).lower(),  # project folder
+        #         os.path.basename(p).lower()                    # file name
+        #     )
+        # )
+
+        raw_paths = data.get("recent_scripts", [])
+
+        # 🔑 CLEAN STALE ENTRIES
+        valid_paths = [
+            os.path.abspath(os.path.normpath(p))
+            for p in raw_paths
+            if p and os.path.isfile(os.path.abspath(os.path.normpath(p)))
+        ]
+
+        # 🔑 WRITE BACK CLEANED LIST
+        if len(valid_paths) != len(raw_paths):
+            data["recent_scripts"] = valid_paths
+            try:
+                with open(state_path, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=4)
+            except:
+                pass
+
+        # 🔑 USE CLEAN LIST
         paths = sorted(
-            data.get("recent_scripts", []),
+            valid_paths,
             key=lambda p: (
-                os.path.basename(os.path.dirname(p)).lower(),  # project folder
-                os.path.basename(p).lower()                    # file name
+                os.path.basename(os.path.dirname(p)).lower(),
+                os.path.basename(p).lower()
             )
         )
+
+        current = os.path.abspath(os.path.normpath(getattr(app, "entry_script", "") or ""))
+
+        if current and current not in valid_paths:
+            if hasattr(app, "ui_handlers"):
+                app.ui_handlers.clear_script_path()
 
         seen = set()
 
@@ -582,10 +648,40 @@ class RecentController:
         except:
             data = {}
 
+        # paths = sorted(
+        #     data.get("recent_icons", []),
+        #     key=lambda p: os.path.basename(p).lower()
+        # )
+
+        raw_paths = data.get("recent_icons", [])
+
+        # 🔑 CLEAN STALE ENTRIES
+        valid_paths = [
+            os.path.abspath(os.path.normpath(p))
+            for p in raw_paths
+            if p and os.path.isfile(os.path.abspath(os.path.normpath(p)))
+        ]
+
+        # 🔑 WRITE BACK CLEANED LIST
+        if len(valid_paths) != len(raw_paths):
+            data["recent_icons"] = valid_paths
+            try:
+                with open(state_path, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=4)
+            except:
+                pass
+
+        # 🔑 USE CLEAN LIST
         paths = sorted(
-            data.get("recent_icons", []),
+            valid_paths,
             key=lambda p: os.path.basename(p).lower()
         )
+
+        current = os.path.abspath(os.path.normpath(getattr(app, "icon_path", "") or ""))
+
+        if current and current not in valid_paths:
+            if hasattr(app, "ui_handlers"):
+                app.ui_handlers.clear_icon()
 
         seen = set()
 
