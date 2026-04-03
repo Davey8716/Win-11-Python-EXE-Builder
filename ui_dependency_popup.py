@@ -12,6 +12,21 @@ class DependencyPopup:
     # Dependency Popup (PySide6)
     # =============================================================
 
+    def _close_and_disable(self):
+        app = self.app
+
+        # close popup safely
+        if self.popup:
+            self.popup.close()
+            self.popup = None
+
+        # 🔑 sync toggle + state
+        app.dependency_notice.setChecked(False)
+        app.dependency_notice_enabled = False
+
+        if hasattr(app, "state_ctrl"):
+            app.state_ctrl.save_state()
+
     def build_dependency_popup(self, packages: list[str]):
         if not packages:
             return None
@@ -175,7 +190,7 @@ class DependencyPopup:
 
         ok_btn.setStyleSheet("""
             QPushButton {
-                background-color: #3bbf3b;
+                background-color: #2a7fff;
                 color: #000000;
                 border: 1px solid #000000;
             }
@@ -188,7 +203,10 @@ class DependencyPopup:
             }
         """)
 
-        ok_btn.clicked.connect(popup.close)
+        # OK button
+        ok_btn.clicked.connect(lambda: self._close_and_disable())
+                # 🔑 also catch X button (window close)
+        popup.finished.connect(lambda: self._close_and_disable())
         frame_layout.addWidget(ok_btn, alignment=Qt.AlignHCenter)
 
         # Position
