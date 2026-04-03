@@ -41,13 +41,45 @@ This feature is a lightweight advisory to help catch missing packages before bui
 
 Protected folders:
 Avoid building in protected folders (e.g. Pictures, Music). These locations may prevent file writes and cause build failures or stalled output.
+Icon Behavior (Important)
+	
+	Windows caches application icons very aggressively. This means that when building multiple EXEs with the same filename, the icon shown in File Explorer may not update correctly — even though the build itself is successful and the correct icon is embedded.
+	
+	What you may see:
+	
+	Changing from one icon to another → old icon still appears
+	Removing an icon → previous icon still appears
+	Rebuilding to the same name → icon appears “stuck”
+	
+	This is a Windows Explorer caching behavior, not an issue with the builder or PyInstaller.
+	
+	Recommended Solution
+	
+	To ensure icons always display correctly, use a unique filename for each build.
+	
+	The builder provides built-in options for this:
+	
+	Append Date/Time (HH-MM) ✅ recommended
+	Append Python Version (optional)
+	
+	Using a timestamp (with minutes) ensures:
+	
+	A fresh file every build
+	No icon cache conflicts
+	Clear versioning of builds
+	Multiple Builds (Important Detail)
+	
+	If you plan to build multiple versions of the same EXE:
+	
+	Use a date/time format that includes minutes (HH-MM)
+	Builds created within the same minute will share the same filename
+	If you need another build, wait until the next minute before rebuilding
+	Practical Rule
+	Same filename → icon may appear incorrect
+	Unique filename → icon will always display correctly
+	Note
 
-Multiple builds:
-If you plan to build multiple versions of the same EXE:
-
-	Use a date/time format that includes minutes (HH-MM).
-	Builds created within the same minute will share the same name.
-	If you need another build, wait for the next minute before rebuilding.
+If you must reuse the same filename, renaming the EXE manually will force Windows to refresh the icon. However, using timestamped builds is the most reliable and intended workflow.
 
 This ensures each build generates a unique output folder and EXE.
 
