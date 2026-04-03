@@ -52,6 +52,7 @@ class EXEBuilderApp(QWidget):
     def __init__(self):
         super().__init__()
         self._dep_last_requested = None
+        self._is_closing = False
 
         self._last_advisory_script = None
         self._eta_running = False
@@ -1056,6 +1057,7 @@ class EXEBuilderApp(QWidget):
         self.status_label.setTextCursor(cursor)
 
     def closeEvent(self, event):
+        self._is_closing = True
         self.state_ctrl.save_state()
 
 # -------------------------------------------------------------

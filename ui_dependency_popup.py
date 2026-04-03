@@ -19,6 +19,10 @@ class DependencyPopup:
     def _close_and_disable(self):
         app = self.app
 
+        # 🔒 IGNORE app shutdown
+        if getattr(app, "_is_closing", False):
+            return
+
         # close popup safely
         if self.popup:
             self.popup.close()
