@@ -773,7 +773,7 @@ class EXEBuilderApp(QWidget):
                 frame.setStyleSheet("""
                     QFrame {
                         border: 2px solid #696969;   /* thickness */
-                        border-radius: 2px;
+                        border-radius: 6px;
                         background-color:   #8A8A8A;
                     }
         """)
@@ -792,7 +792,7 @@ class EXEBuilderApp(QWidget):
                 frame.setStyleSheet("""
                     QFrame {
                         border: 2px solid #080B12;   /* thickness */
-                        border-radius: 2px;
+                        border-radius: 6px;
                         background-color:   #F3F2F2;
                     }
         """)
@@ -859,7 +859,6 @@ class EXEBuilderApp(QWidget):
             folder_row.addWidget(widget)
             
         folder_row.addStretch()
-
 
         for delete_btns in [
             self.delete_recent_icons,

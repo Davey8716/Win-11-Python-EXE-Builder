@@ -57,7 +57,7 @@ class QtTooltip(QObject):
                 color: white;
                 border: 1px solid #444;
                 padding: 6px;
-                border-radius: 4px;
+                border-radius: 6px;
                 font-family: "Rubik";
                 font-size: 15px;
             }

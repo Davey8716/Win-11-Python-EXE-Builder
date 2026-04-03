@@ -383,7 +383,7 @@ class ScriptPickerPopup(QDialog):
         self.frame.setStyleSheet("""
             QFrame {
                 border: 2px solid #080B12;
-                border-radius: 2px;
+                border-radius: 6px;
                 background-color: #DCDBDB;
             }
         """)
