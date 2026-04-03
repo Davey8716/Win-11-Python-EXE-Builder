@@ -21,7 +21,7 @@ class DependencyPopup:
             self.popup.close()
 
         popup = QDialog(self.app)
-        popup.setFixedSize(600,800)
+        popup.setFixedSize(420,800)
         popup.setWindowTitle("Dependency Notice")
         popup.setModal(False)
         popup.setWindowFlag(Qt.WindowStaysOnTopHint, True)
@@ -33,7 +33,7 @@ class DependencyPopup:
         popup_frame = QFrame()
         popup_frame.setStyleSheet("""
             QFrame {
-                border: 2px solid #3a3a3a;
+                border: 3px solid #3a3a3a;
                 border-radius: 6px;
                 background-color: #DCDBDB;
             }
@@ -58,9 +58,9 @@ class DependencyPopup:
         build_frame = QFrame()
         build_frame.setStyleSheet("""
             QFrame {
-                border: 1px solid #3a3a3a;
+                border: 3px solid #3a3a3a;
                 background-color: #F3F2F2;
-                border-radius: 4px;
+                border-radius: 6px;
             }
         """)
         build_frame.setFixedSize(260,90)
@@ -75,7 +75,7 @@ class DependencyPopup:
 
         build_text = QLabel("PyInstaller\n(required to build the .exe)")
         build_text.setFont(QFont("Rubik UI", 11, QFont.Bold))
-        build_text.setStyleSheet("color: #3bbf3b;")
+        build_text.setStyleSheet("color: #2a7fff;")
         build_layout.addWidget(build_text)
 
         frame_layout.addWidget(build_frame)
@@ -86,12 +86,12 @@ class DependencyPopup:
         legend_frame = QFrame()
         legend_frame.setStyleSheet("""
             QFrame {
-                border: 1px solid #3a3a3a;
+                border: 3px solid #3a3a3a;
                 background-color: #F3F2F2;
-                border-radius: 4px;
+                border-radius: 6px;
             }
         """)
-        legend_frame.setFixedSize(260,160)
+        legend_frame.setFixedSize(240,160)
 
         legend_layout = QVBoxLayout(legend_frame)
         legend_layout.setContentsMargins(6, 6, 6, 6)
@@ -102,7 +102,7 @@ class DependencyPopup:
         legend_layout.addWidget(legend_title)
 
         legend_items = [
-            ("✔ External dependency", "#3bbf3b"),
+            ("✔ External dependency", "#2a7fff"),
             ("⚠ May be required (check)", "#e6a23c"),
             ("? Uncertain / optional", "#8a8a8a"),
         ]
@@ -125,7 +125,7 @@ class DependencyPopup:
         label1.setWordWrap(True)
         label1.setFont(QFont("Rubik UI", 11, QFont.Bold))
         label1.setContentsMargins(5,5,5,5)
-        label1.setFixedSize(400,60)
+        label1.setFixedSize(360,50)
         frame_layout.addWidget(label1)
 
         def make_section(title, items, color):
@@ -150,7 +150,7 @@ class DependencyPopup:
             return box
 
         sections = [
-            ("✔ External", packages.get("external", []), "#3bbf3b"),
+            ("✔ External", packages.get("external", []), "#2a7fff"),
             ("⚠ Check", packages.get("maybe", []), "#e6a23c"),
             ("? Uncertain", packages.get("uncertain", []), "#8a8a8a"),
         ]
@@ -161,7 +161,7 @@ class DependencyPopup:
                 frame_layout.addWidget(section)
 
         label3 = QLabel(
-            "Ensure they are installed in the selected Python environment. "
+            "Ensure they are installed in\nthe selected Python environment.\n "
             "E.g. py -3.13 -m pip install <package-name>."
         )
         label3.setWordWrap(True)
