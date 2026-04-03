@@ -481,15 +481,15 @@ class RecentController:
     #========================================
     #================================ Icons
     #========================================
-    
     def on_recent_icon_selected(self, index):
         app = self.app
-        if index <= 0:
-            return
 
         path = app.select_recent_icons.currentData()
 
+        # 🔑 NO ICON → single source of truth
         if not path:
+            if hasattr(app, "ui_handlers"):
+                app.ui_handlers.clear_icon()
             return
 
         path = os.path.abspath(os.path.normpath(path))
@@ -500,11 +500,16 @@ class RecentController:
 
         if hasattr(app, "file_pickers"):
             app.file_pickers._apply_selected_icon(path)
-        
+
+        # 🔑 FULL SYNC
+        app.state_ctrl.save_state()
+        self.app.validator.validation_status_message()
         self.app.validator.update_ui_state()
-        self.app.icon_path_input.setText(self.app.icon_path)
-        QTimer.singleShot(0, lambda: self.app.icon_path_input.setCursorPosition(0))
-                            
+
+        if hasattr(app, "icon_path_input"):
+            app.icon_path_input.setText(app.icon_path)
+            QTimer.singleShot(0, lambda: app.icon_path_input.setCursorPosition(0))
+                                
 
     def add_recent_icon(self, path):
         app = self.app
@@ -551,8 +556,9 @@ class RecentController:
 
         app.select_recent_icons.blockSignals(True)
         app.select_recent_icons.clear()
-
+    
         app.select_recent_icons.addItem("Select Recent Icon")
+        app.select_recent_icons.addItem("No Icon", "")
         model = app.select_recent_icons.model()
         item = model.item(0)
         item.setFlags(item.flags() & ~Qt.ItemIsEnabled)

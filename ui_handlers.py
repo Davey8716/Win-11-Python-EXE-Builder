@@ -79,6 +79,12 @@ class UIHandlers:
         app.icon_path = ""
         app.icon_user_cleared = True
 
+        # 🔑 prevent signal loop
+        if hasattr(app, "select_recent_icons"):
+            app.select_recent_icons.blockSignals(True)
+            app.select_recent_icons.setCurrentIndex(1)  # "No Icon"
+            app.select_recent_icons.blockSignals(False)
+
         # -------------------------------
         # CLEAR UI
         # -------------------------------

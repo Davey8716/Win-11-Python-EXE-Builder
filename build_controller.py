@@ -5,6 +5,7 @@ from datetime import datetime
 from PySide6.QtCore import QObject, Signal,QTimer
 from PySide6.QtCore import QThread
 from pathlib import Path
+import shutil
 
 CREATE_NO_WINDOW = 0x08000000
 
@@ -145,8 +146,8 @@ class BuildController(QObject):
         
         script = app.script_path_input.text().strip()
         outdir = app.output_path_input.text().strip()
-        icon = app.icon_path_input.text().strip()
-
+        icon = getattr(app, "icon_path", "").strip()
+        
         script = os.path.normpath(script) if script else ""
         outdir = os.path.normpath(outdir) if outdir else ""
         icon = os.path.normpath(icon) if icon else ""
@@ -310,6 +311,13 @@ class BuildController(QObject):
 
         os.makedirs(build_path, exist_ok=True)
         os.makedirs(spec_path, exist_ok=True)
+
+       
+
+        target_dir = os.path.join(outdir, final_exe_name)
+
+        if os.path.exists(target_dir):
+            shutil.rmtree(target_dir, ignore_errors=True)
 
         cmd = [
             *cmd_prefix,
