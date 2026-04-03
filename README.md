@@ -45,52 +45,40 @@ Protected folders:
 
 Icon Behavior (Important)
 
-	Windows caches application icons very aggressively. When you rebuild an EXE using the same filename, the file is correctly overwritten, but Windows may continue to display the old cached icon.
-	
-	This creates a mismatch:
-	
-	The EXE is updated ✅
-	The icon inside the EXE is updated ✅
-	Windows Explorer still shows the old icon ❌
-	What actually happens
-	Rebuilding to the same name → previous EXE is overwritten
-	However → Windows may keep showing the old icon
-	The icon will appear “stuck” until the file is renamed
-	
-Examples:
-	
-	Changing icon → old icon still appears
-	Removing icon → previous icon still appears
-	Rebuilding same name → correct build, wrong icon shown
+	Windows caches application icons aggressively. If you rebuild an EXE using the same filename, the file is correctly overwritten, but Windows may continue to display the old cached icon.
+
+In practice:
+
+	The EXE updates correctly
+	The icon inside the EXE updates correctly
+	Windows may still show the previous icon
 	
 	This is a Windows Explorer caching behavior, not an issue with the builder or PyInstaller.
-	
+
 Recommended Solution
-	
-	To ensure icons always display correctly, use a unique filename for each build.
+
+	Use a unique filename for each build.
 	
 	The builder provides built-in options:
 	
 	Append Date/Time (HH-MM) ✅ recommended
 	Append Python Version (optional)
-	
-	Using a timestamp (with minutes) ensures:
-	
+
+Using a timestamp ensures:
+
 	A fresh file every build
 	No icon cache conflicts
-	Clear versioning of builds
-	Multiple Builds (Important Detail)
-	
-	If you plan to build multiple versions of the same EXE:
-	
-	Use a date/time format that includes minutes (HH-MM) ✅ recommended
+	Multiple Builds
 	Builds created within the same minute will share the same filename and be overwritten
-	If you need another distinct build, wait until the next minute before rebuilding
+	If you need another distinct build, wait until the next minute
 	Practical Rule
-	Same filename → file is overwritten, but icon may appear incorrect
-	Renaming the file → forces Windows to refresh the icon
-	Unique filename → icon will always display correctly
+	Same filename → may show incorrect icon (cache)
+	Unique filename → always correct icon
 	
+Bottom line
+	
+	Overwriting works correctly, but Windows may display a stale icon. This is rarely an issue in normal use, and timestamped builds avoid it entirely.
+		
 
 Build requirements:
 
