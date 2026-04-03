@@ -93,6 +93,7 @@ class EXEBuilderApp(QWidget):
         
         self.setFixedSize(525, 1000)
         self.setWindowTitle(" Win 11 → Python → EXE Builder")
+        self.setContentsMargins(5,5,5,5)
         
         self.close_after_build_enabled = getattr(self, "close_after_build_enabled", True)
         self.minimize_after_build_enabled = getattr(self, "minimize_after_build_enabled", True)
@@ -115,7 +116,6 @@ class EXEBuilderApp(QWidget):
 
         title_layout = QHBoxLayout(title_frame)
         title_layout.setContentsMargins(5,5,5,5)
-        title_layout.setSpacing(5)
 
         title_label = QLabel(" Win 11 → Python → EXE Builder")
         title_label.setFont(QFont("Rubik UI", 15, QFont.Bold))
@@ -136,7 +136,7 @@ class EXEBuilderApp(QWidget):
         toggles_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         toggles_layout = QVBoxLayout(toggles_frame)
-        toggles_layout.setContentsMargins(2,2,2,2)
+        toggles_layout.setContentsMargins(5,5,5,5)
         toggles_layout.setSpacing(2)
 
         # -------------------------------
@@ -154,8 +154,6 @@ class EXEBuilderApp(QWidget):
         row1.addWidget(self.tooltips_checkbox)
         row1.addWidget(self.dependency_notice)
         row1.addStretch()
-
-
 
         # -------------------------------
         # ROW 2
@@ -229,9 +227,9 @@ class EXEBuilderApp(QWidget):
         apps_title_frame.setFrameShadow(QFrame.Raised)
 
         apps_title_layout = QHBoxLayout(apps_title_frame)
-        apps_title_layout.setContentsMargins(3,3,3,3)
+        apps_title_layout.setContentsMargins(2,2,2,2)
 
-        self.apps_title = QLabel("Apps Section")
+        self.apps_title = QLabel("Interpreter Section")
         self.apps_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
 
         apps_title_layout.addStretch()
@@ -379,7 +377,7 @@ class EXEBuilderApp(QWidget):
         icon_row1_layout.setContentsMargins(1,1,1,1)
         icon_row1_layout.setSpacing(1)
 
-        self.icon_btn = QPushButton("Select Ico (optional)")
+        self.icon_btn = QPushButton("Select ICO optional")
 
         self.select_recent_icons = QComboBox()
         self.select_recent_icons.setFixedSize(245,35)
@@ -586,8 +584,6 @@ class EXEBuilderApp(QWidget):
             QPushButton:disabled {
                 color: #7a7a7a;
                 background-color: #d3d3d3;
-                border: 2px solid #000000;
-                            
             }
         """)
                 
@@ -761,24 +757,28 @@ class EXEBuilderApp(QWidget):
             dropdowns.setStyleSheet("""
                 QComboBox {
                     background-color: #F3F2F2;   /* matches title frames */
-                    color: #2a2a2a;              /* dark readable text */
-                    border: 2px solid #2B2B2B;   /* soft grey border */
-                    padding: 2px;
+                    color: #000000;              /* dark readable text */
+                    border: 3px solid #000000;   /* soft grey border */
+                    padding: 3px;
+                    font-weight:bold;
+                    font-size: 15px;
                 }
 
                 QComboBox::drop-down {
                     border: none;
                     background: #2B2B2B;
                     padding: 10px;
+                                    
                 }
 
                 QComboBox QAbstractItemView {
-                    background-color: #DCDBDB;   /* matches main frames */
-                    color: #2a2a2a;
+                    background-color: #FFFFFF;   /* matches main frames */
+                    color: 000000;
                     selection-background-color: #c6c6c6;  /* subtle highlight */
                     font-family: "Rubik UI";
                     font-size: 15px;
                     font-weight: bold;
+                    border-radius: 4px;
                 }
 
                 QComboBox:disabled {
@@ -803,9 +803,10 @@ class EXEBuilderApp(QWidget):
             if frame:
                 frame.setStyleSheet("""
                     QFrame {
-                        border: 2px solid #696969;   /* thickness */
+                        border: 4px solid #000000;   /* thickness */
                         border-radius: 6px;
                         background-color:   #8A8A8A;
+                        
                     }
         """)
                 
@@ -822,8 +823,9 @@ class EXEBuilderApp(QWidget):
             if frame:
                 frame.setStyleSheet("""
                     QFrame {
-                        border-radius: 6px;
+                        border-radius: 4px;
                         background-color:   #F3F2F2;
+                        
                     }
         """)
         
@@ -957,7 +959,27 @@ class EXEBuilderApp(QWidget):
             btn.setFont(QFont("Rubik UI", 11, QFont.Bold))
         
         self.recent_folder_dropdown.setFixedSize(245,35)
-            
+
+        buttons = [
+            self.appened_py_version,
+            self.output_btn,
+            self.folder_btn,
+            self.icon_btn,
+            self.ico_convert_btn,
+            self.interpreter_btn,
+            self.open_python_site_btn,
+        ]
+
+        for btn in buttons:
+            btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #F3F2F2;
+                    color: black;
+                    border: 3px solid #000000;   /* thickness */
+                    border-radius: 4px;
+                }
+            """)
+                    
         for widget in [
             self.recent_folder_dropdown,
             self.select_recent_icons,
@@ -1021,17 +1043,6 @@ class EXEBuilderApp(QWidget):
     def set_status(self, text):
         self.status_label.setPlainText(text)
 
-        doc_height = self.status_label.document().size().height()
-        box_height = self.status_label.viewport().height()
-
-        padding = max((box_height - doc_height) / 2, 0)
-
-        self.status_label.setStyleSheet(f"""
-            QTextEdit {{
-                padding-top: {int(padding)}px;
-            }}
-        """)
-
         cursor = self.status_label.textCursor()
         cursor.select(QTextCursor.Document)
 
@@ -1039,6 +1050,9 @@ class EXEBuilderApp(QWidget):
         fmt.setAlignment(Qt.AlignCenter)
 
         cursor.mergeBlockFormat(fmt)
+
+        # 🔑 CLEAR SELECTION (this fixes the green highlight)
+        cursor.clearSelection()
         self.status_label.setTextCursor(cursor)
 
     def closeEvent(self, event):

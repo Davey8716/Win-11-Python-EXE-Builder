@@ -49,7 +49,7 @@ class DependencyPopup:
         popup_frame.setStyleSheet("""
             QFrame {
                 border: 3px solid #3a3a3a;
-                border-radius: 6px;
+                border-radius: 4px;
                 background-color: #8A8A8A;
             }
         """)
@@ -73,12 +73,12 @@ class DependencyPopup:
         build_frame = QFrame()
         build_frame.setStyleSheet("""
             QFrame {
-                border: 3px solid #3a3a3a;
+                border: 3px solid #000000;
                 background-color: #F3F2F2;
-                border-radius: 6px;
+                border-radius: 4px;
             }
         """)
-        build_frame.setFixedSize(260,90)
+        build_frame.setFixedSize(230,90)
 
         build_layout = QVBoxLayout(build_frame)
         build_layout.setContentsMargins(6, 6, 6, 6)
@@ -101,9 +101,9 @@ class DependencyPopup:
         legend_frame = QFrame()
         legend_frame.setStyleSheet("""
             QFrame {
-                border: 3px solid #3a3a3a;
+                border: 3px solid #000000;
                 background-color: #F3F2F2;
-                border-radius: 6px;
+                border-radius: 4px;
             }
         """)
         legend_frame.setFixedSize(240,160)
@@ -143,8 +143,8 @@ class DependencyPopup:
         label1.setFixedSize(360,50)
         label1.setStyleSheet("""
             QLabel {
-                border: 3px solid #3a3a3a;
-                border-radius: 6px;
+                border: 3px solid #000000;
+                border-radius: 4px;
                 background-color: #FFFFFF;
             }
 
@@ -190,15 +190,14 @@ class DependencyPopup:
         label3.setWordWrap(True)
         label3.setFont(QFont("Rubik UI", 11, QFont.Bold))
         label3.setContentsMargins(5,5,5,5)
+        label3.setFixedSize(285,85)
         label3.setStyleSheet("""
             QLabel {
-                border: 3px solid #3a3a3a;
-                border-radius: 6px;
+                border: 3px solid #000000;
+                border-radius: 4px;
                 background-color: #FFFFFF;
             }
-
         """)
-
 
         frame_layout.addWidget(label3)
 
@@ -210,7 +209,8 @@ class DependencyPopup:
             QPushButton {
                 background-color: #2a7fff;
                 color: #000000;
-                border: 1px solid #000000;
+                border: 3px solid #000000;
+                border-radius: 4px;
             }
             QPushButton:disabled {
                 background-color: #8a8a8a;

@@ -41,8 +41,9 @@ class BuildController(QObject):
         remaining = max(est_total - elapsed, 0)
 
         app.status_label.setFont(QFont("Rubik UI", 13, QFont.Bold))
-        app.status_label.setText(
-            f"Building... {elapsed}s elapsed\n — approx {remaining}s remaining"
+         # 🔑 USE CENTRAL METHOD (keeps alignment + padding)
+        self.app.set_status(
+            f"Building... {elapsed}s elapsed\napprox {remaining}s remaining"
         )
 
         QTimer.singleShot(300, self._tick_eta)
@@ -411,7 +412,7 @@ class BuildController(QObject):
         app.build_process = None
 
         app._status_lock = True
-        app.status_label.setText(msg)
+        app.set_status(msg)
         app.validation_controller.update_build_button()
         
             
@@ -435,11 +436,14 @@ class BuildController(QObject):
         elapsed = int(time.time() - self.app.build_start_time)
         est_total = self.app.last_build_seconds
         remaining = max(est_total - elapsed, 0)
-            # 🔑 FORCE FONT EVERY TICK (kills jump)
+
         self.app.status_label.setFont(QFont("Rubik UI", 13, QFont.Bold))
-        self.app.status_label.setText(
-            f"Building... {elapsed}s elapsed\n — approx {remaining}s remaining"
+
+        # 🔑 USE CENTRAL METHOD (keeps alignment + padding)
+        self.app.set_status(
+            f"Building... {elapsed}s elapsed\napprox {remaining}s remaining"
         )
+
         self.app.status_label.setFixedSize(200,100)
 
         QTimer.singleShot(1, self.update_eta_loop)

@@ -113,14 +113,11 @@ class ValidationController:
             "uncertain": sorted(uncertain),
         }
             
-
     def set_build_error(self, message: str):
         self.app.build_error = message
         self.validation_status_message()
         self.app.validator.update_ui_state()
 
-    
-        
     # ==================================================
     # Can we build again?
     # =================================================
@@ -193,9 +190,9 @@ class ValidationController:
             self.app._dependency_popup_shown = False
 
         if not is_ready:
-            self.app.status_label.setFixedSize(250,75)
+            self.app.status_label.setFixedSize(250,60)
         else:
-            self.app.status_label.setFixedSize(250,75)
+            self.app.status_label.setFixedSize(250,60)
 
         # ==========================================================
         # Dependency advisory — fire ONCE when NOT READY → READY
@@ -295,11 +292,9 @@ class ValidationController:
         python_ok = bool(python_path and os.path.isfile(python_path))
 
         icon_path = getattr(app, "icon_path", "").strip()
-        # icon_ok = bool(icon_path and os.path.isfile(icon_path))
         exe_name = app.exe_name_input.text().strip()
 
         python_path = getattr(app, "python_interpreter_path", "").strip()
-        # interpreter_ok = bool(python_path and os.path.isfile(python_path))
 
         is_ready = (
             script_ok and
@@ -314,17 +309,24 @@ class ValidationController:
         def set_btn(btn, enabled, color=None):
             btn.setEnabled(enabled)
 
-            # 🔑 skip styling for toggle button
-            if btn is self.app.appened_py_version:
-                return
-
             if color:
-                btn.setStyleSheet(f"background-color: {color};")
-
-            if color:
-                btn.setStyleSheet(f"background-color: {color};")
+                btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: #F3F2F2;   /* 🔑 ALWAYS white */
+                        color: black;
+                        border: 4px solid {color};  /* 🔑 color moves to border */
+                        border-radius: 4px;
+                    }}
+                """)
             else:
-                btn.setStyleSheet("")
+                btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #F3F2F2;
+                        color: black;
+                        border: 4px solid #000000;
+                        border-radius: 4px;
+                    }
+                """)
 
         # -------------------------------
         # VALUE STATE (TEXT-BASED)
@@ -416,7 +418,6 @@ class ValidationController:
         is_desktop = outdir and os.path.normpath(outdir) == os.path.normpath(desktop)
         set_btn(app.output_refresh_btn, not building and not is_desktop)
 
-    
         # -------------------------------
         # EXE NAME REFRESH (revert to script name)
         # -------------------------------
@@ -434,7 +435,6 @@ class ValidationController:
         )
 
         set_btn(app.refresh_btn, not building and can_revert_name)
-
         app.exe_name_input.setReadOnly(building)
 
         # -------------------------------
@@ -442,39 +442,103 @@ class ValidationController:
         # -------------------------------
 
         if building:
-            app.interpreter_btn.setStyleSheet("background-color: #8a8a8a;")
+            app.interpreter_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #8a8a8a;
+                    border: 4px solid #000000;
+                    color: black;
+                    border-radius: 4px;
+                }
+            """)
         else:
             if python_ok:
-                app.interpreter_btn.setStyleSheet("background-color: #3bbf3b;")
+                app.interpreter_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #3bbf3b;
+                        border: 4px solid #000000;
+                        color: black;
+                        border-radius: 4px;
+                    }
+                """)
             else:
-                app.interpreter_btn.setStyleSheet("background-color: #be1a1a;")
+                app.interpreter_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #be1a1a;
+                        border: 4px solid #000000;
+                        color: black;
+                        border-radius: 4px;
+                    }
+                """)
 
         # -------------------------------
         # BUTTON COLOR: Script Folder
         # -------------------------------
+
         folder_ok = bool(script_ok)
 
         if building:
-            app.folder_btn.setStyleSheet("background-color: #8a8a8a;")
+            app.folder_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #8a8a8a;
+                    border: 4px solid #000000;
+                    color: black;
+                    border-radius: 4px;
+                }
+            """)
         else:
             if folder_ok:
-                app.folder_btn.setStyleSheet("background-color: #3bbf3b;")
+                app.folder_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #3bbf3b;
+                        border: 4px solid #000000;
+                        color: black;
+                         border-radius: 4px;
+                    }
+                """)
             else:
-                app.folder_btn.setStyleSheet("background-color: #be1a1a;")
+                app.folder_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #be1a1a;
+                        border: 4px solid #000000;
+                        color: black;
+                        border-radius: 4px;
+                    }
+                """)
 
         # -------------------------------
         # BUTTON COLOR: Output Folder
         # -------------------------------
-        
+
         output_ok = bool(outdir and os.path.isdir(outdir))
 
         if building:
-            app.output_btn.setStyleSheet("background-color: #8a8a8a;")
+            app.output_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #8a8a8a;
+                    border: 4px solid #000000;
+                    color: black;
+                    border-radius: 4px;
+                }
+            """)
         else:
             if output_ok:
-                app.output_btn.setStyleSheet("background-color: #3bbf3b;")
+                app.output_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #3bbf3b;
+                        border: 4px solid #000000;
+                        color: black;
+                        border-radius: 4px;
+                    }
+                """)
             else:
-                app.output_btn.setStyleSheet("background-color: #be1a1a;")
+                app.output_btn.setStyleSheet("""
+                    QPushButton {
+                        background-color: #be1a1a;
+                        border: 4px solid #000000;
+                        color: black;
+                        border-radius: 4px;
+                    }
+                """)
 
         # -------------------------------
         # STATUS ONLY (lock applies here ONLY)
@@ -506,7 +570,7 @@ class ValidationController:
             QTextEdit {{
                 background-color: #FFFFFF;
                 color: {color};
-                border: 1px solid #3a3a3a;
+                border: 3px solid #3a3a3a;
             }}
         """)
 
@@ -515,7 +579,7 @@ class ValidationController:
                 QTextEdit {
                     background-color: #FFFFFF;
                     color: #3bbf3b;
-                    border: 1px solid #3a3a3a;
+                    border: 3px solid #3a3a3a;
                 }
             """)
 
@@ -665,13 +729,17 @@ class ValidationController:
         is_ready = state["is_ready"]
 
         def set_btn(btn, enabled, color=None):
+            # 🔑 skip styling for toggle button
+            if btn is self.app.appened_py_version:
+                return
             btn.setEnabled(enabled)
             if color:
                 btn.setStyleSheet(f"""
                     QPushButton {{
                         background-color: {color};
                         color: black;
-                        border: 2px solid #000000;
+                        border: 4px solid #000000;
+                        border-radius: 5px;
                     }}
                 """)
         try:
@@ -692,6 +760,31 @@ class ValidationController:
 
             app.build_btn.setText("Build EXE")
             app.build_btn.clicked.connect(app.build_controller.build_exe)
+
+
+        # 🔑 restore toggle styling (it gets wiped during validation cycles)
+        app.appened_py_version.setStyleSheet("""
+            QPushButton {
+                background-color: #FFFFFF;
+                color: black;
+                border: 3px solid #000000;
+            }
+
+            QPushButton:checked {
+                background-color: #3bbf3b;
+                color: black;
+                border: 3px solid #000000;
+            }
+
+            QPushButton:pressed {
+                background-color: #2e9e2e;
+            }
+
+            QPushButton:disabled {
+                color: #7a7a7a;
+                background-color: #d3d3d3;
+            }
+        """)
 
     def run_dependency_advisory_async(self, entry_file: str):
         app = self.app
