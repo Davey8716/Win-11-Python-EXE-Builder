@@ -1,4 +1,4 @@
-
+import time
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton,QFrame,QTextEdit,QScrollArea
 from PySide6.QtGui import QFont
 from PySide6.QtCore import Qt
@@ -7,6 +7,7 @@ class DependencyPopup:
     def __init__(self, app):
         self.app = app
         self.popup = None
+        self._last_shown = 0
 
     # =============================================================
     # Dependency Popup (PySide6)
@@ -232,6 +233,14 @@ class DependencyPopup:
         return popup
 
     def show_dependency_warning_popup(self, packages: list[str]):
+
+
+        now = time.time()
+        # 🔑 throttle (e.g. 0.5s)
+        if now - getattr(self, "_last_shown", 0) < 0.5:
+            return
+
+        self._last_shown = now
     # 🔒 If disabled → force close
         if not getattr(self.app, "dependency_notice_enabled", True):
             if hasattr(self, "popup") and self.popup:
