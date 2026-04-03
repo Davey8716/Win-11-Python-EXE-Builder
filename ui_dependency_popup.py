@@ -50,7 +50,7 @@ class DependencyPopup:
             QFrame {
                 border: 3px solid #3a3a3a;
                 border-radius: 6px;
-                background-color: #DCDBDB;
+                background-color: #8A8A8A;
             }
         """)
 
@@ -141,6 +141,14 @@ class DependencyPopup:
         label1.setFont(QFont("Rubik UI", 11, QFont.Bold))
         label1.setContentsMargins(5,5,5,5)
         label1.setFixedSize(360,50)
+        label1.setStyleSheet("""
+            QLabel {
+                border: 3px solid #3a3a3a;
+                border-radius: 6px;
+                background-color: #FFFFFF;
+            }
+
+        """)
         frame_layout.addWidget(label1)
 
         def make_section(title, items, color):
@@ -156,7 +164,7 @@ class DependencyPopup:
             box.setStyleSheet(f"""
                 QTextEdit {{
                     color: {color};
-                    background-color: #F3F2F2;
+                    background-color: #FFFFFF;
                     border: 1px solid #8a8a8a;
                 }}
             """)
@@ -182,6 +190,16 @@ class DependencyPopup:
         label3.setWordWrap(True)
         label3.setFont(QFont("Rubik UI", 11, QFont.Bold))
         label3.setContentsMargins(5,5,5,5)
+        label3.setStyleSheet("""
+            QLabel {
+                border: 3px solid #3a3a3a;
+                border-radius: 6px;
+                background-color: #FFFFFF;
+            }
+
+        """)
+
+
         frame_layout.addWidget(label3)
 
         ok_btn = QPushButton("OK")
@@ -194,18 +212,13 @@ class DependencyPopup:
                 color: #000000;
                 border: 1px solid #000000;
             }
-            QPushButton:hover {
-                background-color: #2e9e2e;
-            }
             QPushButton:disabled {
                 background-color: #8a8a8a;
                 color: #444;
             }
         """)
 
-        # OK button
         ok_btn.clicked.connect(lambda: self._close_and_disable())
-                # 🔑 also catch X button (window close)
         popup.finished.connect(lambda: self._close_and_disable())
         frame_layout.addWidget(ok_btn, alignment=Qt.AlignHCenter)
 
