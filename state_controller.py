@@ -91,6 +91,7 @@ class StateController:
             self.app.icon_user_cleared = data.get("icon_user_cleared", False)
             self.app.script_user_cleared = data.get("script_user_cleared", False)
             self.app.interpreter_user_cleared = data.get("interpreter_user_cleared", False)
+            self.app.append_py_version = data.get("append_py_version", False)
 
             if self.app.python_interpreter_path:
                 self.app.last_python_dir = os.path.dirname(self.app.python_interpreter_path)
@@ -243,6 +244,7 @@ class StateController:
             # --- Datetime ---
             "append_datetime": getattr(self.app, "append_datetime", False),
             "datetime_format": getattr(self.app, "datetime_format", None),
+            "append_py_version": getattr(self.app, "append_py_version", False),
         }
 
         self.app.state_data = data
