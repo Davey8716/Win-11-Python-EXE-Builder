@@ -3,6 +3,7 @@ import os, json
 from PySide6.QtWidgets import QMessageBox
 from PySide6.QtCore import Qt, QTimer
 
+MAX_RECENTS = 50
 
 class RecentController:
     def __init__(self, app):
@@ -61,7 +62,7 @@ class RecentController:
             lst.remove(ap)
 
         lst.insert(0, ap)
-        lst = lst[:10]
+        lst = lst[:MAX_RECENTS]
 
         data["recent_interpreters"] = lst
 
@@ -265,7 +266,7 @@ class RecentController:
             lst.remove(ap)
 
         lst.insert(0, ap)
-        lst = lst[:10]
+        lst = lst[:MAX_RECENTS]
 
         data["recent_scripts"] = lst
 
@@ -541,7 +542,7 @@ class RecentController:
             lst.remove(ap)
 
         lst.insert(0, ap)
-        lst = lst[:10]
+        lst = lst[:MAX_RECENTS]
 
         data["recent_icons"] = lst
 
