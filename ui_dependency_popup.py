@@ -8,6 +8,9 @@ class DependencyPopup:
         self.app = app
         self.popup = None
         self._last_shown = 0
+        self._last_update = 0
+        self._min_interval = 0.4  # seconds (tune: 0.3–0.6)
+        
 
     # =============================================================
     # Dependency Popup (PySide6)
@@ -31,10 +34,6 @@ class DependencyPopup:
     def build_dependency_popup(self, packages: list[str]):
         if not packages:
             return None
-
-        # close existing popup
-        if hasattr(self, "popup") and self.popup:
-            self.popup.close()
 
         popup = QDialog(self.app)
         popup.setFixedSize(420,800)
@@ -233,25 +232,44 @@ class DependencyPopup:
         return popup
 
     def show_dependency_warning_popup(self, packages: list[str]):
-
-
-        now = time.time()
-        # 🔑 throttle (e.g. 0.5s)
-        if now - getattr(self, "_last_shown", 0) < 0.5:
-            return
-
-        self._last_shown = now
-    # 🔒 If disabled → force close
+        # 🔒 If disabled → force close
         if not getattr(self.app, "dependency_notice_enabled", True):
             if hasattr(self, "popup") and self.popup:
                 self.popup.close()
                 self.popup = None
             return
 
-        # 🔑 Always replace existing popup
+        # 🔑 always replace existing popup
         if hasattr(self, "popup") and self.popup:
             self.popup.close()
             self.popup = None
+
+        self.popup = self.build_dependency_popup(packages)
+
+        if self.popup:
+            self.popup.show()
+
+    def update_popup(self, packages):
+
+        now = time.time()
+
+        # 🔒 SPAM GUARD
+        if now - self._last_update < self._min_interval:
+            return
+
+        self._last_update = now
+        # 🔑 create if missing
+        if not self.popup:
+            self.popup = self.build_dependency_popup(packages)
+            if self.popup:
+                self.popup.show()
+            return
+
+        # 🔑 REBUILD WITHOUT DOUBLE-CLOSE SIDE EFFECTS
+        old_popup = self.popup
+        self.popup = None
+
+        old_popup.deleteLater()   # 🔑 critical (NOT close)
 
         self.popup = self.build_dependency_popup(packages)
 

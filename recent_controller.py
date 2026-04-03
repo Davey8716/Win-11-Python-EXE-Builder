@@ -1,4 +1,4 @@
-
+import time
 import os, json
 from PySide6.QtWidgets import QMessageBox
 from PySide6.QtCore import Qt, QTimer
@@ -75,7 +75,6 @@ class RecentController:
         self.populate_recent_interpreters_dropdown()
         self.app.validator.update_ui_state()
         self.app.validator.validation_status_message()
-
 
     def populate_recent_interpreters_dropdown(self):
         app = self.app
@@ -372,14 +371,22 @@ class RecentController:
         self.app.script_path_input.setText(self.app.script_path)
         QTimer.singleShot(0, lambda: self.app.script_path_input.setCursorPosition(0))
 
-        # 🔑 dependency popup on recent change
         if getattr(app, "dependency_notice_enabled", True):
             script = app.entry_script
+
             if script and os.path.isfile(script):
                 packages = app.validator.run_dependency_advisory(script)
-                if packages:
-                    app.ui_dependency_popup.show_dependency_warning_popup(packages)
-                            
+
+                popup_ctrl = app.ui_dependency_popup
+
+                # 🔑 reuse existing popup (no recreate)
+                if popup_ctrl.popup:
+                    popup_ctrl.update_popup(packages)
+                else:
+                    popup_ctrl.show_dependency_warning_popup(packages)
+
+                
+
     def confirm_delete_recent(self):
         app = self.app
         full_path = getattr(app, "entry_script", "") or getattr(app, "script_path", "")

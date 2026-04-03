@@ -143,6 +143,7 @@ class UIHandlers:
         # 🔑 TURN ON → re-run advisory
         if script and os.path.isfile(script):
             app._dependency_popup_shown = False  # allow popup again
+            app._dep_last_requested = None   # 🔑 REQUIRED RESET
             app.validation_controller.run_dependency_advisory_async(script)
 
         app.state_ctrl.save_state()
@@ -164,7 +165,6 @@ class UIHandlers:
         app.state_ctrl.save_state()
         app.validator.update_ui_state()   # 🔑 THIS WAS MISSING
 
-
     def on_close_toggle(self, state):
         app = self.app
         app.close_after_build_enabled = bool(state)
@@ -177,7 +177,6 @@ class UIHandlers:
         app.state_ctrl.save_state()
         app.validator.update_ui_state()   
         
-
     def on_script_path_change(self, text):
         app = self.app
         if getattr(app, "_loading_state", False):
@@ -251,8 +250,6 @@ class UIHandlers:
         app = self.app
 
         app.append_py_version = checked
-
-    
 
         if hasattr(app, "state_ctrl"):
             app.state_ctrl.save_state()
