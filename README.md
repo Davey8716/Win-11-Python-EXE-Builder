@@ -1,5 +1,18 @@
 **Updated as of 1/4/26 to use PySide6 QtWidgets**
 
+## ⭐ Support & Feedback
+
+	If this tool saved you time or simplified your workflow, consider giving the repo a ⭐ — it helps more than you might think.
+	
+	This project was built to remove a lot of the friction around turning Python projects into EXEs, and if it’s doing that for you, that’s exactly the goal.
+	
+	There’s also a sponsor button available if you’d like to support continued development. No pressure — just there for anyone who finds real value in it.
+	
+	If there’s enough interest, I may expand this into a more complete Python environment / dependency management tool.
+
+	This current tool will remain as-is, and any expansion will be developed as a separate branch/build.
+	
+
 Win 11 → Python → EXE Builder
 If this tool was useful, consider starring the repo — feedback is appreciated.
 
