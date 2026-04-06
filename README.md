@@ -1,152 +1,174 @@
-**Updated as of 1/4/26 to use PySide6 QtWidgets**
+**Updated as of 6/4/26 to use PySide6 QtWidgets**
 
-## ⭐ Support & Feedback
-
-	If this tool saved you time or simplified your workflow, consider giving the repo a ⭐ — it helps more than you might think.
+# Win 11 → Python → EXE Builder
 	
-	This project was built to remove a lot of the friction around turning Python projects into EXEs, and if it’s doing that for you, that’s exactly the goal.
+	If this tool saved you time or simplified your workflow, consider giving the repo a ⭐.
 	
-	There’s also a sponsor button available if you’d like to support continued development. No pressure — just there for anyone who finds real value in it.
+	There’s also a sponsor option available if you’d like to support continued development.
+
+---
+
+## Overview
+
+	Win 11 → Python → EXE Builder is a Windows GUI tool for converting Python scripts and projects into standalone executables using PyInstaller.
 	
-	If there’s enough interest, I may expand this into a more complete Python environment / dependency management tool.
+	It handles interpreter selection, input validation, and build execution in a controlled workflow, reducing friction and avoiding common build issues.
 
-	This current tool will remain as-is, and any expansion will be developed as a separate branch/build.
+---
+
+## Core Features
+
+	* Select and validate Python interpreters
+	* Manage build inputs and output locations
+	* Execute PyInstaller in a predictable, controlled way
+	* Quick access to Windows Installed Apps
+	* Direct links to Python.org for environment setup
+
+---
+
+## Dependency Notice
+
+	Scans your project for imported modules and highlights external packages that may need to be installed.
+
+**How it works:**
+
+	* Recursively scans all Python files in the project folder
+	* Filters out standard library and local modules
+	* Classifies results into:
 	
+	  * ✔ External — likely required packages
+	  * ⚠ Maybe — common/internal names to verify
+	  * ? Uncertain — ambiguous or optional imports
 
-Win 11 → Python → EXE Builder
-If this tool was useful, consider starring the repo — feedback is appreciated.
+**Behavior:**
 
-Why this exists:
+	* Displays results in a categorized, color-coded popup
+	* Runs asynchronously (does not block UI)
+	* Triggers when the selected script changes (if enabled)
+	* Includes safeguards to prevent repeated scans
 
-This tool is designed around the full Windows EXE build workflow, not just invoking PyInstaller.
-It provides a Windows GUI for:
+**Limitations:**
 
-	Selecting and validating Python interpreters.
-	Managing build inputs and outputs.
-	Executing PyInstaller in a controlled, predictable way.
+	* May include false positives
+	* Does not resolve exact package names or versions
+	* Does not detect dynamic imports or runtime dependencies
 
-It also includes shortcuts to Windows Installed Apps and direct links to Python.org, reducing context switching when configuring or repairing build environments.
+	This is a lightweight advisory tool, not a full dependency resolver.
 
-Win 11 → Python → EXE Builder converts Python scripts and projects into standalone Windows executables by orchestrating interpreter selection, validation, build execution, and cleanup around PyInstaller.
+---
 
-Dependency Notice
+## Protected Folders
 
-Scans your project for imported modules and highlights external packages that may need to be installed.
-Recursively scans all Python files in the project folder
-Filters out standard library and local modules
-Classifies results into:
+	Avoid building in protected folders (e.g. Pictures, Music).
+	These locations may block file writes and cause build failures or stalled output.
 
-	✔ External — likely required packages
-	⚠ Maybe — common/internal names to verify
-	? Uncertain — ambiguous or optional imports
-		
-Displays results in a categorized, color-coded popup with legend.
-Runs asynchronously to avoid blocking the UI.
-Runs when the selected script changes (if enabled), with safeguards to prevent repeated scans.
+---
 
-Limitations
+## Icon Behavior (Important)
 
-	May include false positives (e.g. indirect or optional imports).
-	Does not resolve exact package names or versions.
-	Does not detect dynamic imports or runtime dependencies.
-
-This feature is a lightweight advisory to help catch missing packages before building, not a full dependency resolver.
-
-Protected folders:
-
-	Avoid building in protected folders (e.g. Pictures, Music). These locations may prevent file writes and cause build failures or stalled output.
-
-Icon Behavior (Important)
-
-	Windows caches application icons aggressively. If you rebuild an EXE using the same filename, the file is correctly overwritten, but Windows may continue to display the old cached icon.
-
-In practice:
-
-	The EXE updates correctly
-	The icon inside the EXE updates correctly
-	Windows may still show the previous icon
+	Windows aggressively caches application icons.
 	
-	This is a Windows Explorer caching behavior, not an issue with the builder or PyInstaller.
+	If you rebuild an EXE with the same filename:
+	
+	* The EXE updates correctly
+	* The embedded icon updates correctly
+	* Windows may still display the old icon
 
-Recommended Solution
+	This is a Windows Explorer caching behavior, not a bug in the builder or PyInstaller.
+
+**Recommended solution:**
 
 	Use a unique filename for each build.
+
+Built-in options:
+
+	* Append Date/Time (HH-MM) ✅ recommended
+	* Append Python Version (optional)
+
+**Practical rule:**
 	
-	The builder provides built-in options:
+	* Same filename → possible stale icon
+	* Unique filename → always correct icon
+
+---
+
+## Multiple Builds
+
+	Builds created within the same minute will share the same filename and be overwritten.
 	
-	Append Date/Time (HH-MM) ✅ recommended
-	Append Python Version (optional)
+	If you need a distinct build, wait until the next minute or adjust naming settings.
 
-Using a timestamp ensures:
+---
 
-	A fresh file every build
-	No icon cache conflicts
-	Multiple Builds
-	Builds created within the same minute will share the same filename and be overwritten
-	If you need another distinct build, wait until the next minute
-	Practical Rule
-	Same filename → may show incorrect icon (cache)
-	Unique filename → always correct icon
+## Requirements
+
+	* Windows 11
+	* Python 3.11, 3.12, 3.13, or 3.14
+	* PyInstaller installed in the selected interpreter
 	
-Bottom line
-	
-	Overwriting works correctly, but Windows may display a stale icon. This is rarely an issue in normal use, and timestamped builds avoid it entirely.
-		
+	Tested on Python 3.11–3.14.
 
-Build requirements:
+---
 
-	Windows 11.
-	Python 3.11, 3.12, 3.13, or 3.14.
-	PyInstaller installed in the selected interpreter.
+## Limitations
 
-Not tested or supported on other operating systems.
-The tool assumes a working Python environment and focuses on providing a safe, predictable build process, not full dependency resolution or repair.
-
-Tested versions:
-At the time of testing:
-
-Python 3.11, 3.12, 3.13, and 3.14 produced stable builds.
-
-Distribution:
-
-	This repository contains source code only.
-	Users must run the application locally or build their own executable using the tool.
-	
-Local state & portability:
-
-	Each user’s settings are stored locally on their machine.
-	No user configuration or state is embedded inside any executable binary.
-	The _internal folder, JSON state files, and EXE must remain in the same directory.
-	The application can be moved freely as long as this structure is preserved.
-	No configuration or data is shared, uploaded, or transmitted.
-
-Pin to taskbar works.
-Copy shortcut works.
-
-Important limitations:
 This tool does not:
+	
+	* Determine compatibility of libraries with specific Python versions
+	* Fix broken or unsupported dependencies
+	* Modify, downgrade, or patch Python packages
+	* Automatically resolve PyInstaller-specific issues
+	
+	It assumes a working Python environment and focuses on providing a safe, predictable build process.
 
-	Determine whether third-party libraries are compatible with specific Python versions (e.g. 3.13 vs 3.14).
-	Fix broken or unsupported dependencies.
-	Modify, downgrade, or patch Python packages.
-	Automatically resolve PyInstaller-specific compatibility issues.
+---
 
-Building and running from source:
-Install a recent Python version (3.11+)
+## Distribution
 
-Install PyInstaller:
+	* This repository contains source code only
+	* Users must run locally or build their own executable
 
-	py -3.14 -m pip install pyinstaller.
-	Clone this repository.
-	In the GUI, select the Python interpreter that has PyInstaller installed.
-	Start the build.
-	Build the EXE for the EXE Builder itself.
+---
 
-Debug log path:
+## Local State & Portability
+	
+	* All settings are stored locally on the user’s machine
+	* No data is embedded inside generated executables
+	* No data is uploaded or transmitted
 
-	The application writes its debug log to a predefined Desktop location during builds.
-	This path is used for diagnostics and troubleshooting.
-	Do not change the debug log path in the source code unless you fully understand the build workflow.
-	Altering this path can interfere with diagnostics and may cause builds to fail or behave unpredictably.
-	If you need logs stored elsewhere, modify the path only after confirming the application builds and runs correctly.
-		
+To keep the app working:
+
+* `_internal` folder, and EXE must remain together
+* The json state files now is resolve to /Appdata/Local
+
+The application can be moved freely as long as this structure is preserved.
+
+---
+
+	## Building and Running from Source
+
+	1. Install Python 3.11+
+	2. Install PyInstaller:
+
+   ```
+   py -3.14 -m pip install pyinstaller
+   ```
+	3. Clone the repository
+	4. Select the Python interpreter with PyInstaller installed
+	5. Start the build
+
+---
+
+## Debug Log Path
+
+	The application writes debug logs to a predefined Desktop location during builds.
+
+	* Used for diagnostics and troubleshooting
+	* Do not change this path unless you fully understand the build workflow
+
+	Changing the log path incorrectly may interfere with diagnostics or cause unexpected behavior.
+	
+	Modify only after confirming the application builds and runs correctly.
+
+---
+
