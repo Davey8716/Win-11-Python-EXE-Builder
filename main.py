@@ -763,6 +763,7 @@ class EXEBuilderApp(QWidget):
                     padding: 3px;
                     font-weight:bold;
                     font-size: 15px;
+                    qproperty-alignment: AlignCenter;
                 }
 
                 QComboBox::drop-down {
@@ -782,11 +783,17 @@ class EXEBuilderApp(QWidget):
                     border-radius: 4px;
                 }
 
+                QComboBox QAbstractItemView::item {
+                    text-align: center;
+                }
+
                 QComboBox:disabled {
                     background-color: #e0e0e0;
                     color: #888;
                 }
             """)
+            if dropdowns.isEditable() and dropdowns.lineEdit():
+                dropdowns.lineEdit().setAlignment(Qt.AlignCenter)
 
         frames = [
             combined_frame,
