@@ -1,6 +1,7 @@
 from PySide6.QtCore import QObject, QEvent, QTimer, QPoint
 from PySide6.QtWidgets import QLabel
 from PySide6.QtGui import Qt
+from styles import TOOLTIP_STYLE
 
 # -------------------------------------------------------------
 #  Simple tooltip class for Qt widgets (qt_material compatible)
@@ -51,17 +52,7 @@ class QtTooltip(QObject):
         )
 
         # Styling (qt_material-friendly)
-        self.tip_window.setStyleSheet("""
-            QLabel {
-                background-color: #1E1E1E;
-                color: white;
-                border: 1px solid #444;
-                padding: 6px;
-                border-radius: 6px;
-                font-family: "Rubik";
-                font-size: 15px;
-            }
-        """)
+        self.tip_window.setStyleSheet(TOOLTIP_STYLE)
 
         self.tip_window.adjustSize()
 

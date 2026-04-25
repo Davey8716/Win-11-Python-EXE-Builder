@@ -4,6 +4,15 @@ import ast
 from PySide6.QtCore import QTimer,Qt
 from PySide6.QtCore import QThread
 from PySide6.QtCore import QObject, Signal
+from styles import (
+    APPEND_PY_VERSION_STYLE,
+    Colors,
+    button_base,
+    button_with_border,
+    filled_button,
+    line_edit_style,
+    status_text_style,
+)
 
 class DependencyWorker(QObject):
     finished = Signal(dict)  # returns packages dict
@@ -310,23 +319,9 @@ class ValidationController:
             btn.setEnabled(enabled)
 
             if color:
-                btn.setStyleSheet(f"""
-                    QPushButton {{
-                        background-color: #F3F2F2;   /* 🔑 ALWAYS white */
-                        color: black;
-                        border: 4px solid {color};  /* 🔑 color moves to border */
-                        border-radius: 4px;
-                    }}
-                """)
+                btn.setStyleSheet(button_with_border(color))
             else:
-                btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #F3F2F2;
-                        color: black;
-                        border: 4px solid #000000;
-                        border-radius: 4px;
-                    }
-                """)
+                btn.setStyleSheet(button_base(border_width=4))
 
         # -------------------------------
         # VALUE STATE (TEXT-BASED)
@@ -442,33 +437,12 @@ class ValidationController:
         # -------------------------------
 
         if building:
-            app.interpreter_btn.setStyleSheet("""
-                QPushButton {
-                    background-color: #8a8a8a;
-                    border: 4px solid #000000;
-                    color: black;
-                    border-radius: 4px;
-                }
-            """)
+            app.interpreter_btn.setStyleSheet(filled_button(Colors.PANEL_BG))
         else:
             if python_ok:
-                app.interpreter_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #3bbf3b;
-                        border: 4px solid #000000;
-                        color: black;
-                        border-radius: 4px;
-                    }
-                """)
+                app.interpreter_btn.setStyleSheet(filled_button(Colors.SUCCESS))
             else:
-                app.interpreter_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #be1a1a;
-                        border: 4px solid #000000;
-                        color: black;
-                        border-radius: 4px;
-                    }
-                """)
+                app.interpreter_btn.setStyleSheet(filled_button(Colors.ERROR))
 
         # -------------------------------
         # BUTTON COLOR: Script Folder
@@ -477,33 +451,12 @@ class ValidationController:
         folder_ok = bool(script_ok)
 
         if building:
-            app.folder_btn.setStyleSheet("""
-                QPushButton {
-                    background-color: #8a8a8a;
-                    border: 4px solid #000000;
-                    color: black;
-                    border-radius: 4px;
-                }
-            """)
+            app.folder_btn.setStyleSheet(filled_button(Colors.PANEL_BG))
         else:
             if folder_ok:
-                app.folder_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #3bbf3b;
-                        border: 4px solid #000000;
-                        color: black;
-                         border-radius: 4px;
-                    }
-                """)
+                app.folder_btn.setStyleSheet(filled_button(Colors.SUCCESS))
             else:
-                app.folder_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #be1a1a;
-                        border: 4px solid #000000;
-                        color: black;
-                        border-radius: 4px;
-                    }
-                """)
+                app.folder_btn.setStyleSheet(filled_button(Colors.ERROR))
 
         # -------------------------------
         # BUTTON COLOR: Output Folder
@@ -512,33 +465,12 @@ class ValidationController:
         output_ok = bool(outdir and os.path.isdir(outdir))
 
         if building:
-            app.output_btn.setStyleSheet("""
-                QPushButton {
-                    background-color: #8a8a8a;
-                    border: 4px solid #000000;
-                    color: black;
-                    border-radius: 4px;
-                }
-            """)
+            app.output_btn.setStyleSheet(filled_button(Colors.PANEL_BG))
         else:
             if output_ok:
-                app.output_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #3bbf3b;
-                        border: 4px solid #000000;
-                        color: black;
-                        border-radius: 4px;
-                    }
-                """)
+                app.output_btn.setStyleSheet(filled_button(Colors.SUCCESS))
             else:
-                app.output_btn.setStyleSheet("""
-                    QPushButton {
-                        background-color: #be1a1a;
-                        border: 4px solid #000000;
-                        color: black;
-                        border-radius: 4px;
-                    }
-                """)
+                app.output_btn.setStyleSheet(filled_button(Colors.ERROR))
 
         # -------------------------------
         # STATUS ONLY (lock applies here ONLY)
@@ -558,30 +490,18 @@ class ValidationController:
         app.status_label.setAlignment(Qt.AlignCenter)
 
         if building:
-            color = "#000000"
+            color = Colors.BLACK
         elif status_text.startswith("Building..."):
-            color = "#000000" if "complete" in status_text.lower() else "#be1a1a"
+            color = Colors.BLACK if "complete" in status_text.lower() else Colors.ERROR
         elif is_ready:
-            color = "#3bbf3b"
+            color = Colors.SUCCESS
         else:
-            color = "#be1a1a"
+            color = Colors.ERROR
 
-        app.status_label.setStyleSheet(f"""
-            QTextEdit {{
-                background-color: #FFFFFF;
-                color: {color};
-                border: 3px solid #3a3a3a;
-            }}
-        """)
+        app.status_label.setStyleSheet(status_text_style(color))
 
         if building:
-            app.status_label.setStyleSheet("""
-                QTextEdit {
-                    background-color: #FFFFFF;
-                    color: #3bbf3b;
-                    border: 3px solid #3a3a3a;
-                }
-            """)
+            app.status_label.setStyleSheet(status_text_style(Colors.SUCCESS))
 
         # -------------------------------
         # ICON BUTTON TEXT (match grey state)
@@ -665,13 +585,7 @@ class ValidationController:
         # -------------------------------
         if building:
             for widget, _ in mapping:
-                widget.setStyleSheet("""
-                    QLineEdit {
-                        background-color: #FFFFFF;
-                        color: #7a7a7a;
-                        border: 2px solid #8a8a8a;
-                    }
-                """)
+                widget.setStyleSheet(line_edit_style(Colors.MUTED_TEXT, Colors.MUTED_BORDER))
         else:
             for widget, ok in mapping:
 
@@ -679,40 +593,16 @@ class ValidationController:
 
                 # 🔑 ICON (optional → grey if empty)
                 if widget is app.icon_path_input and not widget.text().strip():
-                    widget.setStyleSheet("""
-                        QLineEdit {
-                            background-color: #FFFFFF;
-                            color: #8a8a8a;
-                            border: 2px solid #2B2B2B;
-                        }
-                    """)
+                    widget.setStyleSheet(line_edit_style(Colors.MUTED_BORDER))
 
                 elif widget is app.output_path_input and not widget.text().strip():
                     # output = required → force RED if empty
-                    widget.setStyleSheet("""
-                        QLineEdit {
-                            background-color: #FFFFFF;
-                            color: #be1a1a;
-                            border: 2px solid #2B2B2B;
-                        }
-                    """)
+                    widget.setStyleSheet(line_edit_style(Colors.ERROR))
 
                 elif ok:
-                    widget.setStyleSheet("""
-                        QLineEdit {
-                            background-color: #FFFFFF;
-                            color: #3bbf3b;
-                            border: 2px solid #2B2B2B;
-                        }
-                    """)
+                    widget.setStyleSheet(line_edit_style(Colors.SUCCESS))
                 else:
-                    widget.setStyleSheet("""
-                        QLineEdit {
-                            background-color: #FFFFFF;
-                            color: #be1a1a;
-                            border: 2px solid #2B2B2B;
-                        }
-                    """)
+                    widget.setStyleSheet(line_edit_style(Colors.ERROR))
 
             # 🔑 THEN reapply validation styling
             self.validation_status_message()
@@ -734,57 +624,29 @@ class ValidationController:
                 return
             btn.setEnabled(enabled)
             if color:
-                btn.setStyleSheet(f"""
-                    QPushButton {{
-                        background-color: {color};
-                        color: black;
-                        border: 4px solid #000000;
-                        border-radius: 5px;
-                    }}
-                """)
+                btn.setStyleSheet(filled_button(color, radius=5))
         try:
             app.build_btn.clicked.disconnect()
         except:
             pass
 
         if building:
-            set_btn(app.build_btn, True, "#FF0000")
+            set_btn(app.build_btn, True, Colors.CANCEL)
             app.build_btn.setText("Cancel EXE")
             app.build_btn.clicked.connect(app.build_cancellation.cancel_build)
 
         else:
             if is_ready:
-                set_btn(app.build_btn, True, "#3bbf3b")
+                set_btn(app.build_btn, True, Colors.SUCCESS)
             else:
-                set_btn(app.build_btn, False, "#be1a1a")
+                set_btn(app.build_btn, False, Colors.ERROR)
 
             app.build_btn.setText("Build EXE")
             app.build_btn.clicked.connect(app.build_controller.build_exe)
 
 
         # 🔑 restore toggle styling (it gets wiped during validation cycles)
-        app.appened_py_version.setStyleSheet("""
-            QPushButton {
-                background-color: #FFFFFF;
-                color: black;
-                border: 3px solid #000000;
-            }
-
-            QPushButton:checked {
-                background-color: #3bbf3b;
-                color: black;
-                border: 3px solid #000000;
-            }
-
-            QPushButton:pressed {
-                background-color: #2e9e2e;
-            }
-
-            QPushButton:disabled {
-                color: #7a7a7a;
-                background-color: #d3d3d3;
-            }
-        """)
+        app.appened_py_version.setStyleSheet(APPEND_PY_VERSION_STYLE)
 
     def run_dependency_advisory_async(self, entry_file: str):
         app = self.app

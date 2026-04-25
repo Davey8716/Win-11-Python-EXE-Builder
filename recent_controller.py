@@ -2,6 +2,7 @@ import time
 import os, json
 from PySide6.QtWidgets import QMessageBox
 from PySide6.QtCore import Qt, QTimer
+from ui_highlights import flash_add_highlight, flash_delete_highlight
 
 MAX_RECENTS = 50
 
@@ -37,6 +38,10 @@ class RecentController:
         self.app.python_entry_input.setText(self.app.python_interpreter_path)
         QTimer.singleShot(0, lambda: self.app.python_entry_input.setCursorPosition(0))
         self.app.select_interpreter.setCurrentIndex(0)
+        flash_add_highlight(
+            getattr(app, "interpreter_btn", None),
+            getattr(app, "python_entry_input", None),
+        )
         app.state_ctrl.save_state()
         
     def add_recent_interpreter(self, path):
@@ -193,6 +198,11 @@ class RecentController:
         if reply != QMessageBox.Yes:
             return
 
+        flash_delete_highlight(
+            getattr(app, "python_delete_interpreter", None),
+            getattr(app, "python_entry_input", None),
+        )
+
         # 🔑 clear current if matching
         if os.path.abspath(os.path.normpath(full_path)) == os.path.abspath(os.path.normpath(getattr(app, "python_interpreter_path", ""))):
             if hasattr(app, "python_entry_input"):
@@ -241,6 +251,11 @@ class RecentController:
 
         if reply != QMessageBox.Yes:
             return
+
+        flash_delete_highlight(
+            getattr(app, "python_delete_all_interpreter", None),
+            getattr(app, "python_entry_input", None),
+        )
 
         state_path = app.state_ctrl._state_file_path()
 
@@ -472,6 +487,11 @@ class RecentController:
         if reply != QMessageBox.Yes:
             return
 
+        flash_delete_highlight(
+            getattr(app, "delete_recent_folder", None),
+            getattr(app, "script_path_input", None),
+        )
+
         if os.path.abspath(os.path.normpath(full_path)) == os.path.abspath(os.path.normpath(getattr(app, "entry_script", ""))):
             app.script_path_input.clear()
             app.entry_script = None
@@ -517,6 +537,11 @@ class RecentController:
 
         if reply != QMessageBox.Yes:
             return
+
+        flash_delete_highlight(
+            getattr(app, "delete_all_folders", None),
+            getattr(app, "script_path_input", None),
+        )
 
         state_path = app.state_ctrl._state_file_path()
 
@@ -732,6 +757,11 @@ class RecentController:
         if reply != QMessageBox.Yes:
             return
 
+        flash_delete_highlight(
+            getattr(app, "delete_recent_icons", None),
+            getattr(app, "icon_path_input", None),
+        )
+
         if os.path.abspath(os.path.normpath(full_path)) == os.path.abspath(os.path.normpath(getattr(app, "icon_path", ""))):
             app.icon_path_input.clear()
             app.icon_path = ""
@@ -776,6 +806,11 @@ class RecentController:
 
         if reply != QMessageBox.Yes:
             return
+
+        flash_delete_highlight(
+            getattr(app, "delete_all_icons", None),
+            getattr(app, "icon_path_input", None),
+        )
 
         state_path = app.state_ctrl._state_file_path()
 

@@ -6,6 +6,7 @@ from PySide6.QtCore import QObject, Signal,QTimer
 from PySide6.QtCore import QThread
 from pathlib import Path
 import shutil
+from styles import Colors, status_text_style
 
 CREATE_NO_WINDOW = 0x08000000
 
@@ -392,13 +393,7 @@ class BuildController(QObject):
         if ret == 0:
             app.last_build_seconds = int(time.time() - app.build_start_time)
             msg = "Build complete."
-            app.status_label.setStyleSheet("""
-                QTextEdit {
-                    background-color: #FFFFFF;
-                    color: #3bbf3b;
-                    border: 1px solid #3a3a3a;
-                }
-            """)
+            app.status_label.setStyleSheet(status_text_style(Colors.SUCCESS, border_width=1))
             if getattr(app, "minimize_after_build_enabled", False):
                 app.showMinimized()
             if getattr(app, "close_after_build_enabled", False):
@@ -407,13 +402,7 @@ class BuildController(QObject):
 
         else:
             msg = "Build failed. See debug log."
-            app.status_label.setStyleSheet("""
-                QTextEdit {
-                    background-color: #FFFFFF;
-                    color: #be1a1a;
-                    border: 1px solid #3a3a3a;
-                }
-            """)
+            app.status_label.setStyleSheet(status_text_style(Colors.ERROR, border_width=1))
 
         self.stop_eta()
         app.building = False

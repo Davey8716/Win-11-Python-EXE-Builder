@@ -10,7 +10,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit,QHBoxLayout, QComboBox,QTextEdit
 from validation_controller import ValidationController
 from activation_controller import ActivationController
-from PySide6.QtGui import QFont, QPalette,QColor
+from PySide6.QtGui import QFont, QPalette
 from PySide6.QtWidgets import QSizePolicy
 from file_pickers import FilePickerController
 from state_controller import StateController
@@ -20,6 +20,14 @@ from ui_dependency_popup import DependencyPopup
 from json_import_controller import JsonImportController
 from PySide6.QtGui import QFontMetrics
 from PySide6.QtGui import QTextCursor, QTextBlockFormat
+from styles import (
+    APPEND_PY_VERSION_INITIAL_STYLE,
+    COMBO_BOX_STYLE,
+    MAIN_FRAME_STYLE,
+    TITLE_FRAME_STYLE,
+    button_base,
+    Colors,
+)
 
 mutex = ctypes.windll.kernel32.CreateMutexW(
     None,
@@ -566,27 +574,7 @@ class EXEBuilderApp(QWidget):
         self.appened_py_version.setFixedSize(125,35)
         self.appened_py_version.setCheckable(True)
 
-        self.appened_py_version.setStyleSheet("""
-            QPushButton {
-                background-color: #FFFFFF;
-                color: black;
-                border: 1px solid #000000;
-            }
-
-            QPushButton:checked {
-                background-color: #3bbf3b;
-                color: black;
-                border: 1px solid #000000;
-            }
-
-            QPushButton:pressed {
-                background-color: #2e9e2e;
-            }
-            QPushButton:disabled {
-                color: #7a7a7a;
-                background-color: #d3d3d3;
-            }
-        """)
+        self.appened_py_version.setStyleSheet(APPEND_PY_VERSION_INITIAL_STYLE)
                 
         self.date_time_dropdown.clear()
 
@@ -755,43 +743,7 @@ class EXEBuilderApp(QWidget):
             self.select_recent_icons,
             self.select_interpreter,
         ]:
-            dropdowns.setStyleSheet("""
-                QComboBox {
-                    background-color: #F3F2F2;   /* matches title frames */
-                    color: #000000;              /* dark readable text */
-                    border: 3px solid #000000;   /* soft grey border */
-                    padding: 3px;
-                    font-weight:bold;
-                    font-size: 15px;
-                    qproperty-alignment: AlignCenter;
-                }
-
-                QComboBox::drop-down {
-                    border: none;
-                    background: #2B2B2B;
-                    padding: 10px;
-                                    
-                }
-
-                QComboBox QAbstractItemView {
-                    background-color: #FFFFFF;   /* matches main frames */
-                    color: 000000;
-                    selection-background-color: #c6c6c6;  /* subtle highlight */
-                    font-family: "Rubik UI";
-                    font-size: 15px;
-                    font-weight: bold;
-                    border-radius: 4px;
-                }
-
-                QComboBox QAbstractItemView::item {
-                    text-align: center;
-                }
-
-                QComboBox:disabled {
-                    background-color: #e0e0e0;
-                    color: #888;
-                }
-            """)
+            dropdowns.setStyleSheet(COMBO_BOX_STYLE)
             if dropdowns.isEditable() and dropdowns.lineEdit():
                 dropdowns.lineEdit().setAlignment(Qt.AlignCenter)
 
@@ -809,14 +761,7 @@ class EXEBuilderApp(QWidget):
 
         for frame in frames:
             if frame:
-                frame.setStyleSheet("""
-                    QFrame {
-                        border: 4px solid #000000;   /* thickness */
-                        border-radius: 6px;
-                        background-color:   #8A8A8A;
-                        
-                    }
-        """)
+                frame.setStyleSheet(MAIN_FRAME_STYLE)
                 
         frames = [
             title_frame,
@@ -829,13 +774,7 @@ class EXEBuilderApp(QWidget):
 
         for frame in frames:
             if frame:
-                frame.setStyleSheet("""
-                    QFrame {
-                        border-radius: 4px;
-                        background-color:   #F3F2F2;
-                        
-                    }
-        """)
+                frame.setStyleSheet(TITLE_FRAME_STYLE)
         
             if frame == title_frame:
             # ignore or custom logic
@@ -979,14 +918,7 @@ class EXEBuilderApp(QWidget):
         ]
 
         for btn in buttons:
-            btn.setStyleSheet("""
-                QPushButton {
-                    background-color: #F3F2F2;
-                    color: black;
-                    border: 3px solid #000000;   /* thickness */
-                    border-radius: 4px;
-                }
-            """)
+            btn.setStyleSheet(button_base())
                     
         for widget in [
             self.recent_folder_dropdown,
@@ -1084,7 +1016,7 @@ if __name__ == "__main__":
     palette = QPalette()
 
     # Main background (empty space / non-widget areas)
-    palette.setColor(QPalette.Window, QColor("#2B2B2B"))
+    palette.setColor(QPalette.Window, Colors.WINDOW)
 
     app.setPalette(palette)
 

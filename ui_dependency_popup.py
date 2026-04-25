@@ -2,6 +2,15 @@ import time
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton,QFrame,QTextEdit,QScrollArea
 from PySide6.QtGui import QFont
 from PySide6.QtCore import Qt
+from styles import (
+    DEPENDENCY_INNER_FRAME_STYLE,
+    DEPENDENCY_LABEL_BOX_STYLE,
+    DEPENDENCY_OK_BUTTON_STYLE,
+    DEPENDENCY_POPUP_FRAME_STYLE,
+    Colors,
+    dependency_text_box_style,
+    label_color_style,
+)
 
 class DependencyPopup:
     def __init__(self, app):
@@ -50,13 +59,7 @@ class DependencyPopup:
 
         # 🔑 frame
         popup_frame = QFrame()
-        popup_frame.setStyleSheet("""
-            QFrame {
-                border: 3px solid #3a3a3a;
-                border-radius: 4px;
-                background-color: #8A8A8A;
-            }
-        """)
+        popup_frame.setStyleSheet(DEPENDENCY_POPUP_FRAME_STYLE)
 
         frame_layout = QVBoxLayout(popup_frame)
         frame_layout.setContentsMargins(10, 10, 10, 10)
@@ -75,13 +78,7 @@ class DependencyPopup:
         # -------------------------------
 
         build_frame = QFrame()
-        build_frame.setStyleSheet("""
-            QFrame {
-                border: 3px solid #000000;
-                background-color: #F3F2F2;
-                border-radius: 4px;
-            }
-        """)
+        build_frame.setStyleSheet(DEPENDENCY_INNER_FRAME_STYLE)
         build_frame.setFixedSize(230,90)
 
         build_layout = QVBoxLayout(build_frame)
@@ -94,7 +91,7 @@ class DependencyPopup:
 
         build_text = QLabel("PyInstaller\n(required to build the .exe)")
         build_text.setFont(QFont("Rubik UI", 11, QFont.Bold))
-        build_text.setStyleSheet("color: #2a7fff;")
+        build_text.setStyleSheet(label_color_style(Colors.INFO))
         build_layout.addWidget(build_text)
 
         frame_layout.addWidget(build_frame)
@@ -103,13 +100,7 @@ class DependencyPopup:
         # LEGEND FRAME
         # -------------------------------
         legend_frame = QFrame()
-        legend_frame.setStyleSheet("""
-            QFrame {
-                border: 3px solid #000000;
-                background-color: #F3F2F2;
-                border-radius: 4px;
-            }
-        """)
+        legend_frame.setStyleSheet(DEPENDENCY_INNER_FRAME_STYLE)
         legend_frame.setFixedSize(240,160)
 
         legend_layout = QVBoxLayout(legend_frame)
@@ -121,15 +112,15 @@ class DependencyPopup:
         legend_layout.addWidget(legend_title)
 
         legend_items = [
-            ("✔ External dependency", "#2a7fff"),
-            ("⚠ May be required (check)", "#e6a23c"),
-            ("? Uncertain / optional", "#8a8a8a"),
+            ("✔ External dependency", Colors.INFO),
+            ("⚠ May be required (check)", Colors.WARNING),
+            ("? Uncertain / optional", Colors.MUTED_BORDER),
         ]
 
         for text, color in legend_items:
             lbl = QLabel(text)
             lbl.setFont(QFont("Rubik UI", 11, QFont.Bold))
-            lbl.setStyleSheet(f"color: {color};")
+            lbl.setStyleSheet(label_color_style(color))
             legend_layout.addWidget(lbl)
 
         frame_layout.addWidget(legend_frame)
@@ -145,14 +136,7 @@ class DependencyPopup:
         label1.setFont(QFont("Rubik UI", 11, QFont.Bold))
         label1.setContentsMargins(5,5,5,5)
         label1.setFixedSize(360,50)
-        label1.setStyleSheet("""
-            QLabel {
-                border: 3px solid #000000;
-                border-radius: 4px;
-                background-color: #FFFFFF;
-            }
-
-        """)
+        label1.setStyleSheet(DEPENDENCY_LABEL_BOX_STYLE)
         frame_layout.addWidget(label1)
 
         def make_section(title, items, color):
@@ -165,21 +149,15 @@ class DependencyPopup:
             box.setReadOnly(True)
             box.setText(f"{title}:\n{text}")
             box.setFont(QFont("Rubik UI", 11, QFont.Bold))
-            box.setStyleSheet(f"""
-                QTextEdit {{
-                    color: {color};
-                    background-color: #FFFFFF;
-                    border: 1px solid #8a8a8a;
-                }}
-            """)
+            box.setStyleSheet(dependency_text_box_style(color))
             box.setMinimumHeight(80)
 
             return box
 
         sections = [
-            ("✔ External", packages.get("external", []), "#2a7fff"),
-            ("⚠ Check", packages.get("maybe", []), "#e6a23c"),
-            ("? Uncertain", packages.get("uncertain", []), "#8a8a8a"),
+            ("✔ External", packages.get("external", []), Colors.INFO),
+            ("⚠ Check", packages.get("maybe", []), Colors.WARNING),
+            ("? Uncertain", packages.get("uncertain", []), Colors.MUTED_BORDER),
         ]
 
         for title, items, color in sections:
@@ -195,13 +173,7 @@ class DependencyPopup:
         label3.setFont(QFont("Rubik UI", 11, QFont.Bold))
         label3.setContentsMargins(5,5,5,5)
         label3.setFixedSize(285,85)
-        label3.setStyleSheet("""
-            QLabel {
-                border: 3px solid #000000;
-                border-radius: 4px;
-                background-color: #FFFFFF;
-            }
-        """)
+        label3.setStyleSheet(DEPENDENCY_LABEL_BOX_STYLE)
 
         frame_layout.addWidget(label3)
 
@@ -209,18 +181,7 @@ class DependencyPopup:
         ok_btn.setFont(QFont("Rubik UI", 12, QFont.Bold))
         ok_btn.setFixedSize(80, 30)
 
-        ok_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #2a7fff;
-                color: #000000;
-                border: 3px solid #000000;
-                border-radius: 4px;
-            }
-            QPushButton:disabled {
-                background-color: #8a8a8a;
-                color: #444;
-            }
-        """)
+        ok_btn.setStyleSheet(DEPENDENCY_OK_BUTTON_STYLE)
 
         ok_btn.clicked.connect(lambda: self._close_and_disable())
         popup.finished.connect(lambda: self._close_and_disable())

@@ -1,5 +1,6 @@
 
 import os,webbrowser
+from ui_highlights import flash_delete_highlight
 
 class UIHandlers:
     def __init__(self, app):
@@ -11,6 +12,10 @@ class UIHandlers:
 
     def clear_interpreter_path(self):
         app = self.app
+        flash_delete_highlight(
+            getattr(app, "interpreter_refresh_btn", None),
+            getattr(app, "python_entry_input", None),
+        )
 
         # -------------------------------
         # CLEAR STATE (source of truth FIRST)
@@ -44,6 +49,10 @@ class UIHandlers:
 
     def clear_script_path(self):
         app = self.app
+        flash_delete_highlight(
+            getattr(app, "script_clear_btn", None),
+            getattr(app, "script_path_input", None),
+        )
 
         # -------------------------------
         # CLEAR STATE FIRST
@@ -72,6 +81,10 @@ class UIHandlers:
 
     def clear_icon(self):
         app = self.app
+        flash_delete_highlight(
+            getattr(app, "icon_clear_btn", None),
+            getattr(app, "icon_path_input", None),
+        )
 
         # -------------------------------
         # CLEAR STATE FIRST
@@ -104,6 +117,10 @@ class UIHandlers:
         
     def reset_output_to_desktop(self):
         app = self.app
+        flash_delete_highlight(
+            getattr(app, "output_refresh_btn", None),
+            getattr(app, "output_path_input", None),
+        )
         app.build_error = None
         desktop = self.get_desktop_path()
         app.output_path_input.setText(desktop)
@@ -117,6 +134,10 @@ class UIHandlers:
         if not script or not os.path.isfile(script):
             return
 
+        flash_delete_highlight(
+            getattr(app, "refresh_btn", None),
+            getattr(app, "exe_name_input", None),
+        )
         derived = os.path.splitext(os.path.basename(script))[0]
         app.exe_name_user_modified = False
         app.exe_name_input.setText(derived)

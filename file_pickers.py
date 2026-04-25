@@ -2,6 +2,13 @@ import os
 import subprocess
 from PySide6.QtWidgets import QFileDialog, QDialog, QVBoxLayout, QPushButton, QLabel, QComboBox, QVBoxLayout, QPushButton,QFrame
 from PySide6.QtCore import Qt
+from styles import (
+    SCRIPT_PICKER_CONFIRM_STYLE,
+    SCRIPT_PICKER_DROPDOWN_STYLE,
+    SCRIPT_PICKER_FRAME_STYLE,
+    SCRIPT_PICKER_LABEL_STYLE,
+)
+from ui_highlights import flash_add_highlight
 
 # -------------------------------------------------------------
 # File Pickers (Qt version)
@@ -67,6 +74,12 @@ class FilePickerController:
         # ✅ UI update
         if hasattr(self.app, "python_entry_input"):
             self.app.python_entry_input.setText(path)
+            self.app.python_entry_input.setCursorPosition(len(path))
+
+        flash_add_highlight(
+            getattr(self.app, "interpreter_btn", None),
+            getattr(self.app, "python_entry_input", None),
+        )
 
         # 🔑 ADD → recents system
         if hasattr(self.app, "recent_controller"):
@@ -216,6 +229,11 @@ class FilePickerController:
             self.app.script_path_input.setText(display)
             self.app.script_path_input.setCursorPosition(len(display))
 
+        flash_add_highlight(
+            getattr(self.app, "folder_btn", None),
+            getattr(self.app, "script_path_input", None),
+        )
+
         self.app.project_root = os.path.dirname(full_path)
         self.app.script_path = full_path
 
@@ -266,6 +284,11 @@ class FilePickerController:
             self.app.icon_path_input.setText(display)
             self.app.icon_path_input.setCursorPosition(len(display))
 
+        flash_add_highlight(
+            getattr(self.app, "icon_btn", None),
+            getattr(self.app, "icon_path_input", None),
+        )
+
         # ------------------------------------
         # Persist + revalidate (MATCH SCRIPT)
         # ------------------------------------
@@ -298,6 +321,12 @@ class FilePickerController:
             # ✅ update UI
             if hasattr(self.app, "icon_path_input"):
                 self.app.icon_path_input.setText(path)
+                self.app.icon_path_input.setCursorPosition(len(path))
+
+            flash_add_highlight(
+                getattr(self.app, "icon_btn", None),
+                getattr(self.app, "icon_path_input", None),
+            )
                 
             self.app.recent_controller.add_recent_icon(path)
             self.app.recent_controller.populate_recent_icons_dropdown()
@@ -331,6 +360,12 @@ class FilePickerController:
 
         if hasattr(self.app, "output_path_input"):
             self.app.output_path_input.setText(folder)
+            self.app.output_path_input.setCursorPosition(len(folder))
+
+        flash_add_highlight(
+            getattr(self.app, "output_btn", None),
+            getattr(self.app, "output_path_input", None),
+        )
 
         # Auto-derive exe name ONLY if empty
         if not getattr(self.app, "exe_name", "").strip():
@@ -380,13 +415,7 @@ class ScriptPickerPopup(QDialog):
         self.frame.setFrameShadow(QFrame.Raised)
         self.frame.setLineWidth(1)
 
-        self.frame.setStyleSheet("""
-            QFrame {
-                border: 2px solid #080B12;
-                border-radius: 6px;
-                background-color: #DCDBDB;
-            }
-        """)
+        self.frame.setStyleSheet(SCRIPT_PICKER_FRAME_STYLE)
 
         frame_layout = QVBoxLayout(self.frame)
         frame_layout.setContentsMargins(8, 8, 8, 8)
@@ -394,29 +423,18 @@ class ScriptPickerPopup(QDialog):
 
         label = QLabel("Select the script\nthat starts your program:")
         label.setWordWrap(True)
-        label.setStyleSheet("""
-            font-family: "Rubik";
-            font-size: 13px;
-            font-weight: bold;
-        """)
+        label.setStyleSheet(SCRIPT_PICKER_LABEL_STYLE)
         frame_layout.addWidget(label, alignment=Qt.AlignHCenter)
 
         self.dropdown = QComboBox()
         self.dropdown.addItems(py_files)
-        self.dropdown.setStyleSheet("""
-            font-family: "Rubik";
-            font-size: 13px;
-        """)
+        self.dropdown.setStyleSheet(SCRIPT_PICKER_DROPDOWN_STYLE)
         frame_layout.addWidget(self.dropdown, alignment=Qt.AlignHCenter)
 
         confirm_btn = QPushButton("Confirm")
         confirm_btn.setFixedWidth(120)
         confirm_btn.clicked.connect(self.confirm)
-        confirm_btn.setStyleSheet("""
-            font-family: "Rubik";
-            font-size: 13px;
-            font-weight: bold;
-        """)
+        confirm_btn.setStyleSheet(SCRIPT_PICKER_CONFIRM_STYLE)
         frame_layout.addWidget(confirm_btn, alignment=Qt.AlignHCenter)
 
         layout.addWidget(self.frame, alignment=Qt.AlignHCenter)
