@@ -25,3 +25,7 @@ exe_builder_state.json
 /.VSCodeCounter/2026-04-01_00-16-50
 /.VSCodeCounter/2026-04-02_08-22-34
 /.VSCodeCounter/2026-04-03_10-06-56
+Tests/.pytest_tmp/
+test-temp/
+.pytest_cache/
+pytest-cache-files-*/
