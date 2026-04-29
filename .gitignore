@@ -29,3 +29,4 @@ Tests/.pytest_tmp/
 test-temp/
 .pytest_cache/
 pytest-cache-files-*/
+/Tests/__pycache__
