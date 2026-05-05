@@ -7,6 +7,7 @@ from PySide6.QtCore import QThread
 from pathlib import Path
 import shutil
 from styles import Colors, status_text_style
+from tray_icon_support import get_tray_icon_pyinstaller_args
 
 CREATE_NO_WINDOW = 0x08000000
 
@@ -346,6 +347,8 @@ class BuildController(QObject):
 
         if project_root:
             cmd.append(f"--add-data={project_root}{os.pathsep}.")
+
+        cmd.extend(get_tray_icon_pyinstaller_args(icon))
 
         data_file = os.path.join(project_root, "screen_mover_state.json")
         if os.path.isfile(data_file):
