@@ -51,6 +51,62 @@ class BuildController(QObject):
 
         QTimer.singleShot(300, self._tick_eta)
 
+    def _get_python_version_suffix(self):
+        python_path = getattr(self.app, "python_interpreter_path", "")
+        version = "py"
+
+        if python_path:
+            try:
+                parent = os.path.basename(os.path.dirname(python_path)).lower()
+                if parent.startswith("python"):
+                    raw = parent.replace("python", "")
+                    if raw.isdigit():
+                        version = f"py{raw[0]}.{raw[1:]}" if len(raw) > 1 else f"py{raw}"
+            except Exception:
+                pass
+
+        return version
+
+    def _build_debug_log_name(self, script):
+        script = os.path.normpath(script) if script else ""
+        script_name = os.path.splitext(os.path.basename(script))[0].lower() if script else ""
+        parent_name = os.path.basename(os.path.dirname(script)) if script else ""
+
+        parts = ["EXE_BUILDER_DEBUG"]
+
+        if script:
+            parts.append(self.app.exe_name_input.text().strip() or "exe")
+
+            if script_name in {"main", "app", "run"} and parent_name:
+                parts.append(parent_name)
+
+        if getattr(self.app, "append_py_version", False):
+            parts.append(self._get_python_version_suffix())
+
+        parts.append(datetime.now().strftime("%d-%m-%Y_%H-%M-%S"))
+
+        return "_".join(parts) + ".log"
+
+    def _initialize_debug_log(self, script, outdir):
+        app = self.app
+        app.debug_log_path = os.path.join(outdir, self._build_debug_log_name(script)) if outdir else ""
+
+        if not app.debug_log_path or not os.path.isdir(outdir):
+            return
+
+        try:
+            with open(app.debug_log_path, "w", encoding="utf-8") as f:
+                f.write("BUILD STARTED\n")
+
+            with open(app.debug_log_path, "a", encoding="utf-8") as f:
+                f.write(f"ENTRY_SCRIPT={repr(app.entry_script)}\n")
+                f.write(f"PROJECT_ROOT={repr(app.project_root)}\n")
+                f.write(f"OUTPUT_DIR={repr(outdir)}\n")
+                f.write(f"PYTHON_INTERPRETER_PATH={repr(app.python_interpreter_path)}\n")
+                f.write(f"IS_FROZEN={getattr(sys, 'frozen', False)}\n")
+        except OSError:
+            pass
+
     # -------------------------------------------------------------
     # Build EXE
     # -------------------------------------------------------------
@@ -70,62 +126,6 @@ class BuildController(QObject):
 
         app.dependency_notice.setChecked(False)
         app.dependency_notice_enabled = False
-
-        timestamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-
-        # 🔑 match build naming logic
-        script = app.entry_script or ""
-        script = os.path.normpath(script) if script else ""
-
-        script_name = os.path.splitext(os.path.basename(script))[0].lower() if script else ""
-        parent = os.path.basename(os.path.dirname(script)) if script else ""
-
-        parts = ["EXE_BUILDER_DEBUG"]
-
-        if script:
-            parts.append(app.exe_name_input.text().strip() or "exe")
-
-            # parent (main/app/run case)
-            if script_name in {"main", "app", "run"} and parent:
-                parts.append(parent)
-
-        # 🔑 python version append (match build logic)
-        if getattr(app, "append_py_version", False):
-            python_path = getattr(app, "python_interpreter_path", "")
-            version = "py"
-
-            if python_path:
-                try:
-                    parent = os.path.basename(os.path.dirname(python_path)).lower()
-                    if parent.startswith("python"):
-                        raw = parent.replace("python", "")
-                        if raw.isdigit():
-                            version = f"py{raw[0]}.{raw[1:]}" if len(raw) > 1 else f"py{raw}"
-                except:
-                    pass
-
-            parts.append(version)
-
-        parts.append(timestamp)
-
-        log_name = "_".join(parts) + ".log"
-
-        app.debug_log_path = os.path.join(
-            os.path.expanduser("~"),
-            "Desktop",
-            log_name
-        )
-
-        with open(app.debug_log_path, "w", encoding="utf-8") as f:
-            f.write("BUILD STARTED\n")
-
-        IS_FROZEN = getattr(sys, "frozen", False)
-
-        with open(app.debug_log_path, "a", encoding="utf-8") as f:
-            f.write(f"IS_FROZEN={IS_FROZEN}\n")
-            f.write(f"ENTRY_SCRIPT={repr(app.entry_script)}\n")
-            f.write(f"PROJECT_ROOT={repr(app.project_root)}\n")
-            f.write(f"PYTHON_INTERPRETER_PATH={repr(app.python_interpreter_path)}\n")
 
         # ==================================================
         # CANCEL MODE
@@ -163,6 +163,8 @@ class BuildController(QObject):
 
         app.entry_script = entry_point
         app.project_root = project_root
+        app.output_path = outdir
+        self._initialize_debug_log(script, outdir)
 
         # ==================================================
         # Bundle validation
@@ -291,20 +293,7 @@ class BuildController(QObject):
 
         # python version
         if getattr(app, "append_py_version", False):
-            python_path = getattr(app, "python_interpreter_path", "")
-            version = "py"
-
-            if python_path:
-                try:
-                    parent = os.path.basename(os.path.dirname(python_path)).lower()
-                    if parent.startswith("python"):
-                        raw = parent.replace("python", "")
-                        if raw.isdigit():
-                            version = f"py{raw[0]}.{raw[1:]}" if len(raw) > 1 else f"py{raw}"
-                except:
-                    pass
-
-            parts.append(version)
+            parts.append(self._get_python_version_suffix())
 
         final_exe_name = "_".join(parts)
 

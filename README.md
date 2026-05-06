@@ -161,14 +161,18 @@ The application can be moved freely as long as this structure is preserved.
 
 ## Debug Log Path
 
-	The application writes debug logs to a predefined Desktop location during builds.
+	The application writes debug logs into the selected output folder during builds.
+
+	The log is created alongside the generated build output as a sibling of:
+
+	* `build`
+	* `spec`
+	* the final bundled app folder
 
 	* Used for diagnostics and troubleshooting
-	* Do not change this path unless you fully understand the build workflow
+	* Uses the same output location you selected for the build
 
-	Changing the log path incorrectly may interfere with diagnostics or cause unexpected behavior.
-	
-	Modify only after confirming the application builds and runs correctly.
+	Changing this behavior incorrectly may interfere with diagnostics or cause unexpected behavior.
 
 ---
 

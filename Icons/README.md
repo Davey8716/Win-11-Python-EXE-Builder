@@ -101,19 +101,17 @@ This tool is designed around the entire Windows EXE build workflow, not just inv
 
 **Debug log path**
 
+**The application writes its debug log into the selected output folder during builds.**
 
-
-**The application writes its debug log to a predefined Desktop location during builds.**
+**The log is created alongside the generated output as a sibling of `build`, `spec`, and the final bundled app folder.**
 
 
 
 **This path is used for diagnostics and troubleshooting.**
 
+**The selected output location is also used for the debug log.**
 
-
-**Do not change the debug log path in the source code unless you fully understand the build workflow.**
-
-**Altering this path can interfere with diagnostics and may cause builds to fail or behave unpredictably.**
+**Altering this behavior can interfere with diagnostics and may cause builds to fail or behave unpredictably.**
 
 
 
