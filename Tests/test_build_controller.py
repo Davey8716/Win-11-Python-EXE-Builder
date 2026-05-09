@@ -85,12 +85,16 @@ class DummyButton:
 class DummyLabel:
     def __init__(self):
         self.text = ""
+        self.stylesheet = ""
 
     def setFixedWidth(self, _value):
         pass
 
     def setText(self, value):
         self.text = value
+
+    def setStyleSheet(self, value):
+        self.stylesheet = value
 
 
 class DummyToggle:
@@ -106,6 +110,9 @@ class DummyValidationController:
         pass
 
     def set_build_error(self, _message):
+        pass
+
+    def update_build_button(self):
         pass
 
 
@@ -248,3 +255,101 @@ def test_build_exe_adds_parent_search_path_for_sibling_packages(tmp_path, monkey
     assert f"--paths={project_root}" in app.captured_cmd
     assert f"--paths={workspace_root}" in app.captured_cmd
     assert f"--add-data={project_root}{os.pathsep}." in app.captured_cmd
+
+
+def test_build_complete_opens_output_directory_for_non_desktop_path(tmp_path, monkeypatch):
+    output_dir = tmp_path / "dist"
+    output_dir.mkdir()
+    opened_paths = []
+
+    monkeypatch.setattr(build_controller.os, "startfile", lambda path: opened_paths.append(path), raising=False)
+
+    app = make_app(
+        build_start_time=0,
+        last_build_seconds=45,
+        status_label=DummyLabel(),
+        output_path=str(output_dir),
+        open_output_dir_after_build_enabled=True,
+        minimize_after_build_enabled=False,
+        close_after_build_enabled=False,
+        state_ctrl=SimpleNamespace(save_state=lambda: None),
+        validation_controller=DummyValidationController(),
+        set_status=lambda _message: None,
+        build_process=None,
+    )
+    controller = BuildController(app)
+    monkeypatch.setattr(build_controller.time, "time", lambda: 5)
+    monkeypatch.setattr(controller, "stop_eta", lambda: None)
+    monkeypatch.setattr(build_controller.QTimer, "singleShot", lambda *_args, **_kwargs: None)
+
+    controller._on_build_complete_ui(0, "", "")
+
+    assert opened_paths == [os.path.normpath(str(output_dir))]
+
+
+def test_build_complete_skips_opening_output_directory_for_desktop(monkeypatch):
+    desktop_path = os.path.normpath(os.path.join(os.path.expanduser("~"), "Desktop"))
+    opened_paths = []
+
+    monkeypatch.setattr(build_controller.os, "startfile", lambda path: opened_paths.append(path), raising=False)
+
+    app = make_app(
+        build_start_time=0,
+        last_build_seconds=45,
+        status_label=DummyLabel(),
+        output_path=desktop_path,
+        open_output_dir_after_build_enabled=True,
+        minimize_after_build_enabled=False,
+        close_after_build_enabled=False,
+        state_ctrl=SimpleNamespace(save_state=lambda: None),
+        validation_controller=DummyValidationController(),
+        set_status=lambda _message: None,
+        build_process=None,
+    )
+    controller = BuildController(app)
+    monkeypatch.setattr(build_controller.time, "time", lambda: 5)
+    monkeypatch.setattr(controller, "stop_eta", lambda: None)
+    monkeypatch.setattr(build_controller.QTimer, "singleShot", lambda *_args, **_kwargs: None)
+
+    controller._on_build_complete_ui(0, "", "")
+
+    assert opened_paths == []
+
+
+def test_build_complete_opens_output_directory_before_closing(tmp_path, monkeypatch):
+    output_dir = tmp_path / "dist"
+    output_dir.mkdir()
+    events = []
+
+    monkeypatch.setattr(
+        build_controller.os,
+        "startfile",
+        lambda path: events.append(("open", path)),
+        raising=False,
+    )
+
+    app = make_app(
+        build_start_time=0,
+        last_build_seconds=45,
+        status_label=DummyLabel(),
+        output_path=str(output_dir),
+        open_output_dir_after_build_enabled=True,
+        minimize_after_build_enabled=False,
+        close_after_build_enabled=True,
+        close_app=lambda: events.append(("close", None)),
+        state_ctrl=SimpleNamespace(save_state=lambda: None),
+        validation_controller=DummyValidationController(),
+        set_status=lambda _message: None,
+        build_process=None,
+    )
+    controller = BuildController(app)
+    monkeypatch.setattr(build_controller.time, "time", lambda: 5)
+    monkeypatch.setattr(controller, "stop_eta", lambda: None)
+    monkeypatch.setattr(build_controller.QTimer, "singleShot", lambda *_args, **_kwargs: None)
+
+    controller._on_build_complete_ui(0, "", "")
+
+    assert events == [
+        ("open", os.path.normpath(str(output_dir))),
+        ("close", None),
+    ]

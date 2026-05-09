@@ -186,6 +186,12 @@ class UIHandlers:
         app.state_ctrl.save_state()
         app.validator.update_ui_state()   # 🔑 THIS WAS MISSING
 
+    def on_open_output_dir_toggle(self, state):
+        app = self.app
+        app.open_output_dir_after_build_enabled = bool(state)
+        app.state_ctrl.save_state()
+        app.validator.update_ui_state()
+
     def on_close_toggle(self, state):
         app = self.app
         app.close_after_build_enabled = bool(state)

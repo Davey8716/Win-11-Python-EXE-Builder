@@ -76,6 +76,7 @@ class StateController:
             self.app.dependency_notice_enabled = data.get("dependency_notice_enabled", True)
             self.app.close_after_build_enabled = data.get("close_after_build_enabled", True)
             self.app.minimize_after_build_enabled = data.get("minimize_after_build_enabled", True)
+            self.app.open_output_dir_after_build_enabled = data.get("open_output_dir_after_build_enabled", False)
 
             self.app.script_path = _norm(data.get("last_script_path", ""))
             self.app.icon_path = _norm(data.get("last_icon_path", ""))
@@ -125,6 +126,10 @@ class StateController:
             if hasattr(self.app, "minimize_after_build"):
                 self.app.minimize_after_build.setChecked(min_val)
 
+            if hasattr(self.app, "open_output_dir_after_build"):
+                self.app.open_output_dir_after_build.setChecked(
+                    getattr(self.app, "open_output_dir_after_build_enabled", False)
+                )
 
             if hasattr(self.app, "tooltips_checkbox"):
                 self.app.tooltips_checkbox.setChecked(self.app.tooltips_enabled)
@@ -235,6 +240,7 @@ class StateController:
             "dependency_notice_enabled": getattr(self.app, "dependency_notice_enabled", True),
             "close_after_build_enabled": getattr(self.app, "close_after_build_enabled", True),
             "minimize_after_build_enabled": getattr(self.app, "minimize_after_build_enabled", True),
+            "open_output_dir_after_build_enabled": getattr(self.app, "open_output_dir_after_build_enabled", False),
 
             # --- User flags ---
             "icon_user_cleared": getattr(self.app, "icon_user_cleared", False),

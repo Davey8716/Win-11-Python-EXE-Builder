@@ -106,6 +106,7 @@ class EXEBuilderApp(QWidget):
         
         self.close_after_build_enabled = getattr(self, "close_after_build_enabled", True)
         self.minimize_after_build_enabled = getattr(self, "minimize_after_build_enabled", True)
+        self.open_output_dir_after_build_enabled = getattr(self, "open_output_dir_after_build_enabled", False)
         self.tooltips_enabled = getattr(self, "tooltips_enabled", True)
         self.dependency_notice_enabled = getattr(self, "dependency_notice_enabled", True)
         self.script_path = getattr(self, "script_path", "")
@@ -139,7 +140,7 @@ class EXEBuilderApp(QWidget):
         # -------------------------------
 
         toggles_frame = QFrame()
-        toggles_frame.setFixedSize(425, 75)
+        toggles_frame.setFixedSize(425, 100)
         toggles_frame.setFrameShape(QFrame.StyledPanel)
         toggles_frame.setFrameShadow(QFrame.Raised)
         toggles_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -173,14 +174,24 @@ class EXEBuilderApp(QWidget):
         row2.setSpacing(10)
 
         self.minimize_after_build = QCheckBox("Minimize After Build")
+        self.open_output_dir_after_build = QCheckBox("Open Output Directory")
         self.close_after_build = QCheckBox("Close After Build")
 
         row2.addStretch()
         row2.addWidget(self.minimize_after_build)
         row2.addWidget(self.close_after_build)
-
-        # 🔑 spacer for future toggle (4th slot)
         row2.addStretch()
+
+        # -------------------------------
+        # ROW 3
+        # -------------------------------
+
+        row3 = QHBoxLayout()
+        row3.setContentsMargins(0, 0, 0, 0)
+        row3.setSpacing(10)
+
+        row3.addWidget(self.open_output_dir_after_build)
+        row3.addStretch()
 
         # -------------------------------
         # ATTACH
@@ -188,6 +199,7 @@ class EXEBuilderApp(QWidget):
 
         toggles_layout.addLayout(row1)
         toggles_layout.addLayout(row2)
+        toggles_layout.addLayout(row3)
 
         # -------------------------------
         # WRAPPER (forces vertical alignment)
@@ -841,11 +853,14 @@ class EXEBuilderApp(QWidget):
             self.tooltips_checkbox,
             self.dependency_notice,
             self.minimize_after_build,
+            self.open_output_dir_after_build,
             self.close_after_build,
         ]:
             cb.setFixedSize(200,15)
             cb.setChecked(True)
             cb.setFont(QFont("Rubik UI", 13, QFont.Bold))
+
+        self.open_output_dir_after_build.setChecked(False)
 
         for widget in [
             self.folder_btn,
@@ -972,6 +987,7 @@ class EXEBuilderApp(QWidget):
         self.exe_name_input.textChanged.connect(self.ui_handlers.on_exe_name_change)
         self.script_path_input.textChanged.connect(self.ui_handlers.on_script_path_change)
         self.minimize_after_build.stateChanged.connect(self.ui_handlers.on_minimize_toggle)
+        self.open_output_dir_after_build.stateChanged.connect(self.ui_handlers.on_open_output_dir_toggle)
         self.close_after_build.stateChanged.connect(self.ui_handlers.on_close_toggle)
 
         self.validator.update_ui_state()

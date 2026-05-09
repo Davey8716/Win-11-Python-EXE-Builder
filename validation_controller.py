@@ -368,6 +368,7 @@ class ValidationController:
         # Tooltips
         set_btn(app.tooltips_checkbox, not building)
         set_btn(app.dependency_notice, not building)
+        set_btn(app.open_output_dir_after_build, not building)
         # 🔑 mutual exclusion + build lock
         min_checked = app.minimize_after_build.isChecked()
         close_checked = app.close_after_build.isChecked()

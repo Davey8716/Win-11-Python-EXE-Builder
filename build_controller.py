@@ -101,6 +101,27 @@ class BuildController(QObject):
 
         return search_paths
 
+    def _get_desktop_path(self):
+        return os.path.normpath(os.path.join(os.path.expanduser("~"), "Desktop"))
+
+    def _maybe_open_output_directory_on_success(self):
+        app = self.app
+
+        if not getattr(app, "open_output_dir_after_build_enabled", False):
+            return
+
+        output_dir = os.path.normpath(getattr(app, "output_path", "") or "")
+        if not output_dir or not os.path.isdir(output_dir):
+            return
+
+        if output_dir == self._get_desktop_path():
+            return
+
+        try:
+            os.startfile(output_dir)
+        except Exception:
+            pass
+
     def _initialize_debug_log(self, script, outdir):
         app = self.app
         app.debug_log_path = os.path.join(outdir, self._build_debug_log_name(script)) if outdir else ""
@@ -406,6 +427,7 @@ class BuildController(QObject):
             app.status_label.setStyleSheet(status_text_style(Colors.SUCCESS, border_width=1))
             if getattr(app, "minimize_after_build_enabled", False):
                 app.showMinimized()
+            self._maybe_open_output_directory_on_success()
             if getattr(app, "close_after_build_enabled", False):
                 app.close_app()
             app.state_ctrl.save_state()
