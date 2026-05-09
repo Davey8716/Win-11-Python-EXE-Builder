@@ -7,7 +7,7 @@ from ctypes import wintypes
 from build_controller import BuildController
 from tooltips import attach_tooltips
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit,QHBoxLayout, QComboBox,QTextEdit
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit,QHBoxLayout, QComboBox,QTextEdit, QGridLayout
 from validation_controller import ValidationController
 from activation_controller import ActivationController
 from PySide6.QtGui import QFont, QPalette
@@ -157,57 +157,35 @@ class EXEBuilderApp(QWidget):
         toggles_layout.setContentsMargins(5,5,5,5)
         toggles_layout.setSpacing(2)
 
-        # -------------------------------
-        # ROW 1
-        # -------------------------------
-
-        row1 = QHBoxLayout()
-        row1.setContentsMargins(0, 0, 0, 0)
-        row1.setSpacing(10)
-
         self.tooltips_checkbox = QCheckBox("Tooltips")
         self.dependency_notice = QCheckBox("Dependency Notice")
-
-        row1.addStretch()
-        row1.addWidget(self.tooltips_checkbox)
-        row1.addWidget(self.dependency_notice)
-        row1.addStretch()
-
-        # -------------------------------
-        # ROW 2
-        # -------------------------------
-
-        row2 = QHBoxLayout()
-        row2.setContentsMargins(0, 0, 0, 0)
-        row2.setSpacing(10)
-
         self.minimize_after_build = QCheckBox("Minimize After Build")
         self.open_output_dir_after_build = QCheckBox("Open Output Directory")
         self.close_after_build = QCheckBox("Close After Build")
 
-        row2.addStretch()
-        row2.addWidget(self.minimize_after_build)
-        row2.addWidget(self.close_after_build)
-        row2.addStretch()
+        toggle_columns = QGridLayout()
+        toggle_columns.setContentsMargins(0, 0, 0, 0)
+        toggle_columns.setHorizontalSpacing(0)
+        toggle_columns.setVerticalSpacing(0)
+        toggle_columns.setColumnStretch(0, 1)
+        toggle_columns.setColumnStretch(2, 1)
+        toggle_columns.setColumnStretch(1, 1)
+        toggle_columns.setRowStretch(0, 1)
+        toggle_columns.setRowStretch(2, 1)
+        toggle_columns.setRowStretch(4, 1)
+        toggle_columns.setRowStretch(6, 1)
 
-        # -------------------------------
-        # ROW 3
-        # -------------------------------
-
-        row3 = QHBoxLayout()
-        row3.setContentsMargins(0, 0, 0, 0)
-        row3.setSpacing(10)
-
-        row3.addWidget(self.open_output_dir_after_build)
-        row3.addStretch()
+        toggle_columns.addWidget(self.tooltips_checkbox, 1, 1)
+        toggle_columns.addWidget(self.dependency_notice, 1, 3)
+        toggle_columns.addWidget(self.minimize_after_build, 3, 1)
+        toggle_columns.addWidget(self.close_after_build, 3, 3)
+        toggle_columns.addWidget(self.open_output_dir_after_build, 5, 1)
 
         # -------------------------------
         # ATTACH
         # -------------------------------
 
-        toggles_layout.addLayout(row1)
-        toggles_layout.addLayout(row2)
-        toggles_layout.addLayout(row3)
+        toggles_layout.addLayout(toggle_columns)
 
         # -------------------------------
         # WRAPPER (forces vertical alignment)
