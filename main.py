@@ -853,12 +853,15 @@ class EXEBuilderApp(QWidget):
             self.tooltips_checkbox,
             self.dependency_notice,
             self.minimize_after_build,
-            self.open_output_dir_after_build,
             self.close_after_build,
         ]:
             cb.setFixedSize(200,15)
             cb.setChecked(True)
             cb.setFont(QFont("Rubik UI", 13, QFont.Bold))
+
+        self.open_output_dir_after_build.setFixedWidth(215)
+        self.open_output_dir_after_build.setChecked(True)
+        self.open_output_dir_after_build.setFont(QFont("Rubik Ui", 13, QFont.Bold))
 
         self.open_output_dir_after_build.setChecked(False)
 
