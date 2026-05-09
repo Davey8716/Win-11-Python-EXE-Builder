@@ -115,7 +115,6 @@ COMBO_BOX_STYLE = f"""
         padding: 3px;
         font-weight:bold;
         font-size: 15px;
-        qproperty-alignment: AlignCenter;
     }}
 
     QComboBox::drop-down {{
