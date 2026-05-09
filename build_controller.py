@@ -87,6 +87,20 @@ class BuildController(QObject):
 
         return "_".join(parts) + ".log"
 
+    def _get_pyinstaller_search_paths(self, project_root):
+        if not project_root:
+            return []
+
+        normalized_root = os.path.normpath(project_root)
+        search_paths = [normalized_root]
+
+        parent_root = os.path.dirname(normalized_root)
+        if parent_root and parent_root != normalized_root:
+            # Sibling packages are often stored one level above the entry script folder.
+            search_paths.append(parent_root)
+
+        return search_paths
+
     def _initialize_debug_log(self, script, outdir):
         app = self.app
         app.debug_log_path = os.path.join(outdir, self._build_debug_log_name(script)) if outdir else ""
@@ -331,11 +345,15 @@ class BuildController(QObject):
             f"--workpath={build_path}",
             f"--specpath={spec_path}",
             f"--name={final_exe_name}",
-            entry_point
         ]
+
+        for search_path in self._get_pyinstaller_search_paths(project_root):
+            cmd.append(f"--paths={search_path}")
 
         if project_root:
             cmd.append(f"--add-data={project_root}{os.pathsep}.")
+
+        cmd.append(entry_point)
 
         cmd.extend(get_tray_icon_pyinstaller_args(icon))
 
