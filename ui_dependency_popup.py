@@ -59,6 +59,7 @@ class DependencyPopup:
 
         # 🔑 frame
         popup_frame = QFrame()
+        popup_frame.setFrameShape(QFrame.NoFrame)
         popup_frame.setStyleSheet(DEPENDENCY_POPUP_FRAME_STYLE)
 
         frame_layout = QVBoxLayout(popup_frame)
@@ -78,6 +79,7 @@ class DependencyPopup:
         # -------------------------------
 
         build_frame = QFrame()
+        build_frame.setFrameShape(QFrame.NoFrame)
         build_frame.setStyleSheet(DEPENDENCY_INNER_FRAME_STYLE)
         build_frame.setFixedSize(230,90)
 
@@ -100,6 +102,7 @@ class DependencyPopup:
         # LEGEND FRAME
         # -------------------------------
         legend_frame = QFrame()
+        legend_frame.setFrameShape(QFrame.NoFrame)
         legend_frame.setStyleSheet(DEPENDENCY_INNER_FRAME_STYLE)
         legend_frame.setFixedSize(240,160)
 

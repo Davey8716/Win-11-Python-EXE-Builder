@@ -45,7 +45,7 @@ def button_base(border_width: int = 3) -> str:
         QPushButton {{
             background-color: {qcolor_name(Colors.TITLE_BG)};
             color: {qcolor_name(Colors.TEXT_LIGHT)};
-            border: {border_width}px solid {qcolor_name(Colors.BORDER_DARK)};
+            border: none;
             border-radius: 4px;
         }}
         QPushButton:hover {{
@@ -59,7 +59,7 @@ def button_with_border(border_color: QColor, border_width: int = 4) -> str:
         QPushButton {{
             background-color: {qcolor_name(Colors.TITLE_BG)};
             color: {qcolor_name(Colors.TEXT_LIGHT)};
-            border: {border_width}px solid {qcolor_name(border_color)};
+            border: none;
             border-radius: 4px;
         }}
         QPushButton:hover {{
@@ -73,7 +73,7 @@ def filled_button(background_color: QColor, border_width: int = 4, radius: int =
         QPushButton {{
             background-color: {qcolor_name(background_color)};
             color: {qcolor_name(Colors.TEXT_LIGHT)};
-            border: {border_width}px solid {qcolor_name(Colors.BORDER_DARK)};
+            border: none;
             border-radius: {radius}px;
         }}
         QPushButton:hover {{
@@ -86,13 +86,13 @@ APPEND_PY_VERSION_STYLE = f"""
     QPushButton {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: 3px solid {qcolor_name(Colors.BORDER_DARK)};
+        border: none;
     }}
 
     QPushButton:checked {{
         background-color: {qcolor_name(Colors.SUCCESS)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: 3px solid {qcolor_name(Colors.BORDER_DARK)};
+        border: none;
     }}
 
     QPushButton:pressed {{
@@ -111,7 +111,7 @@ COMBO_BOX_STYLE = f"""
     QComboBox {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: 3px solid {qcolor_name(Colors.BORDER_DARK)};
+        border: none;
         padding: 3px;
         font-weight:bold;
         font-size: 15px;
@@ -145,7 +145,7 @@ COMBO_BOX_STYLE = f"""
 
 MAIN_FRAME_STYLE = f"""
     QFrame {{
-        border: 4px solid {qcolor_name(Colors.BORDER_DARK)};
+        border: none;
         border-radius: 6px;
         background-color: {qcolor_name(Colors.PANEL_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
@@ -157,6 +157,7 @@ MAIN_FRAME_STYLE = f"""
 
 TITLE_FRAME_STYLE = f"""
     QFrame {{
+        border: none;
         border-radius: 4px;
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
@@ -172,7 +173,7 @@ def status_text_style(text_color: QColor, border_width: int = 3) -> str:
         QTextEdit {{
             background-color: {qcolor_name(Colors.PANEL_BG)};
             color: {qcolor_name(text_color)};
-            border: {border_width}px solid {qcolor_name(Colors.BORDER_MID)};
+            border: none;
         }}
     """
 
@@ -182,14 +183,14 @@ def line_edit_style(text_color: QColor, border_color: QColor = Colors.WINDOW) ->
         QLineEdit {{
             background-color: {qcolor_name(Colors.PANEL_BG)};
             color: {qcolor_name(text_color)};
-            border: 2px solid {qcolor_name(border_color)};
+            border: none;
         }}
     """
 
 
 SCRIPT_PICKER_FRAME_STYLE = f"""
     QFrame {{
-        border: 2px solid {qcolor_name(Colors.SCRIPT_POPUP_BORDER)};
+        border: none;
         border-radius: 6px;
         background-color: {qcolor_name(Colors.POPUP_BG)};
     }}
@@ -214,7 +215,7 @@ SCRIPT_PICKER_CONFIRM_STYLE = """
 
 DEPENDENCY_POPUP_FRAME_STYLE = f"""
     QFrame {{
-        border: 3px solid {qcolor_name(Colors.BORDER_MID)};
+        border: none;
         border-radius: 4px;
         background-color: {qcolor_name(Colors.PANEL_BG)};
     }}
@@ -222,7 +223,7 @@ DEPENDENCY_POPUP_FRAME_STYLE = f"""
 
 DEPENDENCY_INNER_FRAME_STYLE = f"""
     QFrame {{
-        border: 3px solid {qcolor_name(Colors.BORDER_DARK)};
+        border: none;
         background-color: {qcolor_name(Colors.TITLE_BG)};
         border-radius: 4px;
         color: {qcolor_name(Colors.TEXT_LIGHT)};
@@ -234,7 +235,7 @@ DEPENDENCY_INNER_FRAME_STYLE = f"""
 
 DEPENDENCY_LABEL_BOX_STYLE = f"""
     QLabel {{
-        border: 3px solid {qcolor_name(Colors.BORDER_DARK)};
+        border: none;
         border-radius: 4px;
         background-color: {qcolor_name(Colors.PANEL_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
@@ -251,7 +252,7 @@ def dependency_text_box_style(text_color: QColor) -> str:
     QTextEdit {{
         color: {qcolor_name(text_color)};
         background-color: {qcolor_name(Colors.PANEL_BG)};
-        border: 1px solid {qcolor_name(Colors.MUTED_BORDER)};
+        border: none;
         }}
     """
 
@@ -260,7 +261,7 @@ DEPENDENCY_OK_BUTTON_STYLE = f"""
     QPushButton {{
         background-color: {qcolor_name(Colors.INFO)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: 3px solid {qcolor_name(Colors.BORDER_DARK)};
+        border: none;
         border-radius: 4px;
     }}
     QPushButton:disabled {{

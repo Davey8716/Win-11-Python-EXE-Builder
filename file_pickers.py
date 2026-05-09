@@ -411,7 +411,7 @@ class ScriptPickerPopup(QDialog):
         layout = QVBoxLayout(self)
 
         self.frame = QFrame()
-        self.frame.setFrameShape(QFrame.StyledPanel)
+        self.frame.setFrameShape(QFrame.NoFrame)
         self.frame.setFrameShadow(QFrame.Raised)
         self.frame.setLineWidth(1)
 
