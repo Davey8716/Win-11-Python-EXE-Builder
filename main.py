@@ -93,7 +93,15 @@ class EXEBuilderApp(QWidget):
         # ALWAYS ON TOP
         # ---------------------------------------------------------
 
-        self.setWindowFlag(Qt.WindowStaysOnTopHint, True)
+        self.setWindowFlags(
+            Qt.Window
+            | Qt.WindowTitleHint
+            | Qt.WindowSystemMenuHint
+            | Qt.WindowMinimizeButtonHint
+            | Qt.WindowCloseButtonHint
+            | Qt.WindowStaysOnTopHint
+            | Qt.MSWindowsFixedSizeDialogHint
+        )
         self.build_process = None
         self.current_build_paths = []
         self.build_btn = None
