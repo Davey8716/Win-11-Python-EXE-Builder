@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/icons">
+    <file>Icons/scroll_up_white.svg</file>
+    <file>Icons/scroll_down_white.svg</file>
+  </qresource>
+</RCC>
