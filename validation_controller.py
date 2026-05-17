@@ -440,7 +440,6 @@ class ValidationController:
 
         can_revert_name = bool(
             derived_name and
-            current_name and
             current_name != derived_name
         )
 

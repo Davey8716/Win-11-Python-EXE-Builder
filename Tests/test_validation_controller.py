@@ -1,0 +1,216 @@
+import os
+from types import SimpleNamespace
+
+import validation_controller
+from validation_controller import ValidationController
+
+
+class DummyCheckbox:
+    def __init__(self, checked=False):
+        self._checked = checked
+        self.enabled = None
+        self.text = ""
+        self.stylesheet = ""
+
+    def isChecked(self):
+        return self._checked
+
+    def setChecked(self, value):
+        self._checked = value
+
+    def setEnabled(self, value):
+        self.enabled = value
+
+    def setStyleSheet(self, value):
+        self.stylesheet = value
+
+    def setText(self, value):
+        self.text = value
+
+
+class DummyButton:
+    def __init__(self):
+        self.enabled = None
+        self.text = ""
+        self.stylesheet = ""
+
+    def setEnabled(self, value):
+        self.enabled = value
+
+    def setText(self, value):
+        self.text = value
+
+    def setStyleSheet(self, value):
+        self.stylesheet = value
+
+
+class DummyInput:
+    def __init__(self, value=""):
+        self._value = value
+        self.read_only = False
+        self.stylesheet = ""
+
+    def text(self):
+        return self._value
+
+    def setText(self, value):
+        self._value = value
+
+    def setReadOnly(self, value):
+        self.read_only = value
+
+    def setStyleSheet(self, value):
+        self.stylesheet = value
+
+
+class DummyDropdown:
+    def __init__(self):
+        self.enabled = None
+
+    def setEnabled(self, value):
+        self.enabled = value
+
+
+class DummyLabel:
+    def __init__(self):
+        self.text = ""
+        self.stylesheet = ""
+        self.alignment = None
+        self.size = None
+
+    def setFixedSize(self, width, height):
+        self.size = (width, height)
+
+    def setText(self, value):
+        self.text = value
+
+    def setAlignment(self, value):
+        self.alignment = value
+
+    def setStyleSheet(self, value):
+        self.stylesheet = value
+
+
+class DummyFrame:
+    def __init__(self):
+        self.stylesheet = ""
+
+    def setStyleSheet(self, value):
+        self.stylesheet = value
+
+
+def make_app(tmp_path, exe_name="", script_name="main.py", entry_script=None):
+    script = tmp_path / script_name
+    script.write_text("print('hello')\n", encoding="utf-8")
+
+    python = tmp_path / "python.exe"
+    python.write_text("", encoding="utf-8")
+
+    output_dir = tmp_path / "dist"
+    output_dir.mkdir()
+
+    script_path = str(script) if entry_script is None else entry_script
+
+    return SimpleNamespace(
+        building=False,
+        build_error=None,
+        dependency_notice_enabled=False,
+        _dependency_popup_shown=False,
+        _last_advisory_script=None,
+        _dep_last_requested=None,
+        _was_build_ready=False,
+        _status_lock=False,
+        state_data={
+            "recent_scripts": [],
+            "recent_icons": [],
+            "recent_interpreters": [],
+        },
+        entry_script=script_path,
+        script_path=script_path,
+        python_interpreter_path=str(python),
+        icon_path="",
+        tooltips_checkbox=DummyCheckbox(),
+        dependency_notice=DummyCheckbox(),
+        open_output_dir_after_build=DummyCheckbox(),
+        minimize_after_build=DummyCheckbox(),
+        close_after_build=DummyCheckbox(),
+        open_python_site_btn=DummyButton(),
+        interpreter_btn=DummyButton(),
+        interpreter_refresh_btn=DummyButton(),
+        icon_btn=DummyButton(),
+        icon_clear_btn=DummyButton(),
+        ico_convert_btn=DummyButton(),
+        folder_btn=DummyButton(),
+        script_clear_btn=DummyButton(),
+        appened_py_version=DummyButton(),
+        output_btn=DummyButton(),
+        output_refresh_btn=DummyButton(),
+        refresh_btn=DummyButton(),
+        delete_recent_icons=DummyButton(),
+        delete_recent_folder=DummyButton(),
+        delete_all_icons=DummyButton(),
+        delete_all_folders=DummyButton(),
+        python_delete_all_interpreter=DummyButton(),
+        python_delete_interpreter=DummyButton(),
+        select_interpreter=DummyDropdown(),
+        select_recent_icons=DummyDropdown(),
+        recent_folder_dropdown=DummyDropdown(),
+        date_time_dropdown=DummyDropdown(),
+        python_entry_input=DummyInput(str(python)),
+        script_path_input=DummyInput(script_path),
+        output_path_input=DummyInput(str(output_dir)),
+        icon_path_input=DummyInput(""),
+        exe_name_input=DummyInput(exe_name),
+        status_label=DummyLabel(),
+        title_frame=DummyFrame(),
+        apps_title_frame=DummyFrame(),
+        icons_title_frame=DummyFrame(),
+        python_title_frame=DummyFrame(),
+        output_title_frame=DummyFrame(),
+    )
+
+
+def test_exe_refresh_enabled_when_name_empty(monkeypatch, tmp_path):
+    monkeypatch.setattr(validation_controller, "QCheckBox", DummyCheckbox)
+    app = make_app(tmp_path, exe_name="")
+
+    controller = ValidationController(app)
+    controller.update_ui_state()
+
+    assert app.refresh_btn.enabled is True
+    assert app.refresh_btn.text == "🔃"
+
+
+def test_exe_refresh_disabled_when_name_matches_script_default(monkeypatch, tmp_path):
+    monkeypatch.setattr(validation_controller, "QCheckBox", DummyCheckbox)
+    app = make_app(tmp_path, exe_name="main")
+
+    controller = ValidationController(app)
+    controller.update_ui_state()
+
+    assert app.refresh_btn.enabled is False
+    assert app.refresh_btn.text == ""
+
+
+def test_exe_refresh_enabled_when_name_differs_from_script_default(monkeypatch, tmp_path):
+    monkeypatch.setattr(validation_controller, "QCheckBox", DummyCheckbox)
+    app = make_app(tmp_path, exe_name="CustomApp", script_name="launcher.py")
+
+    controller = ValidationController(app)
+    controller.update_ui_state()
+
+    assert app.refresh_btn.enabled is True
+    assert app.refresh_btn.text == "🔃"
+
+
+def test_exe_refresh_disabled_without_valid_script(monkeypatch, tmp_path):
+    monkeypatch.setattr(validation_controller, "QCheckBox", DummyCheckbox)
+    missing_script = os.path.join(str(tmp_path), "missing.py")
+    app = make_app(tmp_path, exe_name="", entry_script=missing_script)
+    app.script_path_input.setText(missing_script)
+
+    controller = ValidationController(app)
+    controller.update_ui_state()
+
+    assert app.refresh_btn.enabled is False
+    assert app.refresh_btn.text == ""
