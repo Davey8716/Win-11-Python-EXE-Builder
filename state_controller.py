@@ -138,10 +138,10 @@ class StateController:
                 self.app.dependency_notice.setChecked(self.app.dependency_notice_enabled)
 
             if hasattr(self.app, "script_path_input"):
-                self.app.script_path_input.setText(self.app.script_path)
+                self.app.script_path_input.set_display_path(self.app.script_path)
 
             if hasattr(self.app, "icon_path_input"):
-                self.app.icon_path_input.setText(self.app.icon_path)
+                self.app.icon_path_input.set_display_path(self.app.icon_path)
 
             if hasattr(self.app, "output_path_input"):
                 self.app.output_path_input.setText(self.app.output_path)
@@ -150,7 +150,7 @@ class StateController:
                 self.app.exe_name_input.setText(self.app.exe_name)
 
             if hasattr(self.app, "python_entry_input"):
-                self.app.python_entry_input.setText(self.app.python_interpreter_path)
+                self.app.python_entry_input.set_display_path(self.app.python_interpreter_path)
 
             # --- restore datetime dropdown ---
             if hasattr(self.app, "date_time_dropdown"):

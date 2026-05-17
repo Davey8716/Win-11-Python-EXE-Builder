@@ -73,8 +73,7 @@ class FilePickerController:
 
         # ✅ UI update
         if hasattr(self.app, "python_entry_input"):
-            self.app.python_entry_input.setText(path)
-            self.app.python_entry_input.setCursorPosition(len(path))
+            self.app.python_entry_input.set_display_path(path)
 
         flash_add_highlight(
             getattr(self.app, "interpreter_btn", None),
@@ -221,13 +220,8 @@ class FilePickerController:
         self.app.entry_script = full_path
         
         if hasattr(self.app, "script_path_input"):
-            parent = os.path.basename(os.path.dirname(full_path))
-            name = os.path.basename(full_path)
-
             display = os.path.normpath(full_path)
-
-            self.app.script_path_input.setText(display)
-            self.app.script_path_input.setCursorPosition(len(display))
+            self.app.script_path_input.set_display_path(display)
 
         flash_add_highlight(
             getattr(self.app, "folder_btn", None),
@@ -281,8 +275,7 @@ class FilePickerController:
 
         if hasattr(self.app, "icon_path_input"):
             display = os.path.normpath(full_path)
-            self.app.icon_path_input.setText(display)
-            self.app.icon_path_input.setCursorPosition(len(display))
+            self.app.icon_path_input.set_display_path(display)
 
         flash_add_highlight(
             getattr(self.app, "icon_btn", None),
@@ -320,8 +313,7 @@ class FilePickerController:
 
             # ✅ update UI
             if hasattr(self.app, "icon_path_input"):
-                self.app.icon_path_input.setText(path)
-                self.app.icon_path_input.setCursorPosition(len(path))
+                self.app.icon_path_input.set_display_path(path)
 
             flash_add_highlight(
                 getattr(self.app, "icon_btn", None),

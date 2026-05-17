@@ -102,7 +102,7 @@ class JsonImportController(QObject):
             app.python_interpreter_path = path
             app.python_path = path
 
-            app.python_entry_input.setText(path)
+            app.python_entry_input.set_display_path(path)
 
         if data.get("datetime_format"):
             app.datetime_format = data["datetime_format"]
@@ -122,7 +122,7 @@ class JsonImportController(QObject):
             app.entry_script = script_path
             app.script_path = script_path
             app.project_root = os.path.dirname(script_path)
-            app.script_path_input.setText(script_path)
+            app.script_path_input.set_display_path(script_path)
             app.project_root = os.path.dirname(path)
         app.state_ctrl.save_state()
         app.validator.validation_status_message()

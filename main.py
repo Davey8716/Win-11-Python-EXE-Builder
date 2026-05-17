@@ -13,6 +13,7 @@ from activation_controller import ActivationController
 from PySide6.QtGui import QFont, QPalette
 from PySide6.QtWidgets import QSizePolicy
 from file_pickers import FilePickerController
+from path_display_line_edit import PathDisplayLineEdit
 from state_controller import StateController
 from recent_controller import RecentController
 from ui_handlers import UIHandlers
@@ -148,7 +149,7 @@ class EXEBuilderApp(QWidget):
         # -------------------------------
 
         toggles_frame = QFrame()
-        toggles_frame.setFixedSize(425, 100)
+        toggles_frame.setFixedSize(420, 85)
         toggles_frame.setFrameShape(QFrame.StyledPanel)
         toggles_frame.setFrameShadow(QFrame.Raised)
         toggles_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -332,7 +333,7 @@ class EXEBuilderApp(QWidget):
         interpreter_entry_layout.setContentsMargins(3,3,3,3)
         interpreter_entry_layout.setSpacing(5)
 
-        self.python_entry_input = QLineEdit()
+        self.python_entry_input = PathDisplayLineEdit()
         self.python_entry_input.setPlaceholderText("No python entry is selected.")
 
         self.interpreter_refresh_btn = QPushButton("🔃")
@@ -435,7 +436,7 @@ class EXEBuilderApp(QWidget):
         icon_entry_layout.setContentsMargins(1,1,1,1)
         icon_entry_layout.setSpacing(5)
 
-        self.icon_path_input = QLineEdit()
+        self.icon_path_input = PathDisplayLineEdit()
         self.icon_path_input.setPlaceholderText("icon_path_input")
         self.icon_clear_btn = QPushButton("")
 
@@ -513,7 +514,7 @@ class EXEBuilderApp(QWidget):
         script_layout.setContentsMargins(3,3,3,3)
         script_layout.setSpacing(3)
 
-        self.script_path_input = QLineEdit()
+        self.script_path_input = PathDisplayLineEdit()
 
         self.script_path_input.setPlaceholderText("No python file has been selected.")
         script_layout.addWidget(self.script_path_input)
@@ -898,7 +899,7 @@ class EXEBuilderApp(QWidget):
             self.exe_name_input,
         ]:
             output_paths.setReadOnly(True)
-    
+
         self.exe_name_input.setReadOnly(False)
 
         buttons = [

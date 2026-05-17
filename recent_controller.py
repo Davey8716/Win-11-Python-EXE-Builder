@@ -1,7 +1,7 @@
 import time
 import os, json
 from PySide6.QtWidgets import QMessageBox, QDialogButtonBox
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt
 from styles import RECENT_DELETE_MESSAGE_BOX_STYLE
 from ui_highlights import flash_add_highlight, flash_delete_highlight
 
@@ -55,8 +55,7 @@ class RecentController:
         self.app.validator.update_ui_state()
         self.app.validator.validation_status_message()
 
-        self.app.python_entry_input.setText(self.app.python_interpreter_path)
-        QTimer.singleShot(0, lambda: self.app.python_entry_input.setCursorPosition(0))
+        self.app.python_entry_input.set_display_path(self.app.python_interpreter_path)
         self.app.select_interpreter.setCurrentIndex(0)
         flash_add_highlight(
             getattr(app, "interpreter_btn", None),
@@ -460,8 +459,7 @@ class RecentController:
         self.app.validator.update_ui_state()
         self.app.validator.validation_status_message()
 
-        self.app.script_path_input.setText(self.app.script_path)
-        QTimer.singleShot(0, lambda: self.app.script_path_input.setCursorPosition(0))
+        self.app.script_path_input.set_display_path(self.app.script_path)
 
         if getattr(app, "dependency_notice_enabled", True):
             script = app.entry_script
@@ -606,8 +604,7 @@ class RecentController:
         self.app.validator.update_ui_state()
 
         if hasattr(app, "icon_path_input"):
-            app.icon_path_input.setText(app.icon_path)
-            QTimer.singleShot(0, lambda: app.icon_path_input.setCursorPosition(0))
+            app.icon_path_input.set_display_path(app.icon_path)
                                 
 
     def add_recent_icon(self, path):
