@@ -154,6 +154,9 @@ def button_with_border(border_color: QColor, border_width: int = 4) -> str:
 
 
 def filled_button(background_color: QColor, border_width: int = 4, radius: int = 4) -> str:
+    hover_color = Colors.SUCCESS_PRESSED if background_color == Colors.SUCCESS else background_color
+    if background_color in (Colors.ERROR, Colors.CANCEL):
+        hover_color = Colors.DANGER_HOVER
     return f"""
         QPushButton {{
             background-color: {qcolor_name(background_color)};
@@ -162,7 +165,7 @@ def filled_button(background_color: QColor, border_width: int = 4, radius: int =
             border-radius: {radius}px;
         }}
         QPushButton:hover {{
-            background-color: {qcolor_name(Colors.SURFACE_SELECTED_HOVER)};
+            background-color: {qcolor_name(hover_color)};
         }}
     """
 
