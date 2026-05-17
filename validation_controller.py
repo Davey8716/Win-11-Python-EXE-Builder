@@ -324,11 +324,13 @@ class ValidationController:
         def set_btn(btn, enabled, color=None):
             btn.setEnabled(enabled)
 
-            if building and not enabled:
+            if not enabled:
                 if isinstance(btn, QCheckBox):
                     btn.setStyleSheet(build_disabled_checkbox())
-                else:
+                elif building:
                     btn.setStyleSheet(build_disabled_button())
+                else:
+                    btn.setStyleSheet(button_base(border_width=4))
             elif color:
                 btn.setStyleSheet(button_with_border(color))
             else:
