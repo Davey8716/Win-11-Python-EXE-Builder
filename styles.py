@@ -21,8 +21,10 @@ class Colors:
     MUTED_TEXT = QColor(255, 255, 255)
     MUTED_BORDER = QColor(0, 0, 0)
     DISABLED_BG = QColor(60, 60, 60)
+    BUILD_DISABLED_BG = QColor(60, 60, 60)
+    BUILD_DISABLED_TEXT = QColor(170, 170, 170)
     COMBO_DISABLED_BG = QColor(60, 60, 60)
-    COMBO_DISABLED_TEXT = QColor(255, 255, 255)
+    COMBO_DISABLED_TEXT = QColor(170, 170, 170)
     SELECTION_BG = QColor(74, 111, 168)
     INFO = QColor(45, 125, 210)
     WARNING = QColor(230, 162, 60)
@@ -98,6 +100,31 @@ def filled_button(background_color: QColor, border_width: int = 4, radius: int =
     """
 
 
+def build_disabled_button(radius: int = 4) -> str:
+    return f"""
+        QPushButton {{
+            background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
+            color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+            border: none;
+            border-radius: {radius}px;
+        }}
+        QPushButton:hover {{
+            background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
+        }}
+    """
+
+
+def build_disabled_checkbox() -> str:
+    return f"""
+        QCheckBox {{
+            color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+        }}
+        QCheckBox:disabled {{
+            color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+        }}
+    """
+
+
 APPEND_PY_VERSION_STYLE = f"""
     QPushButton {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
@@ -116,8 +143,8 @@ APPEND_PY_VERSION_STYLE = f"""
     }}
 
     QPushButton:disabled {{
-        color: {qcolor_name(Colors.MUTED_TEXT)};
-        background-color: {qcolor_name(Colors.DISABLED_BG)};
+        color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+        background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
     }}
 """
 
@@ -209,7 +236,8 @@ COMBO_BOX_STYLE = f"""
         background-color: {qcolor_name(Colors.PANEL_BG)};
     }}
 
-    QComboBox:disabled {{
+    QComboBox:disabled,
+    QComboBox:disabled QLineEdit {{
         background-color: {qcolor_name(Colors.COMBO_DISABLED_BG)};
         color: {qcolor_name(Colors.COMBO_DISABLED_TEXT)};
     }}
@@ -239,6 +267,18 @@ TITLE_FRAME_STYLE = f"""
     }}
 """
 
+BUILD_DISABLED_TITLE_FRAME_STYLE = f"""
+    QFrame {{
+        border: none;
+        border-radius: 4px;
+        background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
+        color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+    }}
+    QLabel {{
+        color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+    }}
+"""
+
 
 def status_text_style(text_color: QColor, border_width: int = 3) -> str:
     return f"""
@@ -255,6 +295,16 @@ def line_edit_style(text_color: QColor, border_color: QColor = Colors.WINDOW) ->
         QLineEdit {{
             background-color: {qcolor_name(Colors.PANEL_BG)};
             color: {qcolor_name(text_color)};
+            border: none;
+        }}
+    """
+
+
+def build_disabled_line_edit_style() -> str:
+    return f"""
+        QLineEdit {{
+            background-color: {qcolor_name(Colors.PANEL_BG)};
+            color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
             border: none;
         }}
     """

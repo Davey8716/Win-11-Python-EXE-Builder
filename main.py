@@ -127,13 +127,13 @@ class EXEBuilderApp(QWidget):
         # =============================================================
         # Title + Tooltip Toggle
         # =============================================================
-        title_frame = QFrame()
-        title_frame.setFrameShape(QFrame.StyledPanel)
-        title_frame.setFrameShadow(QFrame.Raised)
-        title_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        title_frame.setFixedSize(350,40)
+        self.title_frame = QFrame()
+        self.title_frame.setFrameShape(QFrame.StyledPanel)
+        self.title_frame.setFrameShadow(QFrame.Raised)
+        self.title_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.title_frame.setFixedSize(350,40)
 
-        title_layout = QHBoxLayout(title_frame)
+        title_layout = QHBoxLayout(self.title_frame)
         title_layout.setContentsMargins(5,5,5,5)
 
         title_label = QLabel(" Win 11 → Python → EXE Builder")
@@ -213,7 +213,7 @@ class EXEBuilderApp(QWidget):
         self.main_layout = QVBoxLayout(self)
         self.main_layout.setContentsMargins(1, 1, 1, 1)
         self.main_layout.setSpacing(2)
-        self.main_layout.addWidget(title_frame, alignment= Qt.AlignCenter)
+        self.main_layout.addWidget(self.title_frame, alignment= Qt.AlignCenter)
 
         # =============================================================
         # Script / Buttons Section
@@ -236,11 +236,11 @@ class EXEBuilderApp(QWidget):
         # Apps TITLE FRAME
         # =================================================
 
-        apps_title_frame = QFrame()
-        apps_title_frame.setFrameShape(QFrame.StyledPanel)
-        apps_title_frame.setFrameShadow(QFrame.Raised)
+        self.apps_title_frame = QFrame()
+        self.apps_title_frame.setFrameShape(QFrame.StyledPanel)
+        self.apps_title_frame.setFrameShadow(QFrame.Raised)
 
-        apps_title_layout = QHBoxLayout(apps_title_frame)
+        apps_title_layout = QHBoxLayout(self.apps_title_frame)
         apps_title_layout.setContentsMargins(2,2,2,2)
 
         self.apps_title = QLabel("Interpreter Section")
@@ -259,7 +259,7 @@ class EXEBuilderApp(QWidget):
         apps_toggles_layout.setContentsMargins(5,5,5,5)
         apps_toggles_layout.setSpacing(1)
 
-        apps_toggles_layout.addWidget(apps_title_frame,alignment=Qt.AlignCenter | Qt.AlignBottom)
+        apps_toggles_layout.addWidget(self.apps_title_frame,alignment=Qt.AlignCenter | Qt.AlignBottom)
         apps_toggles_layout.addWidget(toggles_wrapper,alignment=Qt.AlignCenter | Qt.AlignBottom)
 
         # =================================================
@@ -344,7 +344,7 @@ class EXEBuilderApp(QWidget):
         interpreter_layout.addWidget(interpreter_entry_row)
 
         # --- Final attach ---
-        self.main_layout.addWidget(apps_title_frame,alignment=Qt.AlignCenter)
+        self.main_layout.addWidget(self.apps_title_frame,alignment=Qt.AlignCenter)
         combined_layout.addWidget(apps_row)
         combined_layout.addWidget(interpreter_container)
 
@@ -355,11 +355,11 @@ class EXEBuilderApp(QWidget):
         # Icon Picker
         # =============================================================
 
-        icons_title_frame = QFrame()
-        icons_title_frame.setFrameShape(QFrame.StyledPanel)
-        icons_title_frame.setFrameShadow(QFrame.Raised)
+        self.icons_title_frame = QFrame()
+        self.icons_title_frame.setFrameShape(QFrame.StyledPanel)
+        self.icons_title_frame.setFrameShadow(QFrame.Raised)
   
-        icons_title_layout = QHBoxLayout(icons_title_frame)
+        icons_title_layout = QHBoxLayout(self.icons_title_frame)
         icons_title_layout.setContentsMargins(3,3,3,3)
         icons_title_layout.setSpacing(3)
 
@@ -445,18 +445,18 @@ class EXEBuilderApp(QWidget):
         icon_block_layout.addWidget(icon_entry_row)
         
         icon_frame_layout.addWidget(icon_block)
-        self.main_layout.addWidget(icons_title_frame,alignment=Qt.AlignCenter)
+        self.main_layout.addWidget(self.icons_title_frame,alignment=Qt.AlignCenter)
         self.main_layout.addWidget(icon_frame, alignment= Qt.AlignCenter)
 
         # =================================================
         # PYTHON FILE TITLE FRAME
         # =================================================
 
-        python_title_frame = QFrame()
-        python_title_frame.setFrameShape(QFrame.StyledPanel)
-        python_title_frame.setFrameShadow(QFrame.Raised)
+        self.python_title_frame = QFrame()
+        self.python_title_frame.setFrameShape(QFrame.StyledPanel)
+        self.python_title_frame.setFrameShadow(QFrame.Raised)
 
-        python_title_layout = QHBoxLayout(python_title_frame)
+        python_title_layout = QHBoxLayout(self.python_title_frame)
         python_title_layout.setContentsMargins(3,3,3,3)
         python_title_layout.setSpacing(3)
 
@@ -524,7 +524,7 @@ class EXEBuilderApp(QWidget):
 
         script_layout.setContentsMargins(1,1,1,1)
         python_layout.addWidget(script_row)
-        self.main_layout.addWidget(python_title_frame,alignment=Qt.AlignCenter)
+        self.main_layout.addWidget(self.python_title_frame,alignment=Qt.AlignCenter)
         self.main_layout.addWidget(python_frame,alignment = Qt.AlignCenter)
 
         # =============================================================
@@ -540,11 +540,11 @@ class EXEBuilderApp(QWidget):
         # OUTPUT TITLE FRAME
         # =================================================
 
-        output_title_frame = QFrame()
-        output_title_frame.setFrameShape(QFrame.StyledPanel)
-        output_title_frame.setFrameShadow(QFrame.Raised)
+        self.output_title_frame = QFrame()
+        self.output_title_frame.setFrameShape(QFrame.StyledPanel)
+        self.output_title_frame.setFrameShadow(QFrame.Raised)
 
-        output_title_layout = QHBoxLayout(output_title_frame)
+        output_title_layout = QHBoxLayout(self.output_title_frame)
         output_title_layout.setContentsMargins(3,3,3,3)
         output_title_layout.setSpacing(3)
 
@@ -674,7 +674,7 @@ class EXEBuilderApp(QWidget):
         exe_layout.addWidget(self.refresh_btn)
 
         output_layout.addWidget(exe_row)
-        self.main_layout.addWidget(output_title_frame, alignment=Qt.AlignCenter)
+        self.main_layout.addWidget(self.output_title_frame, alignment=Qt.AlignCenter)
         self.main_layout.addWidget(output_frame,alignment=Qt.AlignCenter)
         
         # =============================================================
@@ -769,11 +769,11 @@ class EXEBuilderApp(QWidget):
                 frame.setStyleSheet(MAIN_FRAME_STYLE)
                 
         frames = [
-            title_frame,
-            apps_title_frame,
-            icons_title_frame,
-            python_title_frame,
-            output_title_frame,
+            self.title_frame,
+            self.apps_title_frame,
+            self.icons_title_frame,
+            self.python_title_frame,
+            self.output_title_frame,
             build_title_frame,
         ]
 
@@ -781,7 +781,7 @@ class EXEBuilderApp(QWidget):
             if frame:
                 frame.setStyleSheet(TITLE_FRAME_STYLE)
         
-            if frame == title_frame:
+            if frame == self.title_frame:
             # ignore or custom logic
                 continue
 
@@ -804,10 +804,10 @@ class EXEBuilderApp(QWidget):
         # -------------------------------
 
         title_pairs = [
-            (apps_title_frame, self.apps_title),
-            (icons_title_frame, self.icons_title),
-            (python_title_frame, self.python_title),
-            (output_title_frame, self.output_title),
+            (self.apps_title_frame, self.apps_title),
+            (self.icons_title_frame, self.icons_title),
+            (self.python_title_frame, self.python_title),
+            (self.output_title_frame, self.output_title),
             (build_title_frame, self.build_title),
         ]
 

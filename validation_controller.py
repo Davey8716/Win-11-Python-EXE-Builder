@@ -4,14 +4,20 @@ import ast
 from PySide6.QtCore import QTimer,Qt
 from PySide6.QtCore import QThread
 from PySide6.QtCore import QObject, Signal
+from PySide6.QtWidgets import QCheckBox
 from styles import (
     APPEND_PY_VERSION_STYLE,
+    BUILD_DISABLED_TITLE_FRAME_STYLE,
     Colors,
+    build_disabled_button,
+    build_disabled_checkbox,
+    build_disabled_line_edit_style,
     button_base,
     button_with_border,
     filled_button,
     line_edit_style,
     status_text_style,
+    TITLE_FRAME_STYLE,
 )
 
 class DependencyWorker(QObject):
@@ -318,9 +324,17 @@ class ValidationController:
         def set_btn(btn, enabled, color=None):
             btn.setEnabled(enabled)
 
-            if color:
+            if building and not enabled:
+                if isinstance(btn, QCheckBox):
+                    btn.setStyleSheet(build_disabled_checkbox())
+                else:
+                    btn.setStyleSheet(build_disabled_button())
+            elif color:
                 btn.setStyleSheet(button_with_border(color))
             else:
+                if isinstance(btn, QCheckBox):
+                    btn.setStyleSheet("")
+                    return
                 btn.setStyleSheet(button_base(border_width=4))
 
         # -------------------------------
@@ -438,7 +452,7 @@ class ValidationController:
         # -------------------------------
 
         if building:
-            app.interpreter_btn.setStyleSheet(filled_button(Colors.PANEL_BG))
+            app.interpreter_btn.setStyleSheet(build_disabled_button())
         else:
             if python_ok:
                 app.interpreter_btn.setStyleSheet(filled_button(Colors.SUCCESS))
@@ -452,7 +466,7 @@ class ValidationController:
         folder_ok = bool(script_ok)
 
         if building:
-            app.folder_btn.setStyleSheet(filled_button(Colors.PANEL_BG))
+            app.folder_btn.setStyleSheet(build_disabled_button())
         else:
             if folder_ok:
                 app.folder_btn.setStyleSheet(filled_button(Colors.SUCCESS))
@@ -466,7 +480,7 @@ class ValidationController:
         output_ok = bool(outdir and os.path.isdir(outdir))
 
         if building:
-            app.output_btn.setStyleSheet(filled_button(Colors.PANEL_BG))
+            app.output_btn.setStyleSheet(build_disabled_button())
         else:
             if output_ok:
                 app.output_btn.setStyleSheet(filled_button(Colors.SUCCESS))
@@ -503,6 +517,20 @@ class ValidationController:
 
         if building:
             app.status_label.setStyleSheet(status_text_style(Colors.SUCCESS))
+
+        section_title_frames = [
+            getattr(app, "title_frame", None),
+            getattr(app, "apps_title_frame", None),
+            getattr(app, "icons_title_frame", None),
+            getattr(app, "python_title_frame", None),
+            getattr(app, "output_title_frame", None),
+        ]
+
+        for frame in section_title_frames:
+            if frame:
+                frame.setStyleSheet(
+                    BUILD_DISABLED_TITLE_FRAME_STYLE if building else TITLE_FRAME_STYLE
+                )
 
         # -------------------------------
         # ICON BUTTON TEXT (match grey state)
@@ -573,22 +601,27 @@ class ValidationController:
         # -------------------------------
         state = self.validation_status_message()
 
-        mapping = [
-        (app.python_entry_input, state["python_ok"]),
-        (app.script_path_input, state["script_ok"]),
-        (app.output_path_input, state["outdir_ok"]),
-        (app.exe_name_input, state["exe_ok"]),
-        (app.icon_path_input, state["icon_ok"]),
+        path_mapping = [
+            (app.python_entry_input, state["python_ok"]),
+            (app.script_path_input, state["script_ok"]),
+            (app.output_path_input, state["outdir_ok"]),
+            (app.icon_path_input, state["icon_ok"]),
+        ]
+
+        validation_mapping = path_mapping + [
+            (app.exe_name_input, state["exe_ok"]),
         ]
 
         # -------------------------------
         # BUILD MODE → force grey
         # -------------------------------
         if building:
-            for widget, _ in mapping:
-                widget.setStyleSheet(line_edit_style(Colors.MUTED_TEXT, Colors.MUTED_BORDER))
+            for widget, _ in path_mapping:
+                widget.setStyleSheet(build_disabled_line_edit_style())
+
+            app.exe_name_input.setStyleSheet(build_disabled_line_edit_style())
         else:
-            for widget, ok in mapping:
+            for widget, ok in validation_mapping:
 
                 widget.setStyleSheet("")  # reset first
 
