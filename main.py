@@ -589,12 +589,24 @@ class EXEBuilderApp(QWidget):
         self.appened_py_version.setStyleSheet(APPEND_PY_VERSION_INITIAL_STYLE)
                 
         self.date_time_dropdown.clear()
+        date_format_prefixes = {
+            "%Y-%m-%d": "ISO",
+            "%Y-%m-%d_%H-%M": "ISO",
+            "%d-%m-%Y": "UK",
+            "%d-%m-%Y_%H-%M": "UK",
+            "%m-%d-%Y": "USA",
+            "%m-%d-%Y_%H-%M": "USA",
+        }
 
         def _add(label, data=None, enabled=True):
             self.date_time_dropdown.addItem(label, data)
             item = self.date_time_dropdown.model().item(self.date_time_dropdown.count() - 1)
             if not enabled:
                 item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
+
+        def _add_format(label, data):
+            prefix = date_format_prefixes[data]
+            _add(f"{prefix} | {label}", data)
 
         # Header
         _add("Append Date/Time", None, enabled=False)
@@ -606,20 +618,25 @@ class EXEBuilderApp(QWidget):
         # ISO
         _add("──────────", enabled=False)
         _add("ISO", enabled=False)
-        _add("YYYY-MM-DD", "%Y-%m-%d")
-        _add("YYYY-MM-DD_HH-MM", "%Y-%m-%d_%H-%M")
+        _add_format("YYYY-MM-DD", "%Y-%m-%d")
+        _add_format("YYYY-MM-DD_HH-MM", "%Y-%m-%d_%H-%M")
 
         # UK
         _add("──────────", enabled=False)
         _add("UK", enabled=False)
-        _add("DD-MM-YYYY", "%d-%m-%Y")
-        _add("DD-MM-YYYY_HH-MM", "%d-%m-%Y_%H-%M")
+        _add_format("DD-MM-YYYY", "%d-%m-%Y")
+        _add_format("DD-MM-YYYY_HH-MM", "%d-%m-%Y_%H-%M")
 
         # USA
         _add("──────────", enabled=False)
         _add("USA", enabled=False)
-        _add("MM-DD-YYYY", "%m-%d-%Y")
-        _add("MM-DD-YYYY_HH-MM", "%m-%d-%Y_%H-%M")
+        _add_format("MM-DD-YYYY", "%m-%d-%Y")
+        _add_format("MM-DD-YYYY_HH-MM", "%m-%d-%Y_%H-%M")
+
+        date_dropdown_metrics = QFontMetrics(self.date_time_dropdown.font())
+        longest_date_label = "USA | MM-DD-YYYY_HH-MM"
+        date_dropdown_width = max(245, date_dropdown_metrics.horizontalAdvance(longest_date_label) + 64)
+        self.date_time_dropdown.setFixedSize(date_dropdown_width, 35)
 
         model = self.date_time_dropdown.model()
         item = model.item(0)
@@ -627,6 +644,10 @@ class EXEBuilderApp(QWidget):
         
         self.date_time_dropdown.setEditable(True)
         self.date_time_dropdown.lineEdit().setReadOnly(True)
+        self.date_time_dropdown.lineEdit().setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.date_time_dropdown.lineEdit().setStyleSheet(
+            "padding-left: 18px; padding-right: 8px;"
+        )
         self.date_time_dropdown.setCurrentIndex(0)
         self.date_time_dropdown.setEnabled(True)
             
@@ -747,7 +768,8 @@ class EXEBuilderApp(QWidget):
         ]:
             frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
 
-            output_frame.setFixedSize(500,170)
+            output_frame_width = max(500, self.output_btn.sizeHint().width() + self.date_time_dropdown.width() + 40)
+            output_frame.setFixedSize(output_frame_width,170)
 
         for dropdowns in [
             self.date_time_dropdown,
@@ -757,7 +779,8 @@ class EXEBuilderApp(QWidget):
         ]:
             dropdowns.setStyleSheet(COMBO_BOX_STYLE)
             if dropdowns.isEditable() and dropdowns.lineEdit():
-                dropdowns.lineEdit().setAlignment(Qt.AlignCenter)
+                alignment = Qt.AlignLeft | Qt.AlignVCenter if dropdowns is self.date_time_dropdown else Qt.AlignCenter
+                dropdowns.lineEdit().setAlignment(alignment)
 
         frames = [
             combined_frame,
