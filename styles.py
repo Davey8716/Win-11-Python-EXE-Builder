@@ -258,6 +258,19 @@ SCRIPT_PICKER_CONFIRM_STYLE = f"""
     }}
 """
 
+RECENT_DELETE_MESSAGE_BOX_STYLE = f"""
+    QMessageBox {{
+        background-color: {qcolor_name(Colors.POPUP_BG)};
+    }}
+
+    QMessageBox QLabel {{
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+        font-family: "Rubik UI";
+        font-size: 13px;
+        font-weight: bold;
+    }}
+"""
+
 DEPENDENCY_POPUP_FRAME_STYLE = f"""
     QFrame {{
         border: none;

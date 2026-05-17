@@ -1,7 +1,8 @@
 import time
 import os, json
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox, QDialogButtonBox
 from PySide6.QtCore import Qt, QTimer
+from styles import RECENT_DELETE_MESSAGE_BOX_STYLE
 from ui_highlights import flash_add_highlight, flash_delete_highlight
 
 MAX_RECENTS = 50
@@ -9,6 +10,25 @@ MAX_RECENTS = 50
 class RecentController:
     def __init__(self, app):
         self.app = app
+
+    def _show_recent_delete_confirmation(self, title, message):
+        dialog = QMessageBox(self.app)
+        dialog.setWindowTitle(title)
+        dialog.setText(message)
+        dialog.setIcon(QMessageBox.NoIcon)
+        dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        dialog.setDefaultButton(QMessageBox.No)
+        dialog.setStyleSheet(RECENT_DELETE_MESSAGE_BOX_STYLE)
+        dialog.setWindowFlags(
+            (dialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+            | Qt.MSWindowsFixedSizeDialogHint
+        )
+
+        button_box = dialog.findChild(QDialogButtonBox)
+        if button_box is not None:
+            button_box.setCenterButtons(True)
+
+        return dialog.exec() == QMessageBox.Yes
 
     def on_recent_interpreter_selected(self, index):
         app = self.app
@@ -187,15 +207,10 @@ class RecentController:
         if not full_path:
             return
 
-        reply = QMessageBox.question(
-            app,
+        if not self._show_recent_delete_confirmation(
             "Delete Interpreter",
             f"Are you sure you want to remove:\n\n{full_path}",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
-        )
-
-        if reply != QMessageBox.Yes:
+        ):
             return
 
         flash_delete_highlight(
@@ -241,15 +256,10 @@ class RecentController:
     def all_interpreter_delete(self):
         app = self.app
 
-        reply = QMessageBox.question(
-            app,
+        if not self._show_recent_delete_confirmation(
             "Delete All Interpreters",
             "Are you sure you want to delete ALL interpreters?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
-        )
-
-        if reply != QMessageBox.Yes:
+        ):
             return
 
         flash_delete_highlight(
@@ -476,15 +486,10 @@ class RecentController:
         if not full_path:
             return
 
-        reply = QMessageBox.question(
-            app,
+        if not self._show_recent_delete_confirmation(
             "Delete Recent File",
             f"Are you sure you want to remove:\n\n{full_path}",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
-        )
-
-        if reply != QMessageBox.Yes:
+        ):
             return
 
         flash_delete_highlight(
@@ -527,15 +532,10 @@ class RecentController:
     def confirm_delete_all_folder(self):
         app = self.app
 
-        reply = QMessageBox.question(
-            app,
+        if not self._show_recent_delete_confirmation(
             "Delete All Recent Files",
             "Are you sure you want to delete ALL recent files?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
-        )
-
-        if reply != QMessageBox.Yes:
+        ):
             return
 
         flash_delete_highlight(
@@ -746,15 +746,10 @@ class RecentController:
         if not full_path:
             return
 
-        reply = QMessageBox.question(
-            app,
+        if not self._show_recent_delete_confirmation(
             "Delete Recent Icon",
             f"Are you sure you want to remove:\n\n{full_path}",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
-        )
-
-        if reply != QMessageBox.Yes:
+        ):
             return
 
         flash_delete_highlight(
@@ -796,15 +791,10 @@ class RecentController:
     def confirm_delete_all_icons(self):
         app = self.app
 
-        reply = QMessageBox.question(
-            app,
+        if not self._show_recent_delete_confirmation(
             "Delete All Recent Icons",
             "Are you sure you want to delete ALL recent icons?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
-        )
-
-        if reply != QMessageBox.Yes:
+        ):
             return
 
         flash_delete_highlight(
