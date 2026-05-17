@@ -7,6 +7,7 @@ from styles import (
     DEPENDENCY_LABEL_BOX_STYLE,
     DEPENDENCY_OK_BUTTON_STYLE,
     DEPENDENCY_POPUP_FRAME_STYLE,
+    DEPENDENCY_SCROLL_AREA_STYLE,
     Colors,
     dependency_text_box_style,
     label_color_style,
@@ -70,6 +71,7 @@ class DependencyPopup:
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setStyleSheet(DEPENDENCY_SCROLL_AREA_STYLE)
         scroll.setWidget(popup_frame)
 
         layout.addWidget(scroll)
