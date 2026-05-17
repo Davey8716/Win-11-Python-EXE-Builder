@@ -40,6 +40,10 @@ def qcolor_name(color: QColor) -> str:
     return color.name(QColor.HexRgb)
 
 
+SCROLLBAR_UP_ARROW_ICON = "Icons/scroll_up_black.svg"
+SCROLLBAR_DOWN_ARROW_ICON = "Icons/scroll_down_black.svg"
+
+
 def button_base(border_width: int = 3) -> str:
     return f"""
         QPushButton {{
@@ -135,6 +139,62 @@ COMBO_BOX_STYLE = f"""
 
     QComboBox QAbstractItemView::item {{
         text-align: center;
+    }}
+
+    QComboBox QAbstractItemView QScrollBar {{
+        background-color: {qcolor_name(Colors.PANEL_BG)};
+    }}
+
+    QComboBox QAbstractItemView QScrollBar:vertical {{
+        background-color: {qcolor_name(Colors.PANEL_BG)};
+        width: 18px;
+        margin: 18px 0 18px 0;
+    }}
+
+    QComboBox QAbstractItemView QScrollBar:horizontal {{
+        background-color: {qcolor_name(Colors.PANEL_BG)};
+    }}
+
+    QComboBox QAbstractItemView QScrollBar::handle {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+        border-radius: 4px;
+    }}
+
+    QComboBox QAbstractItemView QScrollBar::sub-line:vertical,
+    QComboBox QAbstractItemView QScrollBar::add-line:vertical {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+        height: 18px;
+    }}
+
+    QComboBox QAbstractItemView QScrollBar::sub-line:vertical {{
+        subcontrol-origin: margin;
+        subcontrol-position: top;
+    }}
+
+    QComboBox QAbstractItemView QScrollBar::add-line:vertical {{
+        subcontrol-origin: margin;
+        subcontrol-position: bottom;
+    }}
+
+    QComboBox QAbstractItemView QScrollBar::up-arrow:vertical,
+    QComboBox QAbstractItemView QScrollBar::down-arrow:vertical {{
+        background-color: transparent;
+        color: {qcolor_name(Colors.BLACK)};
+        width: 10px;
+        height: 10px;
+    }}
+
+    QComboBox QAbstractItemView QScrollBar::up-arrow:vertical {{
+        image: url({SCROLLBAR_UP_ARROW_ICON});
+    }}
+
+    QComboBox QAbstractItemView QScrollBar::down-arrow:vertical {{
+        image: url({SCROLLBAR_DOWN_ARROW_ICON});
+    }}
+
+    QComboBox QAbstractItemView QScrollBar::add-page,
+    QComboBox QAbstractItemView QScrollBar::sub-page {{
+        background-color: {qcolor_name(Colors.PANEL_BG)};
     }}
 
     QComboBox:disabled {{
@@ -234,6 +294,62 @@ SCRIPT_PICKER_DROPDOWN_STYLE = f"""
         font-size: 13px;
         font-weight: bold;
         border: none;
+    }}
+
+    QComboBox QAbstractItemView QScrollBar {{
+        background-color: {qcolor_name(Colors.PANEL_BG)};
+    }}
+
+    QComboBox QAbstractItemView QScrollBar:vertical {{
+        background-color: {qcolor_name(Colors.PANEL_BG)};
+        width: 18px;
+        margin: 18px 0 18px 0;
+    }}
+
+    QComboBox QAbstractItemView QScrollBar:horizontal {{
+        background-color: {qcolor_name(Colors.PANEL_BG)};
+    }}
+
+    QComboBox QAbstractItemView QScrollBar::handle {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+        border-radius: 4px;
+    }}
+
+    QComboBox QAbstractItemView QScrollBar::sub-line:vertical,
+    QComboBox QAbstractItemView QScrollBar::add-line:vertical {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+        height: 18px;
+    }}
+
+    QComboBox QAbstractItemView QScrollBar::sub-line:vertical {{
+        subcontrol-origin: margin;
+        subcontrol-position: top;
+    }}
+
+    QComboBox QAbstractItemView QScrollBar::add-line:vertical {{
+        subcontrol-origin: margin;
+        subcontrol-position: bottom;
+    }}
+
+    QComboBox QAbstractItemView QScrollBar::up-arrow:vertical,
+    QComboBox QAbstractItemView QScrollBar::down-arrow:vertical {{
+        background-color: transparent;
+        color: {qcolor_name(Colors.BLACK)};
+        width: 10px;
+        height: 10px;
+    }}
+
+    QComboBox QAbstractItemView QScrollBar::up-arrow:vertical {{
+        image: url({SCROLLBAR_UP_ARROW_ICON});
+    }}
+
+    QComboBox QAbstractItemView QScrollBar::down-arrow:vertical {{
+        image: url({SCROLLBAR_DOWN_ARROW_ICON});
+    }}
+
+    QComboBox QAbstractItemView QScrollBar::add-page,
+    QComboBox QAbstractItemView QScrollBar::sub-page {{
+        background-color: {qcolor_name(Colors.PANEL_BG)};
     }}
 """
 
