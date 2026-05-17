@@ -123,7 +123,7 @@ class UIHandlers:
         )
         app.build_error = None
         desktop = self.get_desktop_path()
-        app.output_path_input.setText(desktop)
+        app.output_path_input.set_display_path(desktop)
         app.output_path = desktop
         app.state_ctrl.save_state()
         app.validation_controller.update_ui_state()

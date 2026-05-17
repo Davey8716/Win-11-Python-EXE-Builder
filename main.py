@@ -5,9 +5,10 @@ import threading
 
 from ctypes import wintypes
 from build_controller import BuildController
+from path_hover import attach_path_hovers
 from tooltips import attach_tooltips
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit,QHBoxLayout, QComboBox,QTextEdit
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit,QHBoxLayout, QComboBox,QTextEdit,QListView
 from validation_controller import ValidationController
 from activation_controller import ActivationController
 from PySide6.QtGui import QFont, QPalette
@@ -24,6 +25,7 @@ from PySide6.QtGui import QTextCursor, QTextBlockFormat
 from styles import (
     APPEND_PY_VERSION_INITIAL_STYLE,
     COMBO_BOX_STYLE,
+    combo_box_popup_style,
     MAIN_FRAME_STYLE,
     TITLE_FRAME_STYLE,
     button_base,
@@ -303,6 +305,11 @@ class EXEBuilderApp(QWidget):
         self.select_interpreter = QComboBox()
         self.select_interpreter.setFixedSize(245,35)
         self.select_interpreter.setFont(QFont("Rubik UI", 12))
+        interpreter_popup_view = QListView()
+        interpreter_popup_view.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        interpreter_popup_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        interpreter_popup_view.setStyleSheet(combo_box_popup_style())
+        self.select_interpreter.setView(interpreter_popup_view)
 
         # 🔑 Header
         self.select_interpreter.addItem("Select Recent Interpreter")
@@ -649,7 +656,7 @@ class EXEBuilderApp(QWidget):
         output_entry_layout.setContentsMargins(1,1,1,1)
         output_entry_layout.setSpacing(3)
 
-        self.output_path_input = QLineEdit()
+        self.output_path_input = PathDisplayLineEdit()
         self.output_path_input.setPlaceholderText("No output path selected.")
         output_entry_layout.addWidget(self.output_path_input)
 
@@ -943,6 +950,7 @@ class EXEBuilderApp(QWidget):
         self.main_layout.addWidget(build_frame,alignment=Qt.AlignCenter)
 
         attach_tooltips(self)
+        attach_path_hovers(self)
         self._loading_state = False
         self.state_ctrl.load_state()
         self.recent_controller.populate_recent_dropdown()

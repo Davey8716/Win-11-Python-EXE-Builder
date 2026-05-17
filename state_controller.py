@@ -144,7 +144,7 @@ class StateController:
                 self.app.icon_path_input.set_display_path(self.app.icon_path)
 
             if hasattr(self.app, "output_path_input"):
-                self.app.output_path_input.setText(self.app.output_path)
+                self.app.output_path_input.set_display_path(self.app.output_path)
 
             if hasattr(self.app, "exe_name_input"):
                 self.app.exe_name_input.setText(self.app.exe_name)

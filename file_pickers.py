@@ -351,8 +351,7 @@ class FilePickerController:
         self.app.last_output_dir = folder
 
         if hasattr(self.app, "output_path_input"):
-            self.app.output_path_input.setText(folder)
-            self.app.output_path_input.setCursorPosition(len(folder))
+            self.app.output_path_input.set_display_path(folder)
 
         flash_add_highlight(
             getattr(self.app, "output_btn", None),

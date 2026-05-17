@@ -65,6 +65,26 @@ def combo_box_scrollbar_style() -> str:
     return vertical_scrollbar_style("QComboBox QAbstractItemView")
 
 
+def combo_box_popup_style(owner_selector: str = "QAbstractItemView") -> str:
+    return f"""
+    {owner_selector} {{
+        background-color: {qcolor_name(Colors.PANEL_BG)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+        selection-background-color: {qcolor_name(Colors.SELECTION_BG)};
+        font-family: "Rubik UI";
+        font-size: 15px;
+        font-weight: bold;
+        border-radius: 4px;
+    }}
+
+    {owner_selector}::item {{
+        text-align: center;
+    }}
+
+    {vertical_scrollbar_style(owner_selector)}
+"""
+
+
 def vertical_scrollbar_style(owner_selector: str) -> str:
     return f"""
     {owner_selector} QScrollBar {{
@@ -248,21 +268,7 @@ COMBO_BOX_STYLE = f"""
         padding: 10px;
     }}
 
-    QComboBox QAbstractItemView {{
-        background-color: {qcolor_name(Colors.PANEL_BG)};
-        color: {qcolor_name(Colors.TEXT_LIGHT)};
-        selection-background-color: {qcolor_name(Colors.SELECTION_BG)};
-        font-family: "Rubik UI";
-        font-size: 15px;
-        font-weight: bold;
-        border-radius: 4px;
-    }}
-
-    QComboBox QAbstractItemView::item {{
-        text-align: center;
-    }}
-
-    {combo_box_scrollbar_style()}
+    {combo_box_popup_style("QComboBox QAbstractItemView")}
 
     QComboBox:disabled,
     QComboBox:disabled QLineEdit {{

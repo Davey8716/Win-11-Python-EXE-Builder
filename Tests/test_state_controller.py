@@ -43,6 +43,9 @@ class DummyInput:
     def setText(self, value):
         self.value = value
 
+    def set_display_path(self, value):
+        self.value = value
+
 
 class DummyValidator:
     def update_ui_state(self):
