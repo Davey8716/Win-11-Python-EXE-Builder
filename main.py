@@ -7,7 +7,7 @@ from ctypes import wintypes
 from build_controller import BuildController
 from tooltips import attach_tooltips
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit,QHBoxLayout, QComboBox,QTextEdit, QGridLayout
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit,QHBoxLayout, QComboBox,QTextEdit
 from validation_controller import ValidationController
 from activation_controller import ActivationController
 from PySide6.QtGui import QFont, QPalette
@@ -163,23 +163,29 @@ class EXEBuilderApp(QWidget):
         self.open_output_dir_after_build = QCheckBox("Open Output Directory")
         self.close_after_build = QCheckBox("Close After Build")
 
-        toggle_columns = QGridLayout()
+        toggle_columns = QHBoxLayout()
         toggle_columns.setContentsMargins(0, 0, 0, 0)
-        toggle_columns.setHorizontalSpacing(0)
-        toggle_columns.setVerticalSpacing(0)
-        toggle_columns.setColumnStretch(0, 1)
-        toggle_columns.setColumnStretch(2, 1)
-        toggle_columns.setColumnStretch(1, 1)
-        toggle_columns.setRowStretch(0, 1)
-        toggle_columns.setRowStretch(2, 1)
-        toggle_columns.setRowStretch(4, 1)
-        toggle_columns.setRowStretch(6, 1)
+        toggle_columns.setSpacing(0)
 
-        toggle_columns.addWidget(self.tooltips_checkbox, 1, 1)
-        toggle_columns.addWidget(self.dependency_notice, 1, 3)
-        toggle_columns.addWidget(self.minimize_after_build, 3, 1)
-        toggle_columns.addWidget(self.close_after_build, 3, 3)
-        toggle_columns.addWidget(self.open_output_dir_after_build, 5, 1)
+        left_toggle_column = QVBoxLayout()
+        left_toggle_column.setContentsMargins(0, 0, 0, 0)
+        left_toggle_column.setSpacing(0)
+
+        right_toggle_column = QVBoxLayout()
+        right_toggle_column.setContentsMargins(0, 0, 0, 0)
+        right_toggle_column.setSpacing(0)
+
+        left_toggle_column.addWidget(self.tooltips_checkbox, alignment=Qt.AlignLeft | Qt.AlignTop)
+        left_toggle_column.addWidget(self.minimize_after_build, alignment=Qt.AlignLeft | Qt.AlignTop)
+        left_toggle_column.addWidget(self.open_output_dir_after_build, alignment=Qt.AlignLeft | Qt.AlignTop)
+        left_toggle_column.addStretch()
+
+        right_toggle_column.addWidget(self.dependency_notice, alignment=Qt.AlignLeft | Qt.AlignTop)
+        right_toggle_column.addWidget(self.close_after_build, alignment=Qt.AlignLeft | Qt.AlignTop)
+        right_toggle_column.addStretch()
+
+        toggle_columns.addLayout(left_toggle_column, 1)
+        toggle_columns.addLayout(right_toggle_column, 1)
 
         # -------------------------------
         # ATTACH
@@ -841,13 +847,13 @@ class EXEBuilderApp(QWidget):
             self.minimize_after_build,
             self.close_after_build,
         ]:
-            cb.setFixedSize(200,15)
+            cb.setFixedSize(200, 24)
             cb.setChecked(True)
             cb.setFont(QFont("Rubik UI", 13, QFont.Bold))
 
-        self.open_output_dir_after_build.setFixedWidth(215)
+        self.open_output_dir_after_build.setFixedSize(215, 24)
         self.open_output_dir_after_build.setChecked(True)
-        self.open_output_dir_after_build.setFont(QFont("Rubik Ui", 13, QFont.Bold))
+        self.open_output_dir_after_build.setFont(QFont("Rubik UI", 13, QFont.Bold))
 
         self.open_output_dir_after_build.setChecked(False)
 
