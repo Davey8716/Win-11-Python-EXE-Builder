@@ -193,24 +193,69 @@ SCRIPT_PICKER_FRAME_STYLE = f"""
         border: none;
         border-radius: 6px;
         background-color: {qcolor_name(Colors.POPUP_BG)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
     }}
 """
 
-SCRIPT_PICKER_LABEL_STYLE = """
-    font-family: "Rubik";
-    font-size: 13px;
-    font-weight: bold;
+SCRIPT_PICKER_LABEL_STYLE = f"""
+    QLabel {{
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+        font-family: "Rubik UI";
+        font-size: 13px;
+        font-weight: bold;
+    }}
 """
 
-SCRIPT_PICKER_DROPDOWN_STYLE = """
-    font-family: "Rubik";
-    font-size: 13px;
+SCRIPT_PICKER_DROPDOWN_STYLE = f"""
+    QComboBox {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+        border: none;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-family: "Rubik UI";
+        font-size: 13px;
+        font-weight: bold;
+    }}
+
+    QComboBox::drop-down {{
+        border: none;
+        background-color: {qcolor_name(Colors.WINDOW)};
+        border-top-right-radius: 4px;
+        border-bottom-right-radius: 4px;
+        width: 28px;
+    }}
+
+    QComboBox QAbstractItemView {{
+        background-color: {qcolor_name(Colors.PANEL_BG)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+        selection-background-color: {qcolor_name(Colors.SELECTION_BG)};
+        font-family: "Rubik UI";
+        font-size: 13px;
+        font-weight: bold;
+        border: none;
+    }}
 """
 
-SCRIPT_PICKER_CONFIRM_STYLE = """
-    font-family: "Rubik";
-    font-size: 13px;
-    font-weight: bold;
+SCRIPT_PICKER_CONFIRM_STYLE = f"""
+    QPushButton {{
+        background-color: {qcolor_name(Colors.SUCCESS)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+        border: none;
+        border-radius: 4px;
+        padding: 6px 10px;
+        font-family: "Rubik UI";
+        font-size: 13px;
+        font-weight: bold;
+    }}
+
+    QPushButton:hover {{
+        background-color: {qcolor_name(Colors.SUCCESS_PRESSED)};
+    }}
+
+    QPushButton:pressed {{
+        background-color: {qcolor_name(Colors.SUCCESS_PRESSED)};
+    }}
 """
 
 DEPENDENCY_POPUP_FRAME_STYLE = f"""
