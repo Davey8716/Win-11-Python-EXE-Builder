@@ -613,7 +613,7 @@ class EXEBuilderApp(QWidget):
 
         _add("──────────", enabled=False)
         # Top option
-        _add("None", None)
+        _add("No Date Time Appended", None)
 
         # ISO
         _add("──────────", enabled=False)
