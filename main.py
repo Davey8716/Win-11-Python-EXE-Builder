@@ -141,7 +141,7 @@ class EXEBuilderApp(QWidget):
         title_label.setFixedSize(350,30)
 
         title_layout.addStretch()
-        title_layout.addWidget(title_label)  
+        title_layout.addWidget(title_label)
         title_layout.addStretch()
 
         # -------------------------------

@@ -253,6 +253,9 @@ MAIN_FRAME_STYLE = f"""
     QLabel {{
         color: {qcolor_name(Colors.TEXT_LIGHT)};
     }}
+    QCheckBox {{
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+    }}
 """
 
 TITLE_FRAME_STYLE = f"""
