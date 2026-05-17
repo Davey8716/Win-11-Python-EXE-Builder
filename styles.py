@@ -1,3 +1,6 @@
+import sys
+from pathlib import Path
+
 from PySide6.QtGui import QColor
 
 
@@ -40,8 +43,17 @@ def qcolor_name(color: QColor) -> str:
     return color.name(QColor.HexRgb)
 
 
-SCROLLBAR_UP_ARROW_ICON = "Icons/scroll_up_black.svg"
-SCROLLBAR_DOWN_ARROW_ICON = "Icons/scroll_down_black.svg"
+def _resource_path(relative_path: str) -> Path:
+    base_dir = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+    return base_dir / relative_path
+
+
+def _stylesheet_url(relative_path: str) -> str:
+    return _resource_path(relative_path).resolve().as_posix()
+
+
+SCROLLBAR_UP_ARROW_ICON = _stylesheet_url("Icons/scroll_up_black.svg")
+SCROLLBAR_DOWN_ARROW_ICON = _stylesheet_url("Icons/scroll_down_black.svg")
 
 
 def button_base(border_width: int = 3) -> str:
