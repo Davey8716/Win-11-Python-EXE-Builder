@@ -56,6 +56,8 @@ def _stylesheet_url(relative_path: str) -> str:
 
 SCROLLBAR_UP_ARROW_ICON = _stylesheet_url("Icons/scroll_up_black.svg")
 SCROLLBAR_DOWN_ARROW_ICON = _stylesheet_url("Icons/scroll_down_black.svg")
+CHECKBOX_CHECK_BLACK_ICON = _stylesheet_url("Icons/check_black.svg")
+CHECKBOX_CHECK_DISABLED_ICON = _stylesheet_url("Icons/check_disabled.svg")
 
 
 def button_base(border_width: int = 3) -> str:
@@ -118,6 +120,18 @@ def build_disabled_checkbox() -> str:
     return f"""
         QCheckBox {{
             color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+        }}
+        QCheckBox::indicator {{
+            width: 14px;
+            height: 14px;
+            background-color: {qcolor_name(Colors.DISABLED_BG)};
+            border: 1px solid {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+            border-radius: 3px;
+        }}
+        QCheckBox::indicator:checked {{
+            background-color: {qcolor_name(Colors.DISABLED_BG)};
+            border: 1px solid {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+            image: url({CHECKBOX_CHECK_DISABLED_ICON});
         }}
         QCheckBox:disabled {{
             color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
@@ -255,6 +269,18 @@ MAIN_FRAME_STYLE = f"""
     }}
     QCheckBox {{
         color: {qcolor_name(Colors.TEXT_LIGHT)};
+    }}
+    QCheckBox::indicator {{
+        width: 14px;
+        height: 14px;
+        background-color: {qcolor_name(Colors.WHITE)};
+        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border-radius: 3px;
+    }}
+    QCheckBox::indicator:checked {{
+        background-color: {qcolor_name(Colors.WHITE)};
+        border: 1px solid {qcolor_name(Colors.BLACK)};
+        image: url({CHECKBOX_CHECK_BLACK_ICON});
     }}
 """
 
