@@ -317,6 +317,7 @@ class EXEBuilderApp(QWidget):
         
         self.env_sync_log_input = QLineEdit()
         self.env_sync_log_input.setReadOnly(True)
+        self.env_sync_log_input.setFocusPolicy(Qt.NoFocus)
         self.env_sync_log_input.setFixedWidth(485)
         self.env_sync_log_input.setPlaceholderText("Environment sync ready.")
         self.env_sync_log_input.setText("Environment sync ready.")
@@ -1222,6 +1223,8 @@ class EXEBuilderApp(QWidget):
 
         single_line = " ".join(str(text).splitlines()).strip()
         self.env_sync_log_input.setText(single_line)
+        self.env_sync_log_input.deselect()
+        self.env_sync_log_input.setCursorPosition(0)
 
     def closeEvent(self, event):
         self._is_closing = True
