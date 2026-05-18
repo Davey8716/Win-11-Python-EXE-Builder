@@ -284,6 +284,18 @@ class UIHandlers:
         if hasattr(app, "validator"):
             app.validator.validation_status_message()
             self.app.validator.update_ui_state()
+
+    def on_env_sync_scan(self):
+        app = self.app
+        app.set_status("Scanning Python profiles...")
+        if not app.environment_sync_controller.start_scan_async():
+            app.set_status("Environment sync is already running.")
+
+    def on_env_sync_match(self):
+        app = self.app
+        app.set_status("Syncing dependencies...")
+        if not app.environment_sync_controller.start_sync_async():
+            app.set_status("Environment sync is already running.")
     
     def _on_exe_name_user_edit(self, text):
         app = self.app

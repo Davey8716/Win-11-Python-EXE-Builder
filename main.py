@@ -5,6 +5,7 @@ import threading
 
 from ctypes import wintypes
 from build_controller import BuildController
+from environment_sync_controller import EnvironmentSyncController
 from path_hover import attach_path_hovers
 from tooltips import attach_tooltips
 from PySide6.QtCore import Qt
@@ -80,6 +81,7 @@ class EXEBuilderApp(QWidget):
         self.ui_dependency_popup = DependencyPopup(self)
         self.recent_controller = RecentController(self)
         self.ui_handlers = UIHandlers(self)
+        self.environment_sync_controller = EnvironmentSyncController(self)
         self.build_controller = BuildController(self)
         self.validation_controller = ValidationController(self)
         self.state_ctrl = StateController(self)
@@ -266,6 +268,91 @@ class EXEBuilderApp(QWidget):
         # =============================================================
         # Script / Buttons Section
         # =============================================================
+
+        # =============================================================
+        # Environment Sync Section
+        # =============================================================
+
+        self.env_sync_title_frame = QFrame()
+        self.env_sync_title_frame.setFrameShape(QFrame.StyledPanel)
+        self.env_sync_title_frame.setFrameShadow(QFrame.Raised)
+
+        env_sync_title_layout = QHBoxLayout(self.env_sync_title_frame)
+        env_sync_title_layout.setContentsMargins(2,2,2,2)
+
+        self.env_sync_title = QLabel("Environment Sync")
+        self.env_sync_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
+
+        env_sync_title_layout.addStretch()
+        env_sync_title_layout.addWidget(self.env_sync_title)
+        env_sync_title_layout.addStretch()
+
+        env_sync_frame = QFrame()
+        env_sync_frame.setFrameShape(QFrame.StyledPanel)
+        env_sync_frame.setFrameShadow(QFrame.Raised)
+
+        env_sync_layout = QVBoxLayout(env_sync_frame)
+        env_sync_layout.setContentsMargins(6,6,6,6)
+        env_sync_layout.setSpacing(4)
+
+        env_sync_intro = QLabel(
+            "Scans installed Python profiles and syncs every version toward one union package set."
+        )
+        env_sync_intro.setWordWrap(True)
+        env_sync_intro.setFixedWidth(485)
+        env_sync_intro.setFont(QFont("Rubik UI", 10, QFont.Bold))
+
+        env_sync_action_row = QWidget()
+        env_sync_action_layout = QHBoxLayout(env_sync_action_row)
+        env_sync_action_layout.setContentsMargins(0,0,0,0)
+        env_sync_action_layout.setSpacing(4)
+
+        self.env_sync_scan_btn = QPushButton("Scan Profiles")
+        self.env_sync_match_btn = QPushButton("Sync Dependencies")
+        self.env_sync_scan_btn.setFixedSize(145,35)
+        self.env_sync_match_btn.setFixedSize(175,35)
+        self.env_sync_match_btn.setEnabled(False)
+
+        env_sync_action_layout.addWidget(self.env_sync_scan_btn)
+        env_sync_action_layout.addWidget(self.env_sync_match_btn)
+        env_sync_action_layout.addStretch()
+
+        env_sync_status_header = QWidget()
+        env_sync_status_header_layout = QHBoxLayout(env_sync_status_header)
+        env_sync_status_header_layout.setContentsMargins(0,0,0,0)
+        env_sync_status_header_layout.setSpacing(4)
+
+        for text, width in [
+            ("Python Version", 125),
+            ("Packages", 80),
+            ("State", 275),
+        ]:
+            label = QLabel(text)
+            label.setFixedWidth(width)
+            label.setFont(QFont("Rubik UI", 9, QFont.Bold))
+            env_sync_status_header_layout.addWidget(label)
+
+        env_sync_status_header_layout.addStretch()
+
+        self.env_sync_summary_label = QLabel("Not scanned.")
+        self.env_sync_summary_label.setWordWrap(True)
+        self.env_sync_summary_label.setFixedWidth(485)
+        self.env_sync_summary_label.setFont(QFont("Rubik UI", 9, QFont.Bold))
+
+        env_sync_rows_container = QWidget()
+        self.env_sync_rows_layout = QVBoxLayout(env_sync_rows_container)
+        self.env_sync_rows_layout.setContentsMargins(0,0,0,0)
+        self.env_sync_rows_layout.setSpacing(2)
+
+        env_sync_layout.addWidget(env_sync_intro)
+        env_sync_layout.addWidget(env_sync_action_row)
+        env_sync_layout.addWidget(self.env_sync_summary_label)
+        env_sync_layout.addWidget(env_sync_status_header)
+        env_sync_layout.addWidget(env_sync_rows_container)
+        self.add_env_sync_status_row("-", "-", "Press Scan Profiles")
+
+        self.left_layout.addWidget(self.env_sync_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        self.left_layout.addWidget(env_sync_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
 
         row2 = QWidget(self)
         row2_layout = QVBoxLayout(row2)
@@ -784,6 +871,7 @@ class EXEBuilderApp(QWidget):
         build_layout.addWidget(self.build_btn, alignment=Qt.AlignCenter)
 
         for frame in [
+            env_sync_frame,
             combined_frame,
             interpreter_container,
             icon_frame,
@@ -807,6 +895,7 @@ class EXEBuilderApp(QWidget):
                 dropdowns.lineEdit().setAlignment(alignment)
 
         frames = [
+            env_sync_frame,
             combined_frame,
             interpreter_container,
             icon_frame,
@@ -823,6 +912,7 @@ class EXEBuilderApp(QWidget):
                 frame.setStyleSheet(MAIN_FRAME_STYLE)
                 
         frames = [
+            self.env_sync_title_frame,
             self.apps_title_frame,
             self.icons_title_frame,
             self.python_title_frame,
@@ -839,6 +929,7 @@ class EXEBuilderApp(QWidget):
             
                 
         for label in [
+            self.env_sync_title,
             self.apps_title,
             self.icons_title,
             self.python_title,
@@ -853,6 +944,7 @@ class EXEBuilderApp(QWidget):
         # -------------------------------
 
         title_pairs = [
+            (self.env_sync_title_frame, self.env_sync_title),
             (self.apps_title_frame, self.apps_title),
             (self.icons_title_frame, self.icons_title),
             (self.python_title_frame, self.python_title),
@@ -952,6 +1044,8 @@ class EXEBuilderApp(QWidget):
         self.exe_name_input.setReadOnly(False)
 
         buttons = [
+            self.env_sync_scan_btn,
+            self.env_sync_match_btn,
             self.open_python_site_btn,
             self.appened_py_version,
             self.icon_btn,
@@ -962,12 +1056,15 @@ class EXEBuilderApp(QWidget):
         ]
 
         for btn in buttons:
-            btn.setFixedSize(160, 35)
+            if btn not in (self.env_sync_scan_btn, self.env_sync_match_btn):
+                btn.setFixedSize(160, 35)
             btn.setFont(QFont("Rubik UI", 11, QFont.Bold))
         
         self.recent_folder_dropdown.setFixedSize(245,35)
 
         buttons = [
+            self.env_sync_scan_btn,
+            self.env_sync_match_btn,
             self.appened_py_version,
             self.output_btn,
             self.folder_btn,
@@ -998,6 +1095,8 @@ class EXEBuilderApp(QWidget):
         self.recent_controller.populate_recent_dropdown()
         self.validator.validation_status_message()
         self.json_import_controller.attach()
+        self.env_sync_scan_btn.clicked.connect(self.ui_handlers.on_env_sync_scan)
+        self.env_sync_match_btn.clicked.connect(self.ui_handlers.on_env_sync_match)
         self.interpreter_btn.clicked.connect(self.file_pickers.select_python_interpreter)
         self.python_delete_interpreter.clicked.connect(self.recent_controller.interpreter_delete)
         self.select_interpreter.currentIndexChanged.connect(self.recent_controller.on_recent_interpreter_selected)
@@ -1038,6 +1137,28 @@ class EXEBuilderApp(QWidget):
 
         self.validator.update_ui_state()
         self.validation_controller.update_build_button()
+
+    def add_env_sync_status_row(self, version, package_count, status):
+        if not hasattr(self, "env_sync_rows_layout"):
+            return
+
+        row = QWidget()
+        row_layout = QHBoxLayout(row)
+        row_layout.setContentsMargins(0,0,0,0)
+        row_layout.setSpacing(4)
+
+        for text, width in [
+            (version, 125),
+            (package_count, 80),
+            (status, 275),
+        ]:
+            label = QLabel(text)
+            label.setFixedWidth(width)
+            label.setFont(QFont("Rubik UI", 9, QFont.Bold))
+            row_layout.addWidget(label)
+
+        row_layout.addStretch()
+        self.env_sync_rows_layout.addWidget(row)
 
     def _create_content_column(self):
         content = QWidget()

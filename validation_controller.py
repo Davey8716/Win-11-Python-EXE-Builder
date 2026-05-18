@@ -400,6 +400,25 @@ class ValidationController:
         )
 
         # Apps
+        env_sync_controller = getattr(app, "environment_sync_controller", None)
+        env_sync_running = bool(getattr(env_sync_controller, "is_running", False))
+
+        if hasattr(app, "env_sync_scan_btn"):
+            set_btn(app.env_sync_scan_btn, not building and not env_sync_running)
+
+        if hasattr(app, "env_sync_match_btn"):
+            sync_plan = getattr(
+                env_sync_controller,
+                "last_plan",
+                None,
+            )
+            set_btn(
+                app.env_sync_match_btn,
+                not building
+                and not env_sync_running
+                and bool(sync_plan and sync_plan.total_actions > 0),
+            )
+
         set_btn(app.open_python_site_btn, not building)
         set_btn(app.interpreter_btn, not building)
         set_btn(app.interpreter_refresh_btn, not building and python_ok)
@@ -521,6 +540,7 @@ class ValidationController:
 
         section_title_frames = [
             getattr(app, "title_frame", None),
+            getattr(app, "env_sync_title_frame", None),
             getattr(app, "apps_title_frame", None),
             getattr(app, "icons_title_frame", None),
             getattr(app, "python_title_frame", None),

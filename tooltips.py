@@ -151,6 +151,18 @@ def attach_tooltips(app):
     # -----------------------------
 
     QtTooltip(
+        app.env_sync_scan_btn,
+        "Scans Python installs under AppData\\Local\\Programs\\Python.\n"
+        "Compares installed package names and versions across all detected profiles."
+    )
+
+    QtTooltip(
+        app.env_sync_match_btn,
+        "Installs missing or mismatched packages so detected Python profiles converge\n"
+        "toward the same union dependency state. This is separate from the EXE build chain."
+    )
+
+    QtTooltip(
         app.select_recent_icons,
         "Select a recent Icon from this drop down list."
     )
