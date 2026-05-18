@@ -7,6 +7,7 @@ from styles import (
     ENV_SYNC_BUTTON_STYLE,
     ENV_SYNC_STATUS_LINE_STYLE,
     build_disabled_button,
+    build_disabled_checkbox,
     build_disabled_line_edit_style,
     qcolor_name,
 )
@@ -251,6 +252,30 @@ def test_environment_sync_restores_normal_styling_when_not_building(
         *app.env_sync_row_labels,
     ]:
         assert normal_text in label.stylesheet
+
+
+def test_open_output_directory_disabled_for_desktop_output(monkeypatch, tmp_path):
+    monkeypatch.setattr(validation_controller, "QCheckBox", DummyCheckbox)
+    app = make_app(tmp_path, exe_name="main")
+    desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+    app.output_path_input.setText(desktop)
+
+    controller = ValidationController(app)
+    controller.update_ui_state()
+
+    assert app.open_output_dir_after_build.enabled is False
+    assert app.open_output_dir_after_build.stylesheet == build_disabled_checkbox()
+
+
+def test_open_output_directory_enabled_for_non_desktop_output(monkeypatch, tmp_path):
+    monkeypatch.setattr(validation_controller, "QCheckBox", DummyCheckbox)
+    app = make_app(tmp_path, exe_name="main")
+
+    controller = ValidationController(app)
+    controller.update_ui_state()
+
+    assert app.open_output_dir_after_build.enabled is True
+    assert app.open_output_dir_after_build.stylesheet == ""
 
 
 def test_exe_refresh_enabled_when_name_differs_from_script_default(monkeypatch, tmp_path):

@@ -171,6 +171,7 @@ class ValidationController:
         outdir = os.path.normpath(outdir) if outdir else ""
 
         desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+        is_desktop = outdir and os.path.normpath(outdir) == os.path.normpath(desktop)
 
         python_path = getattr(app, "python_interpreter_path", "").strip()
         python_ok = bool(python_path and os.path.isfile(python_path))
@@ -252,7 +253,7 @@ class ValidationController:
                         
         # Tooltips
         set_btn(app.tooltips_checkbox, not building)
-        set_btn(app.open_output_dir_after_build, not building)
+        set_btn(app.open_output_dir_after_build, not building and not is_desktop)
         # 🔑 mutual exclusion + build lock
         min_checked = app.minimize_after_build.isChecked()
         close_checked = app.close_after_build.isChecked()
@@ -313,7 +314,6 @@ class ValidationController:
         set_btn(app.output_btn, not building)
         app.date_time_dropdown.setEnabled(not building)
 
-        is_desktop = outdir and os.path.normpath(outdir) == os.path.normpath(desktop)
         set_btn(app.output_refresh_btn, not building and not is_desktop)
 
         # -------------------------------
