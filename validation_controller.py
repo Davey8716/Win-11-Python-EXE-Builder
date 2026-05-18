@@ -539,6 +539,7 @@ class ValidationController:
 
         section_title_frames = [
             getattr(app, "title_frame", None),
+            getattr(app, "build_options_title_frame", None),
             getattr(app, "env_sync_title_frame", None),
             getattr(app, "apps_title_frame", None),
             getattr(app, "icons_title_frame", None),

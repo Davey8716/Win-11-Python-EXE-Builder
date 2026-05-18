@@ -117,7 +117,7 @@ class EXEBuilderApp(QWidget):
         self.last_build_seconds = 45
         self.last_build_counter = 0
         
-        self.setFixedSize(1050, 1000)
+        self.setFixedSize(1050, 820)
         self.setWindowTitle(" Win 11 → Python → EXE Builder")
         self.setContentsMargins(0,0,0,0)
         
@@ -160,6 +160,22 @@ class EXEBuilderApp(QWidget):
         # -------------------------------
         # TOGGLES FRAME
         # -------------------------------
+
+        self.build_options_title_frame = QFrame()
+        self.build_options_title_frame.setFrameShape(QFrame.StyledPanel)
+        self.build_options_title_frame.setFrameShadow(QFrame.Raised)
+
+        build_options_title_layout = QHBoxLayout(self.build_options_title_frame)
+        build_options_title_layout.setContentsMargins(3,3,3,3)
+        build_options_title_layout.setSpacing(3)
+
+        self.build_options_title = QLabel("Build Options")
+        self.build_options_title.setFixedHeight(30)
+        self.build_options_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
+
+        build_options_title_layout.addStretch()
+        build_options_title_layout.addWidget(self.build_options_title)
+        build_options_title_layout.addStretch()
 
         toggles_frame = QFrame()
         toggles_frame.setFixedSize(420, 85)
@@ -233,6 +249,12 @@ class EXEBuilderApp(QWidget):
         title_row_layout.setSpacing(0)
         title_row_layout.addWidget(self.title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
 
+        toggles_title_row = QWidget()
+        toggles_title_row_layout = QHBoxLayout(toggles_title_row)
+        toggles_title_row_layout.setContentsMargins(0, 0, 0, 0)
+        toggles_title_row_layout.setSpacing(0)
+        toggles_title_row_layout.addWidget(self.build_options_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+
         toggles_row = QWidget()
         toggles_row_layout = QHBoxLayout(toggles_row)
         toggles_row_layout.setContentsMargins(0, 0, 0, 0)
@@ -240,16 +262,19 @@ class EXEBuilderApp(QWidget):
         toggles_row_layout.addWidget(toggles_wrapper, alignment=Qt.AlignHCenter | Qt.AlignTop)
 
         content_row = QWidget()
+        content_row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         content_row_layout = QHBoxLayout(content_row)
         content_row_layout.setContentsMargins(0, 0, 0, 0)
         content_row_layout.setSpacing(0)
 
         build_title_row = QWidget()
+        build_title_row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         build_title_row_layout = QHBoxLayout(build_title_row)
         build_title_row_layout.setContentsMargins(0, 0, 0, 0)
         build_title_row_layout.setSpacing(0)
 
         build_frame_row = QWidget()
+        build_frame_row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         build_frame_row_layout = QHBoxLayout(build_frame_row)
         build_frame_row_layout.setContentsMargins(0, 0, 0, 0)
         build_frame_row_layout.setSpacing(0)
@@ -262,6 +287,7 @@ class EXEBuilderApp(QWidget):
         content_row_layout.addWidget(self.right_content)
 
         root_layout.addWidget(title_row)
+        root_layout.addWidget(toggles_title_row)
         root_layout.addWidget(toggles_row)
         root_layout.addWidget(content_row)
         root_layout.addWidget(build_title_row)
@@ -919,6 +945,7 @@ class EXEBuilderApp(QWidget):
                 frame.setStyleSheet(MAIN_FRAME_STYLE)
                 
         frames = [
+            self.build_options_title_frame,
             self.env_sync_title_frame,
             self.apps_title_frame,
             self.icons_title_frame,
@@ -936,6 +963,7 @@ class EXEBuilderApp(QWidget):
             
                 
         for label in [
+            self.build_options_title,
             self.env_sync_title,
             self.apps_title,
             self.icons_title,
@@ -951,6 +979,7 @@ class EXEBuilderApp(QWidget):
         # -------------------------------
 
         title_pairs = [
+            (self.build_options_title_frame, self.build_options_title),
             (self.env_sync_title_frame, self.env_sync_title),
             (self.apps_title_frame, self.apps_title),
             (self.icons_title_frame, self.icons_title),
@@ -1170,7 +1199,7 @@ class EXEBuilderApp(QWidget):
     def _create_content_column(self):
         content = QWidget()
         content.setFixedWidth(525)
-        content.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        content.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         layout = QVBoxLayout(content)
         layout.setContentsMargins(1, 1, 1, 1)
