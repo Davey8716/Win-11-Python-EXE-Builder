@@ -19,7 +19,6 @@ from path_display_line_edit import PathDisplayLineEdit
 from state_controller import StateController
 from recent_controller import RecentController
 from ui_handlers import UIHandlers
-from ui_dependency_popup import DependencyPopup
 from json_import_controller import JsonImportController
 from PySide6.QtGui import QFontMetrics
 from PySide6.QtGui import QTextCursor, QTextBlockFormat
@@ -67,10 +66,8 @@ def resource_path(relative_path):
 class EXEBuilderApp(QWidget):
     def __init__(self):
         super().__init__()
-        self._dep_last_requested = None
         self._is_closing = False
 
-        self._last_advisory_script = None
         self._eta_running = False
         self._loading_state = True
         self.building = False
@@ -80,7 +77,6 @@ class EXEBuilderApp(QWidget):
         self.exe_name_user_modified = False
         
         self.json_import_controller =JsonImportController(self)
-        self.ui_dependency_popup = DependencyPopup(self)
         self.recent_controller = RecentController(self)
         self.ui_handlers = UIHandlers(self)
         self.environment_sync_controller = EnvironmentSyncController(self)
@@ -125,7 +121,6 @@ class EXEBuilderApp(QWidget):
         self.minimize_after_build_enabled = getattr(self, "minimize_after_build_enabled", True)
         self.open_output_dir_after_build_enabled = getattr(self, "open_output_dir_after_build_enabled", False)
         self.tooltips_enabled = getattr(self, "tooltips_enabled", True)
-        self.dependency_notice_enabled = getattr(self, "dependency_notice_enabled", True)
         self.script_path = getattr(self, "script_path", "")
         self.icon_path = getattr(self, "icon_path", "")
         self.output_path = getattr(self, "output_path", "")
@@ -188,7 +183,6 @@ class EXEBuilderApp(QWidget):
         toggles_layout.setSpacing(2)
 
         self.tooltips_checkbox = QCheckBox("Tooltips")
-        self.dependency_notice = QCheckBox("Dependency Notice")
         self.minimize_after_build = QCheckBox("Minimize After Build")
         self.open_output_dir_after_build = QCheckBox("Open Output Directory")
         self.close_after_build = QCheckBox("Close After Build")
@@ -207,10 +201,9 @@ class EXEBuilderApp(QWidget):
 
         left_toggle_column.addWidget(self.tooltips_checkbox, alignment=Qt.AlignLeft | Qt.AlignTop)
         left_toggle_column.addWidget(self.minimize_after_build, alignment=Qt.AlignLeft | Qt.AlignTop)
-        left_toggle_column.addWidget(self.open_output_dir_after_build, alignment=Qt.AlignLeft | Qt.AlignTop)
         left_toggle_column.addStretch()
 
-        right_toggle_column.addWidget(self.dependency_notice, alignment=Qt.AlignLeft | Qt.AlignTop)
+        right_toggle_column.addWidget(self.open_output_dir_after_build, alignment=Qt.AlignLeft | Qt.AlignTop)
         right_toggle_column.addWidget(self.close_after_build, alignment=Qt.AlignLeft | Qt.AlignTop)
         right_toggle_column.addStretch()
 
@@ -1014,7 +1007,6 @@ class EXEBuilderApp(QWidget):
 
         for cb in [
             self.tooltips_checkbox,
-            self.dependency_notice,
             self.minimize_after_build,
             self.close_after_build,
         ]:
@@ -1154,7 +1146,6 @@ class EXEBuilderApp(QWidget):
         self.output_btn.clicked.connect(self.file_pickers.select_output_folder)
         self.output_refresh_btn.clicked.connect(self.ui_handlers.reset_output_to_desktop)
         self.refresh_btn.clicked.connect(self.ui_handlers.reset_exe_name_from_script)
-        self.dependency_notice.stateChanged.connect(self.ui_handlers.on_dependency_toggle)
         self.tooltips_checkbox.stateChanged.connect(self.ui_handlers.on_tooltips_toggle)
         self.exe_name_input.textChanged.connect(self.ui_handlers._on_exe_name_user_edit)
         self.exe_name_input.textChanged.connect(self.ui_handlers.on_exe_name_change)

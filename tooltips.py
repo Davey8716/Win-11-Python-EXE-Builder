@@ -91,13 +91,6 @@ def attach_tooltips(app):
     )
     
     QtTooltip(
-        app.dependency_notice,
-        "Brings up the dependency notice.\n"
-        "Describes what packages are needed to be installed.\n"
-        "For a build to succeed."
-    )
-
-    QtTooltip(
         app.minimize_after_build,
         "If toggled the app will minimize after a build.\n"
         "Mutually excluse to the close after build toggle."

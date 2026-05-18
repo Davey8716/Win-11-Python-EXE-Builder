@@ -1,9 +1,5 @@
 import os
-import sys
-import ast
-from PySide6.QtCore import QTimer,Qt
-from PySide6.QtCore import QThread
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QCheckBox
 from styles import (
     APPEND_PY_VERSION_STYLE,
@@ -20,113 +16,12 @@ from styles import (
     TITLE_FRAME_STYLE,
 )
 
-class DependencyWorker(QObject):
-    finished = Signal(dict)  # returns packages dict
-
-    def __init__(self, controller, entry_file):
-        super().__init__()
-        self.controller = controller
-        self.entry_file = entry_file
-
-    def run(self):
-        try:
-            result = self.controller.run_dependency_advisory(self.entry_file)
-        except Exception:
-            result = {"external": [], "maybe": [], "uncertain": []}
-
-        self.finished.emit(result)
-
 class ValidationController:
     def __init__(self, app):
         """
         app = EXEBuilderApp instance
         """
         self.app = app
-
-    def extract_imports_from_file(self, py_file: str) -> set[str]:
-        imports = set()
-
-        try:
-            with open(py_file, "r", encoding="utf-8") as f:
-                tree = ast.parse(f.read(), filename=py_file)
-        except Exception:
-            return imports  # advisory only
-
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import):
-                for alias in node.names:
-                    imports.add(alias.name.split(".")[0])
-            elif isinstance(node, ast.ImportFrom):
-                if node.module:
-                    imports.add(node.module.split(".")[0])
-
-        return imports
-
-    def filter_external_imports(self, imports: set[str]) -> list[str]:
-        stdlib = set(sys.stdlib_module_names)
-        return sorted(i for i in imports if i not in stdlib)
-
-    def run_dependency_advisory(self, entry_file: str) -> list[str]:
-        root = os.path.dirname(os.path.normpath(entry_file))
-
-        all_imports = set()
-        local_modules = set()
-
-        # -----------------------------
-        # 1. collect local module names (recursive)
-        # -----------------------------
-        for root_dir, _, files in os.walk(root):
-            for file in files:
-                if file.endswith(".py"):
-                    name = os.path.splitext(file)[0]
-                    local_modules.add(name)
-
-        # -----------------------------
-        # 2. collect all imports (recursive)
-        # -----------------------------
-        for root_dir, _, files in os.walk(root):
-            for file in files:
-                if not file.endswith(".py"):
-                    continue
-
-                full_path = os.path.join(root_dir, file)
-
-                if not os.path.isfile(full_path):
-                    continue
-
-                all_imports |= self.extract_imports_from_file(full_path)
-
-        # -----------------------------
-        # 3. classify imports
-        # -----------------------------
-        stdlib = set(sys.stdlib_module_names)
-
-        external = []
-        maybe = []
-        uncertain = []
-
-        for i in all_imports:
-            if i in stdlib or i in local_modules:
-                continue
-
-            # simple heuristics
-            if i.startswith("_"):
-                uncertain.append(i)
-
-            elif len(i) <= 3:
-                uncertain.append(i)
-
-            elif i in {"utils", "helpers", "common", "core"}:
-                maybe.append(i)
-
-            else:
-                external.append(i)
-
-        return {
-            "external": sorted(external),
-            "maybe": sorted(maybe),
-            "uncertain": sorted(uncertain),
-        }
             
     def set_build_error(self, message: str):
         self.app.build_error = message
@@ -200,39 +95,10 @@ class ValidationController:
 
         state["is_ready"] = is_ready
 
-        # Reset popup eligibility when leaving READY state
-        if not is_ready:
-            self.app._dependency_popup_shown = False
-
         if not is_ready:
             self.app.status_label.setFixedSize(250,60)
         else:
             self.app.status_label.setFixedSize(250,60)
-
-        # ==========================================================
-        # Dependency advisory — fire ONCE when NOT READY → READY
-        # ==========================================================
-        if is_ready:
-            current_script = script
-            script_changed = current_script != self.app._last_advisory_script
-
-            if script_changed:
-                self.app._last_advisory_script = current_script
-
-                if getattr(self.app, "dependency_notice_enabled", True):
-
-                    # 🔑 HARD GUARD (prevents spam / freezing)
-                    if current_script != getattr(self.app, "_dep_last_requested", None):
-                        self.app._dep_last_requested = current_script
-
-                        # 🔑 ASYNC ONLY (no blocking UI)
-                        self.run_dependency_advisory_async(current_script)
-
-                state["external_packages"] = []
-            else:
-                state["external_packages"] = []
-        else:
-            self.app._last_advisory_script = None
 
         # Track previous state
         self.app._was_build_ready = is_ready
@@ -383,7 +249,6 @@ class ValidationController:
                         
         # Tooltips
         set_btn(app.tooltips_checkbox, not building)
-        set_btn(app.dependency_notice, not building)
         set_btn(app.open_output_dir_after_build, not building)
         # 🔑 mutual exclusion + build lock
         min_checked = app.minimize_after_build.isChecked()
@@ -703,44 +568,3 @@ class ValidationController:
         # 🔑 restore toggle styling (it gets wiped during validation cycles)
         app.appened_py_version.setStyleSheet(APPEND_PY_VERSION_STYLE)
 
-    def run_dependency_advisory_async(self, entry_file: str):
-        app = self.app
-
-        # stop duplicate runs
-        if getattr(app, "_dep_thread_running", False):
-            return
-
-        app._dep_thread_running = True
-
-        self.dep_thread = QThread()
-        self.dep_worker = DependencyWorker(self, entry_file)
-
-        self.dep_worker.moveToThread(self.dep_thread)
-
-        self.dep_thread.started.connect(self.dep_worker.run)
-
-        self.dep_worker.finished.connect(self._on_dependency_result)
-
-        # cleanup
-        self.dep_worker.finished.connect(self.dep_thread.quit)
-        self.dep_worker.finished.connect(self.dep_worker.deleteLater)
-        self.dep_thread.finished.connect(self.dep_thread.deleteLater)
-
-        self.dep_thread.start()
-
-    def _on_dependency_result(self, packages: dict):
-        app = self.app
-
-        app._dep_thread_running = False
-
-        if (
-            packages
-            and getattr(app, "dependency_notice_enabled", True)
-            and not getattr(app, "_dependency_popup_shown", False)
-        ):
-            QTimer.singleShot(
-                0,
-                self.app,
-                lambda: self.app.ui_dependency_popup.show_dependency_warning_popup(packages)
-            )
-            app._dependency_popup_shown = True

@@ -156,7 +156,6 @@ def test_load_state_restores_open_output_directory_toggle(monkeypatch, tmp_path)
     monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
     app = make_app(
         tooltips_checkbox=DummyCheckbox(),
-        dependency_notice=DummyCheckbox(),
         close_after_build=DummyCheckbox(),
         minimize_after_build=DummyCheckbox(),
         open_output_dir_after_build=DummyCheckbox(),
@@ -184,7 +183,6 @@ def test_load_state_restores_no_datetime_appended_selection(monkeypatch, tmp_pat
     monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
     app = make_app(
         tooltips_checkbox=DummyCheckbox(),
-        dependency_notice=DummyCheckbox(),
         close_after_build=DummyCheckbox(),
         minimize_after_build=DummyCheckbox(),
         open_output_dir_after_build=DummyCheckbox(),
@@ -220,7 +218,6 @@ def test_load_state_restores_saved_datetime_format_selection(monkeypatch, tmp_pa
     monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
     app = make_app(
         tooltips_checkbox=DummyCheckbox(),
-        dependency_notice=DummyCheckbox(),
         close_after_build=DummyCheckbox(),
         minimize_after_build=DummyCheckbox(),
         open_output_dir_after_build=DummyCheckbox(),

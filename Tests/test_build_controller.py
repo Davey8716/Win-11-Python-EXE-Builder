@@ -175,8 +175,6 @@ def test_build_exe_adds_project_root_to_paths_and_data(tmp_path, monkeypatch):
     app = make_app(
         script_path_input=DummyInput(str(script)),
         output_path_input=DummyInput(str(output_dir)),
-        dependency_notice=DummyToggle(),
-        dependency_notice_enabled=True,
         build_process=None,
         icon_path="",
         output_path="",
@@ -232,8 +230,6 @@ def test_build_exe_adds_parent_search_path_for_sibling_packages(tmp_path, monkey
     app = make_app(
         script_path_input=DummyInput(str(script)),
         output_path_input=DummyInput(str(output_dir)),
-        dependency_notice=DummyToggle(),
-        dependency_notice_enabled=True,
         build_process=None,
         icon_path="",
         output_path="",

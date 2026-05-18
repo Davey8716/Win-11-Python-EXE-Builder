@@ -114,10 +114,6 @@ def make_app(tmp_path, exe_name="", script_name="main.py", entry_script=None):
     return SimpleNamespace(
         building=False,
         build_error=None,
-        dependency_notice_enabled=False,
-        _dependency_popup_shown=False,
-        _last_advisory_script=None,
-        _dep_last_requested=None,
         _was_build_ready=False,
         _status_lock=False,
         state_data={
@@ -130,7 +126,6 @@ def make_app(tmp_path, exe_name="", script_name="main.py", entry_script=None):
         python_interpreter_path=str(python),
         icon_path="",
         tooltips_checkbox=DummyCheckbox(),
-        dependency_notice=DummyCheckbox(),
         open_output_dir_after_build=DummyCheckbox(),
         minimize_after_build=DummyCheckbox(),
         close_after_build=DummyCheckbox(),

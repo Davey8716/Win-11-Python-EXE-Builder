@@ -74,7 +74,6 @@ class StateController:
             # -------------------------
             for name in (
                 "tooltips_checkbox",
-                "dependency_notice",
                 "script_path_input",
                 "icon_path_input",
                 "output_path_input",
@@ -90,7 +89,6 @@ class StateController:
             # Load JSON app state
             # -------------------------
             self.app.tooltips_enabled = data.get("tooltips_enabled", True)
-            self.app.dependency_notice_enabled = data.get("dependency_notice_enabled", True)
             self.app.close_after_build_enabled = data.get("close_after_build_enabled", True)
             self.app.minimize_after_build_enabled = data.get("minimize_after_build_enabled", True)
             self.app.open_output_dir_after_build_enabled = data.get("open_output_dir_after_build_enabled", False)
@@ -150,9 +148,6 @@ class StateController:
 
             if hasattr(self.app, "tooltips_checkbox"):
                 self.app.tooltips_checkbox.setChecked(self.app.tooltips_enabled)
-
-            if hasattr(self.app, "dependency_notice"):
-                self.app.dependency_notice.setChecked(self.app.dependency_notice_enabled)
 
             if hasattr(self.app, "script_path_input"):
                 self.app.script_path_input.set_display_path(self.app.script_path)
@@ -261,7 +256,6 @@ class StateController:
 
             # --- Toggles / settings ---
             "tooltips_enabled": getattr(self.app, "tooltips_enabled", True),
-            "dependency_notice_enabled": getattr(self.app, "dependency_notice_enabled", True),
             "close_after_build_enabled": getattr(self.app, "close_after_build_enabled", True),
             "minimize_after_build_enabled": getattr(self.app, "minimize_after_build_enabled", True),
             "open_output_dir_after_build_enabled": getattr(self.app, "open_output_dir_after_build_enabled", False),

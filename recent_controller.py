@@ -461,22 +461,6 @@ class RecentController:
 
         self.app.script_path_input.set_display_path(self.app.script_path)
 
-        if getattr(app, "dependency_notice_enabled", True):
-            script = app.entry_script
-
-            if script and os.path.isfile(script):
-                packages = app.validator.run_dependency_advisory(script)
-
-                popup_ctrl = app.ui_dependency_popup
-
-                # 🔑 reuse existing popup (no recreate)
-                if popup_ctrl.popup:
-                    popup_ctrl.update_popup(packages)
-                else:
-                    popup_ctrl.show_dependency_warning_popup(packages)
-
-                
-
     def confirm_delete_recent(self):
         app = self.app
         full_path = getattr(app, "entry_script", "") or getattr(app, "script_path", "")

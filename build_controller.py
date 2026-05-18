@@ -151,17 +151,6 @@ class BuildController(QObject):
         app.building = True
         app._eta_running = True
 
-        # 🔑 kill dependency popup + disable toggle
-        if hasattr(app, "ui_dependency_popup"):
-            popup_ctrl = app.ui_dependency_popup
-
-            if popup_ctrl.popup:
-                popup_ctrl.popup.close()
-                popup_ctrl.popup = None
-
-        app.dependency_notice.setChecked(False)
-        app.dependency_notice_enabled = False
-
         # ==================================================
         # CANCEL MODE
         # ==================================================
