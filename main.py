@@ -28,6 +28,7 @@ from styles import (
     APP_TITLE_CONTAINER_STYLE,
     APP_TITLE_LABEL_STYLE,
     COMBO_BOX_STYLE,
+    ENV_SYNC_BUTTON_STYLE,
     ENV_SYNC_STATUS_LINE_STYLE,
     combo_box_popup_style,
     MAIN_FRAME_STYLE,
@@ -321,6 +322,8 @@ class EXEBuilderApp(QWidget):
         self.env_sync_scan_btn.setFixedSize(145,35)
         self.env_sync_match_btn.setFixedSize(175,35)
         self.env_sync_match_btn.setEnabled(False)
+        self.env_sync_scan_btn.setStyleSheet(ENV_SYNC_BUTTON_STYLE)
+        self.env_sync_match_btn.setStyleSheet(ENV_SYNC_BUTTON_STYLE)
 
         env_sync_action_layout.addWidget(self.env_sync_scan_btn)
         env_sync_action_layout.addWidget(self.env_sync_match_btn)
@@ -1069,8 +1072,6 @@ class EXEBuilderApp(QWidget):
         self.recent_folder_dropdown.setFixedSize(245,35)
 
         buttons = [
-            self.env_sync_scan_btn,
-            self.env_sync_match_btn,
             self.appened_py_version,
             self.output_btn,
             self.folder_btn,

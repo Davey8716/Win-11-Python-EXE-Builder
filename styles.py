@@ -204,6 +204,31 @@ def build_disabled_button(radius: int = 4) -> str:
     """
 
 
+ENV_SYNC_BUTTON_STYLE = f"""
+    QPushButton {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+        border: none;
+        border-radius: 4px;
+    }}
+    QPushButton:hover {{
+        background-color: {qcolor_name(Colors.SURFACE_SELECTED_HOVER)};
+    }}
+    QPushButton:pressed {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+    }}
+    QPushButton:disabled {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+        border: none;
+    }}
+    QPushButton:disabled:hover {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+    }}
+"""
+
+
 def build_disabled_checkbox() -> str:
     return f"""
         QCheckBox {{

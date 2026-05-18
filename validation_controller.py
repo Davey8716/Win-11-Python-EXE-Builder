@@ -404,7 +404,7 @@ class ValidationController:
         env_sync_running = bool(getattr(env_sync_controller, "is_running", False))
 
         if hasattr(app, "env_sync_scan_btn"):
-            set_btn(app.env_sync_scan_btn, not building and not env_sync_running)
+            app.env_sync_scan_btn.setEnabled(not building and not env_sync_running)
 
         if hasattr(app, "env_sync_match_btn"):
             sync_plan = getattr(
@@ -412,8 +412,7 @@ class ValidationController:
                 "last_plan",
                 None,
             )
-            set_btn(
-                app.env_sync_match_btn,
+            app.env_sync_match_btn.setEnabled(
                 not building
                 and not env_sync_running
                 and bool(sync_plan and sync_plan.total_actions > 0),
