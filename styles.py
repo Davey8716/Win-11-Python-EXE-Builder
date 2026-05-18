@@ -277,6 +277,24 @@ COMBO_BOX_STYLE = f"""
     }}
 """
 
+ENV_SYNC_STATUS_LINE_STYLE = f"""
+    QLineEdit {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+        border: none;
+        border-radius: 4px;
+        padding: 3px 8px;
+        font-weight: bold;
+    }}
+
+    QLineEdit:read-only,
+    QLineEdit:disabled {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+        border: none;
+    }}
+"""
+
 MAIN_FRAME_STYLE = f"""
     QFrame {{
         border: none;

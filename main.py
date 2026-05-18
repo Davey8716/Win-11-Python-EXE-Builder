@@ -28,6 +28,7 @@ from styles import (
     APP_TITLE_CONTAINER_STYLE,
     APP_TITLE_LABEL_STYLE,
     COMBO_BOX_STYLE,
+    ENV_SYNC_STATUS_LINE_STYLE,
     combo_box_popup_style,
     MAIN_FRAME_STYLE,
     TITLE_FRAME_STYLE,
@@ -308,6 +309,7 @@ class EXEBuilderApp(QWidget):
         self.env_sync_log_input.setPlaceholderText("Environment sync ready.")
         self.env_sync_log_input.setText("Environment sync ready.")
         self.env_sync_log_input.setFont(QFont("Rubik UI", 10, QFont.Bold))
+        self.env_sync_log_input.setStyleSheet(ENV_SYNC_STATUS_LINE_STYLE)
 
         env_sync_action_row = QWidget()
         env_sync_action_layout = QHBoxLayout(env_sync_action_row)
