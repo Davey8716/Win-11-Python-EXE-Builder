@@ -113,9 +113,9 @@ class EXEBuilderApp(QWidget):
         self.last_build_seconds = 45
         self.last_build_counter = 0
         
-        self.setFixedSize(525, 1000)
+        self.setFixedSize(1050, 1000)
         self.setWindowTitle(" Win 11 → Python → EXE Builder")
-        self.setContentsMargins(5,5,5,5)
+        self.setContentsMargins(0,0,0,0)
         
         self.close_after_build_enabled = getattr(self, "close_after_build_enabled", True)
         self.minimize_after_build_enabled = getattr(self, "minimize_after_build_enabled", True)
@@ -219,7 +219,22 @@ class EXEBuilderApp(QWidget):
         # MAIN LAYOUT
         # -------------------------------
 
-        self.main_layout = QVBoxLayout(self)
+        root_layout = QHBoxLayout(self)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+        root_layout.setSpacing(0)
+
+        blank_left_space = QWidget()
+        blank_left_space.setFixedWidth(525)
+        blank_left_space.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+
+        right_content = QWidget()
+        right_content.setFixedWidth(525)
+        right_content.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+
+        root_layout.addWidget(blank_left_space)
+        root_layout.addWidget(right_content)
+
+        self.main_layout = QVBoxLayout(right_content)
         self.main_layout.setContentsMargins(1, 1, 1, 1)
         self.main_layout.setSpacing(2)
         self.main_layout.addWidget(self.title_frame, alignment= Qt.AlignCenter)
