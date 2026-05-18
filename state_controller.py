@@ -2,6 +2,8 @@ import os
 import json
 
 class StateController:
+    NO_DATETIME_LABEL = "No Date Time Appended"
+
     def __init__(self, app):
         self.app = app
         self.last_build_counter = 0
@@ -33,6 +35,21 @@ class StateController:
     # ============================================================
     # LOAD
     # ============================================================
+    def _find_enabled_dropdown_text(self, dropdown, text):
+        for index in range(dropdown.count()):
+            if dropdown.itemText(index) != text:
+                continue
+
+            model = getattr(dropdown, "model", lambda: None)()
+            if model is None:
+                return index
+
+            item = model.item(index)
+            if item is None or item.isEnabled():
+                return index
+
+        return -1
+
     def load_state(self):
         state_path = self._state_file_path()
 
@@ -154,8 +171,15 @@ class StateController:
 
             # --- restore datetime dropdown ---
             if hasattr(self.app, "date_time_dropdown"):
-                if self.app.datetime_format:
+                if self.app.append_datetime and self.app.datetime_format:
                     index = self.app.date_time_dropdown.findData(self.app.datetime_format)
+                    if index != -1:
+                        self.app.date_time_dropdown.setCurrentIndex(index)
+                elif not self.app.append_datetime:
+                    index = self._find_enabled_dropdown_text(
+                        self.app.date_time_dropdown,
+                        self.NO_DATETIME_LABEL,
+                    )
                     if index != -1:
                         self.app.date_time_dropdown.setCurrentIndex(index)
 

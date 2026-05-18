@@ -52,6 +52,53 @@ class DummyValidator:
         pass
 
 
+class DummyDropdownItem:
+    def __init__(self, enabled=True):
+        self.enabled = enabled
+
+    def isEnabled(self):
+        return self.enabled
+
+
+class DummyDropdownModel:
+    def __init__(self, items):
+        self.items = items
+
+    def item(self, index):
+        return self.items[index]
+
+
+class DummyDropdown:
+    def __init__(self, options):
+        self.options = list(options)
+        self.current_index = None
+
+    def count(self):
+        return len(self.options)
+
+    def itemText(self, index):
+        return self.options[index]["text"]
+
+    def findData(self, value):
+        for index, option in enumerate(self.options):
+            if option["data"] == value:
+                return index
+        return -1
+
+    def setCurrentIndex(self, index):
+        self.current_index = index
+
+    def currentText(self):
+        if self.current_index is None:
+            return ""
+        return self.itemText(self.current_index)
+
+    def model(self):
+        return DummyDropdownModel(
+            [DummyDropdownItem(enabled=option.get("enabled", True)) for option in self.options]
+        )
+
+
 def test_state_file_path_uses_localappdata(monkeypatch, tmp_path):
     monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
     controller = StateController(make_app())
@@ -131,3 +178,75 @@ def test_load_state_restores_open_output_directory_toggle(monkeypatch, tmp_path)
 
     assert app.open_output_dir_after_build_enabled is True
     assert app.open_output_dir_after_build.checked is True
+
+
+def test_load_state_restores_no_datetime_appended_selection(monkeypatch, tmp_path):
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    app = make_app(
+        tooltips_checkbox=DummyCheckbox(),
+        dependency_notice=DummyCheckbox(),
+        close_after_build=DummyCheckbox(),
+        minimize_after_build=DummyCheckbox(),
+        open_output_dir_after_build=DummyCheckbox(),
+        script_path_input=DummyInput(),
+        icon_path_input=DummyInput(),
+        output_path_input=DummyInput(),
+        exe_name_input=DummyInput(),
+        python_entry_input=DummyInput(),
+        validator=DummyValidator(),
+        date_time_dropdown=DummyDropdown(
+            [
+                {"text": "Append Date/Time", "data": None, "enabled": False},
+                {"text": "──────────", "data": None, "enabled": False},
+                {"text": "No Date Time Appended", "data": None, "enabled": True},
+                {"text": "ISO | YYYY-MM-DD", "data": "%Y-%m-%d", "enabled": True},
+            ]
+        ),
+    )
+    controller = StateController(app)
+
+    state_path = controller._state_file_path()
+    os.makedirs(os.path.dirname(state_path), exist_ok=True)
+    with open(state_path, "w", encoding="utf-8") as state_file:
+        json.dump({"append_datetime": False, "datetime_format": ""}, state_file)
+
+    controller.load_state()
+
+    assert app.append_datetime is False
+    assert app.date_time_dropdown.currentText() == "No Date Time Appended"
+
+
+def test_load_state_restores_saved_datetime_format_selection(monkeypatch, tmp_path):
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    app = make_app(
+        tooltips_checkbox=DummyCheckbox(),
+        dependency_notice=DummyCheckbox(),
+        close_after_build=DummyCheckbox(),
+        minimize_after_build=DummyCheckbox(),
+        open_output_dir_after_build=DummyCheckbox(),
+        script_path_input=DummyInput(),
+        icon_path_input=DummyInput(),
+        output_path_input=DummyInput(),
+        exe_name_input=DummyInput(),
+        python_entry_input=DummyInput(),
+        validator=DummyValidator(),
+        date_time_dropdown=DummyDropdown(
+            [
+                {"text": "Append Date/Time", "data": None, "enabled": False},
+                {"text": "──────────", "data": None, "enabled": False},
+                {"text": "No Date Time Appended", "data": None, "enabled": True},
+                {"text": "ISO | YYYY-MM-DD", "data": "%Y-%m-%d", "enabled": True},
+            ]
+        ),
+    )
+    controller = StateController(app)
+
+    state_path = controller._state_file_path()
+    os.makedirs(os.path.dirname(state_path), exist_ok=True)
+    with open(state_path, "w", encoding="utf-8") as state_file:
+        json.dump({"append_datetime": True, "datetime_format": "%Y-%m-%d"}, state_file)
+
+    controller.load_state()
+
+    assert app.append_datetime is True
+    assert app.date_time_dropdown.currentText() == "ISO | YYYY-MM-DD"
