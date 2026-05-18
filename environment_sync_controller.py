@@ -161,6 +161,73 @@ class EnvironmentSyncController(QObject):
             self.update_ui_from_plan(self.last_plan)
         return self.last_plan
 
+    def serialize_profiles(self):
+        plan = self.last_plan
+        if not plan:
+            return []
+
+        serialized = []
+        for profile in plan.profiles:
+            packages = {}
+            for key, package in profile.packages.items():
+                packages[str(key)] = {
+                    "name": str(package.get("name", key)),
+                    "version": str(package.get("version", "")),
+                }
+
+            serialized.append(
+                {
+                    "version": str(profile.version),
+                    "executable": str(profile.executable),
+                    "packages": packages,
+                    "error": str(profile.error or ""),
+                }
+            )
+
+        return serialized
+
+    def load_serialized_profiles(self, serialized_profiles, update_ui=True):
+        profiles = []
+
+        if not isinstance(serialized_profiles, list):
+            serialized_profiles = []
+
+        for item in serialized_profiles:
+            if not isinstance(item, dict):
+                continue
+
+            packages = {}
+            raw_packages = item.get("packages", {})
+            if isinstance(raw_packages, dict):
+                for key, package in raw_packages.items():
+                    if not isinstance(package, dict):
+                        continue
+
+                    package_name = str(package.get("name", key)).strip()
+                    package_version = str(package.get("version", "")).strip()
+                    if not package_name:
+                        continue
+
+                    packages[str(key).lower()] = {
+                        "name": package_name,
+                        "version": package_version,
+                    }
+
+            profiles.append(
+                PythonEnvironmentProfile(
+                    version=str(item.get("version", "")),
+                    executable=str(item.get("executable", "")),
+                    packages=packages,
+                    error=str(item.get("error", "") or ""),
+                )
+            )
+
+        self.last_plan = self.build_sync_plan(profiles)
+        if update_ui:
+            self.update_ui_from_plan(self.last_plan)
+
+        return self.last_plan
+
     def sync_dependencies(self, update_ui=True, progress_callback=None):
         if self.last_plan is None:
             self.scan_profiles(update_ui=False)
@@ -336,6 +403,8 @@ class EnvironmentSyncController(QObject):
             plan = payload
             self.last_plan = plan
             self.update_ui_from_plan(plan)
+            if self.app is not None and hasattr(self.app, "state_ctrl"):
+                self.app.state_ctrl.save_state()
             return
 
         results = payload

@@ -194,6 +194,14 @@ class StateController:
                 if hasattr(self.app, "select_interpreter"):
                     self.app.select_interpreter.setCurrentIndex(0)
 
+            env_sync_controller = getattr(self.app, "environment_sync_controller", None)
+            if env_sync_controller is not None:
+                env_sync_profiles = data.get("env_sync_profiles", [])
+                if env_sync_profiles:
+                    env_sync_controller.load_serialized_profiles(
+                        env_sync_profiles,
+                        update_ui=True,
+                    )
                 
             self.app.validator.update_ui_state()
 
@@ -236,6 +244,15 @@ class StateController:
             existing_data.get("recent_interpreters", [])
         )
 
+        env_sync_controller = getattr(self.app, "environment_sync_controller", None)
+        if env_sync_controller is not None:
+            env_sync_profiles = env_sync_controller.serialize_profiles()
+        else:
+            env_sync_profiles = getattr(self.app, "state_data", {}).get(
+                "env_sync_profiles",
+                existing_data.get("env_sync_profiles", [])
+            )
+
         data = {
             # --- Paths / core selections ---
             "last_script_path": _norm(self.app.script_path),
@@ -250,6 +267,7 @@ class StateController:
             "recent_scripts": recent_scripts,
             "recent_icons": recent_icons,
             "recent_interpreters": recent_interpreters,
+            "env_sync_profiles": env_sync_profiles,
 
             # --- Build info ---
             "last_build_seconds": self.app.last_build_seconds,

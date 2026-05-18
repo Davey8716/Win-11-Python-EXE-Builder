@@ -52,6 +52,20 @@ class DummyValidator:
         pass
 
 
+class DummyEnvironmentSyncController:
+    def __init__(self, profiles=None):
+        self.profiles = profiles if profiles is not None else []
+        self.loaded_profiles = None
+        self.update_ui = None
+
+    def serialize_profiles(self):
+        return self.profiles
+
+    def load_serialized_profiles(self, profiles, update_ui=True):
+        self.loaded_profiles = profiles
+        self.update_ui = update_ui
+
+
 class DummyDropdownItem:
     def __init__(self, enabled=True):
         self.enabled = enabled
@@ -139,6 +153,29 @@ def test_save_state_writes_current_values_and_preserves_recents(monkeypatch, tmp
     assert data["open_output_dir_after_build_enabled"] is False
 
 
+def test_save_state_writes_environment_sync_profiles(monkeypatch, tmp_path):
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    env_sync_profiles = [
+        {
+            "version": "3.13",
+            "executable": "C:/Python313/python.exe",
+            "packages": {"numpy": {"name": "numpy", "version": "2.3.0"}},
+            "error": "",
+        }
+    ]
+    app = make_app(
+        environment_sync_controller=DummyEnvironmentSyncController(env_sync_profiles)
+    )
+
+    controller = StateController(app)
+    controller.save_state()
+
+    with open(controller._state_file_path(), "r", encoding="utf-8") as state_file:
+        data = json.load(state_file)
+
+    assert data["env_sync_profiles"] == env_sync_profiles
+
+
 def test_save_state_persists_open_output_directory_toggle(monkeypatch, tmp_path):
     monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
     app = make_app(open_output_dir_after_build_enabled=True)
@@ -177,6 +214,43 @@ def test_load_state_restores_open_output_directory_toggle(monkeypatch, tmp_path)
 
     assert app.open_output_dir_after_build_enabled is True
     assert app.open_output_dir_after_build.checked is True
+
+
+def test_load_state_restores_environment_sync_profiles(monkeypatch, tmp_path):
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    env_sync_profiles = [
+        {
+            "version": "3.13",
+            "executable": "C:/Python313/python.exe",
+            "packages": {"numpy": {"name": "numpy", "version": "2.3.0"}},
+            "error": "",
+        }
+    ]
+    env_sync_controller = DummyEnvironmentSyncController()
+    app = make_app(
+        tooltips_checkbox=DummyCheckbox(),
+        close_after_build=DummyCheckbox(),
+        minimize_after_build=DummyCheckbox(),
+        open_output_dir_after_build=DummyCheckbox(),
+        script_path_input=DummyInput(),
+        icon_path_input=DummyInput(),
+        output_path_input=DummyInput(),
+        exe_name_input=DummyInput(),
+        python_entry_input=DummyInput(),
+        validator=DummyValidator(),
+        environment_sync_controller=env_sync_controller,
+    )
+    controller = StateController(app)
+
+    state_path = controller._state_file_path()
+    os.makedirs(os.path.dirname(state_path), exist_ok=True)
+    with open(state_path, "w", encoding="utf-8") as state_file:
+        json.dump({"env_sync_profiles": env_sync_profiles}, state_file)
+
+    controller.load_state()
+
+    assert env_sync_controller.loaded_profiles == env_sync_profiles
+    assert env_sync_controller.update_ui is True
 
 
 def test_load_state_restores_no_datetime_appended_selection(monkeypatch, tmp_path):

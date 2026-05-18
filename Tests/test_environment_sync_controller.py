@@ -74,6 +74,51 @@ def test_install_specs_include_missing_and_mismatched_target_versions():
     assert specs == ["numpy==2.3.0", "PySide6==6.9.0"]
 
 
+def test_serialized_profiles_round_trip_and_rebuild_plan():
+    controller = EnvironmentSyncController()
+    profile_311 = make_profile("3.11", package("numpy", "1.26.0"))
+    profile_313 = make_profile(
+        "3.13",
+        {
+            **package("numpy", "2.3.0"),
+            **package("PySide6", "6.9.0"),
+        },
+    )
+    controller.last_plan = controller.build_sync_plan([profile_311, profile_313])
+
+    serialized = controller.serialize_profiles()
+
+    restored = EnvironmentSyncController()
+    plan = restored.load_serialized_profiles(serialized, update_ui=False)
+
+    assert serialized[0]["version"] == "3.11"
+    assert serialized[0]["executable"] == profile_311.executable
+    assert serialized[0]["packages"]["numpy"]["version"] == "1.26.0"
+    assert plan.baseline_version == "3.13"
+    assert set(plan.missing_by_version["3.11"]) == {"pyside6"}
+    assert set(plan.mismatched_by_version["3.11"]) == {"numpy"}
+
+
+def test_serialized_profiles_preserve_scan_errors():
+    controller = EnvironmentSyncController()
+    controller.last_plan = controller.build_sync_plan(
+        [
+            PythonEnvironmentProfile(
+                version="Python314",
+                executable="C:/Python314/python.exe",
+                error="pip failed",
+            )
+        ]
+    )
+
+    serialized = controller.serialize_profiles()
+    restored = EnvironmentSyncController()
+    plan = restored.load_serialized_profiles(serialized, update_ui=False)
+
+    assert serialized[0]["error"] == "pip failed"
+    assert plan.profiles[0].error == "pip failed"
+
+
 def test_sync_continues_when_one_package_fails(monkeypatch):
     controller = EnvironmentSyncController()
     profile_311 = make_profile("3.11", {})
