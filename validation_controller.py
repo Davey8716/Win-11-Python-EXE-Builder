@@ -555,7 +555,6 @@ class ValidationController:
 
         env_sync_labels = []
         for attr in [
-            "env_sync_intro",
             "env_sync_status_labels",
             "env_sync_row_labels",
         ]:

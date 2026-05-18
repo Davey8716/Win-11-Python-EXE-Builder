@@ -319,20 +319,13 @@ class EXEBuilderApp(QWidget):
         env_sync_title_layout.addWidget(self.env_sync_title)
         env_sync_title_layout.addStretch()
 
-        env_sync_frame = QFrame()
-        env_sync_frame.setFrameShape(QFrame.StyledPanel)
-        env_sync_frame.setFrameShadow(QFrame.Raised)
+        self.env_sync_frame = QFrame()
+        self.env_sync_frame.setFrameShape(QFrame.StyledPanel)
+        self.env_sync_frame.setFrameShadow(QFrame.Raised)
 
-        env_sync_layout = QVBoxLayout(env_sync_frame)
+        env_sync_layout = QVBoxLayout(self.env_sync_frame)
         env_sync_layout.setContentsMargins(6,6,6,6)
         env_sync_layout.setSpacing(4)
-
-        self.env_sync_intro = QLabel(
-            "Scans installed Python profiles and syncs every version toward one union package set."
-        )
-        self.env_sync_intro.setWordWrap(True)
-        self.env_sync_intro.setFixedWidth(485)
-        self.env_sync_intro.setFont(QFont("Rubik UI", 10, QFont.Bold))
         
         self.env_sync_log_input = QLineEdit()
         self.env_sync_log_input.setReadOnly(True)
@@ -340,11 +333,11 @@ class EXEBuilderApp(QWidget):
         self.env_sync_log_input.setFixedWidth(485)
         self.env_sync_log_input.setPlaceholderText("Environment sync ready.")
         self.env_sync_log_input.setText("Environment sync ready.")
-        self.env_sync_log_input.setFont(QFont("Rubik UI", 10, QFont.Bold))
+        self.env_sync_log_input.setFont(QFont("Rubik UI", 11, QFont.Bold))
         self.env_sync_log_input.setStyleSheet(ENV_SYNC_STATUS_LINE_STYLE)
 
-        env_sync_action_row = QWidget()
-        env_sync_action_layout = QHBoxLayout(env_sync_action_row)
+        self.env_sync_action_row = QWidget()
+        env_sync_action_layout = QHBoxLayout(self.env_sync_action_row)
         env_sync_action_layout.setContentsMargins(0,0,0,0)
         env_sync_action_layout.setSpacing(4)
 
@@ -360,8 +353,8 @@ class EXEBuilderApp(QWidget):
         env_sync_action_layout.addWidget(self.env_sync_match_btn)
         env_sync_action_layout.addStretch()
 
-        env_sync_status_header = QWidget()
-        env_sync_status_header_layout = QHBoxLayout(env_sync_status_header)
+        self.env_sync_status_header = QWidget()
+        env_sync_status_header_layout = QHBoxLayout(self.env_sync_status_header)
         env_sync_status_header_layout.setContentsMargins(0,0,0,0)
         env_sync_status_header_layout.setSpacing(4)
 
@@ -375,26 +368,25 @@ class EXEBuilderApp(QWidget):
         ]:
             label = QLabel(text)
             label.setFixedWidth(width)
-            label.setFont(QFont("Rubik UI", 9, QFont.Bold))
+            label.setFont(QFont("Rubik UI", 10, QFont.Bold))
             self.env_sync_status_labels.append(label)
             env_sync_status_header_layout.addWidget(label)
 
         env_sync_status_header_layout.addStretch()
 
-        env_sync_rows_container = QWidget()
-        self.env_sync_rows_layout = QVBoxLayout(env_sync_rows_container)
+        self.env_sync_rows_container = QWidget()
+        self.env_sync_rows_layout = QVBoxLayout(self.env_sync_rows_container)
         self.env_sync_rows_layout.setContentsMargins(0,0,0,0)
         self.env_sync_rows_layout.setSpacing(2)
 
-        env_sync_layout.addWidget(self.env_sync_intro)
-        env_sync_layout.addWidget(env_sync_action_row)
-        env_sync_layout.addWidget(env_sync_status_header)
-        env_sync_layout.addWidget(env_sync_rows_container)
+        env_sync_layout.addWidget(self.env_sync_action_row)
+        env_sync_layout.addWidget(self.env_sync_status_header)
+        env_sync_layout.addWidget(self.env_sync_rows_container)
         env_sync_layout.addWidget(self.env_sync_log_input)
         self.add_env_sync_status_row("-", "-", "Press Scan Profiles")
 
         self.left_layout.addWidget(self.env_sync_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
-        self.left_layout.addWidget(env_sync_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        self.left_layout.addWidget(self.env_sync_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
 
         row2 = QWidget(self)
         row2_layout = QVBoxLayout(row2)
@@ -921,7 +913,7 @@ class EXEBuilderApp(QWidget):
         build_layout.addWidget(self.build_btn, alignment=Qt.AlignCenter)
 
         for frame in [
-            env_sync_frame,
+            self.env_sync_frame,
             combined_frame,
             interpreter_container,
             icon_frame,
@@ -945,7 +937,7 @@ class EXEBuilderApp(QWidget):
                 dropdowns.lineEdit().setStyleSheet(COMBO_BOX_LINE_EDIT_STYLE)
 
         frames = [
-            env_sync_frame,
+            self.env_sync_frame,
             combined_frame,
             interpreter_container,
             icon_frame,
@@ -1208,7 +1200,7 @@ class EXEBuilderApp(QWidget):
         ]:
             label = QLabel(text)
             label.setFixedWidth(width)
-            label.setFont(QFont("Rubik UI", 9, QFont.Bold))
+            label.setFont(QFont("Rubik UI", 10, QFont.Bold))
             if not hasattr(self, "env_sync_row_labels"):
                 self.env_sync_row_labels = []
             self.env_sync_row_labels.append(label)

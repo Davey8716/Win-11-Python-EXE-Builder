@@ -142,7 +142,6 @@ def make_app(tmp_path, exe_name="", script_name="main.py", entry_script=None):
         env_sync_scan_btn=DummyButton(),
         env_sync_match_btn=DummyButton(),
         env_sync_log_input=DummyInput("Environment sync ready."),
-        env_sync_intro=DummyLabel(),
         env_sync_status_labels=[DummyLabel(), DummyLabel(), DummyLabel()],
         env_sync_row_labels=[DummyLabel(), DummyLabel(), DummyLabel()],
         environment_sync_controller=SimpleNamespace(
@@ -224,7 +223,6 @@ def test_environment_sync_uses_disabled_build_styling(monkeypatch, tmp_path):
 
     disabled_text = qcolor_name(Colors.BUILD_DISABLED_TEXT)
     for label in [
-        app.env_sync_intro,
         *app.env_sync_status_labels,
         *app.env_sync_row_labels,
     ]:
@@ -248,7 +246,6 @@ def test_environment_sync_restores_normal_styling_when_not_building(
 
     normal_text = qcolor_name(Colors.TEXT_LIGHT)
     for label in [
-        app.env_sync_intro,
         *app.env_sync_status_labels,
         *app.env_sync_row_labels,
     ]:

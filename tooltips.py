@@ -1,31 +1,47 @@
 from PySide6.QtCore import QObject, QEvent, QTimer, QPoint
 from PySide6.QtWidgets import QLabel
-from PySide6.QtGui import Qt
+from PySide6.QtGui import Qt, QCursor
 from styles import TOOLTIP_STYLE
 
 # -------------------------------------------------------------
 #  Simple tooltip class for Qt widgets (qt_material compatible)
 # -------------------------------------------------------------
 class QtTooltip(QObject):
-    def __init__(self, widget, text, delay=500):
+    def __init__(
+        self,
+        widget,
+        text,
+        delay=500,
+        direct_widget_only=False,
+        ignored_hover_children=None,
+        blocked_hover_widgets=None,
+    ):
         super().__init__(widget)
 
         self.widget = widget
         self.text = text
         self.delay = delay
+        self.direct_widget_only = direct_widget_only
+        self.ignored_hover_children = set(ignored_hover_children or [])
+        self.blocked_hover_widgets = set(blocked_hover_widgets or [])
 
         self.tip_window = None
         self.timer = QTimer()
         self.timer.setSingleShot(True)
         self.timer.timeout.connect(self.show)
+        self.monitor_timer = QTimer()
+        self.monitor_timer.setInterval(75)
+        self.monitor_timer.timeout.connect(self._monitor_direct_hover)
 
         # Install event filter instead of Tk bindings
+        if self.blocked_hover_widgets:
+            widget.setMouseTracking(True)
         widget.installEventFilter(self)
 
     def eventFilter(self, obj, event):
         if obj == self.widget:
-            if event.type() == QEvent.Enter:
-                self.schedule()
+            if event.type() in (QEvent.Enter, QEvent.MouseMove):
+                self._handle_hover_update()
             elif event.type() == QEvent.Leave:
                 self.hide()
             elif event.type() == QEvent.MouseButtonPress:
@@ -33,10 +49,26 @@ class QtTooltip(QObject):
         return super().eventFilter(obj, event)
 
     def schedule(self):
+        if self._is_blocked_hover():
+            self.hide()
+            return
+
+        if self.direct_widget_only and not self._is_direct_hover():
+            self.hide()
+            return
+
         self.timer.stop()
         self.timer.start(self.delay)
 
     def show(self):
+        if self._is_blocked_hover():
+            self._hide_tip_window()
+            return
+
+        if self.direct_widget_only and not self._is_direct_hover():
+            self.hide()
+            return
+
         # Global toggle (match your existing pattern)
         root = self.widget.window()
         if hasattr(root, "tooltips_enabled"):
@@ -61,13 +93,74 @@ class QtTooltip(QObject):
         self.tip_window.move(pos)
 
         self.tip_window.show()
+        if self.direct_widget_only or self.blocked_hover_widgets:
+            self.monitor_timer.start()
 
     def hide(self):
         self.timer.stop()
+        self.monitor_timer.stop()
+        self._hide_tip_window()
 
+    def _hide_tip_window(self):
         if self.tip_window:
             self.tip_window.close()
             self.tip_window = None
+
+    def _is_direct_hover(self):
+        local_pos = self.widget.mapFromGlobal(QCursor.pos())
+        if not self.widget.rect().contains(local_pos):
+            return False
+
+        child = self.widget.childAt(local_pos)
+        if child is None:
+            return True
+
+        if child not in self.ignored_hover_children:
+            return False
+
+        child_pos = child.mapFromGlobal(QCursor.pos())
+        return child.childAt(child_pos) is None
+
+    def _monitor_direct_hover(self):
+        if self._is_blocked_hover():
+            self.timer.stop()
+            self._hide_tip_window()
+            return
+
+        if self.direct_widget_only and not self._is_direct_hover():
+            self.hide()
+            return
+
+        if self.blocked_hover_widgets and not self.tip_window and not self.timer.isActive():
+            self.schedule()
+
+    def _is_blocked_hover(self):
+        if not self.blocked_hover_widgets:
+            return False
+
+        cursor_pos = QCursor.pos()
+        for widget in self.blocked_hover_widgets:
+            local_pos = widget.mapFromGlobal(cursor_pos)
+            if widget.rect().contains(local_pos):
+                return True
+
+        return False
+
+    def _handle_hover_update(self):
+        if not self.blocked_hover_widgets:
+            self.schedule()
+            return
+
+        if not self.monitor_timer.isActive():
+            self.monitor_timer.start()
+
+        if self._is_blocked_hover():
+            self.timer.stop()
+            self._hide_tip_window()
+            return
+
+        if not self.tip_window and not self.timer.isActive():
+            self.schedule()
 
 
 # -------------------------------------------------------------
@@ -142,6 +235,25 @@ def attach_tooltips(app):
     # -----------------------------
     # Python interpreter
     # -----------------------------
+
+    env_sync_summary = (
+        "Scans installed Python profiles and syncs every version toward one union package set."
+    )
+
+    QtTooltip(
+        app.env_sync_title_frame,
+        env_sync_summary,
+    )
+
+    QtTooltip(
+        app.env_sync_frame,
+        env_sync_summary,
+        blocked_hover_widgets=[
+            app.env_sync_scan_btn,
+            app.env_sync_match_btn,
+            app.env_sync_log_input,
+        ],
+    )
 
     QtTooltip(
         app.env_sync_log_input,
