@@ -224,42 +224,34 @@ class EXEBuilderApp(QWidget):
         toggles_layout.addLayout(toggle_columns)
 
         # -------------------------------
-        # WRAPPER (forces vertical alignment)
-        # -------------------------------
-
-        toggles_wrapper = QWidget()
-        toggles_wrapper_layout = QVBoxLayout(toggles_wrapper)
-        toggles_wrapper_layout.setContentsMargins(0,0,0,0)
-        toggles_wrapper_layout.setSpacing(0)
-
-        toggles_wrapper_layout.addStretch()  # 🔑 pushes toggles DOWN
-        toggles_wrapper_layout.addWidget(toggles_frame, alignment=Qt.AlignLeft)
-
-        # -------------------------------
         # MAIN LAYOUT
         # -------------------------------
 
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.setSpacing(0)
+        root_layout.setAlignment(Qt.AlignTop)
 
         title_row = QWidget()
+        title_row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         title_row_layout = QHBoxLayout(title_row)
         title_row_layout.setContentsMargins(0, 1, 0, 0)
         title_row_layout.setSpacing(0)
         title_row_layout.addWidget(self.title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
 
         toggles_title_row = QWidget()
+        toggles_title_row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         toggles_title_row_layout = QHBoxLayout(toggles_title_row)
         toggles_title_row_layout.setContentsMargins(0, 0, 0, 0)
         toggles_title_row_layout.setSpacing(0)
         toggles_title_row_layout.addWidget(self.build_options_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
 
         toggles_row = QWidget()
+        toggles_row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         toggles_row_layout = QHBoxLayout(toggles_row)
         toggles_row_layout.setContentsMargins(0, 0, 0, 0)
         toggles_row_layout.setSpacing(0)
-        toggles_row_layout.addWidget(toggles_wrapper, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        toggles_row_layout.addWidget(toggles_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
 
         content_row = QWidget()
         content_row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
