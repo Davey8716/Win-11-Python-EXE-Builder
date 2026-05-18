@@ -219,9 +219,26 @@ class EXEBuilderApp(QWidget):
         # MAIN LAYOUT
         # -------------------------------
 
-        root_layout = QHBoxLayout(self)
+        root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.setSpacing(0)
+
+        title_row = QWidget()
+        title_row_layout = QHBoxLayout(title_row)
+        title_row_layout.setContentsMargins(0, 1, 0, 0)
+        title_row_layout.setSpacing(0)
+        title_row_layout.addWidget(self.title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+
+        toggles_row = QWidget()
+        toggles_row_layout = QHBoxLayout(toggles_row)
+        toggles_row_layout.setContentsMargins(0, 0, 0, 0)
+        toggles_row_layout.setSpacing(0)
+        toggles_row_layout.addWidget(toggles_wrapper, alignment=Qt.AlignHCenter | Qt.AlignTop)
+
+        content_row = QWidget()
+        content_row_layout = QHBoxLayout(content_row)
+        content_row_layout.setContentsMargins(0, 0, 0, 0)
+        content_row_layout.setSpacing(0)
 
         blank_left_space = QWidget()
         blank_left_space.setFixedWidth(525)
@@ -231,13 +248,16 @@ class EXEBuilderApp(QWidget):
         right_content.setFixedWidth(525)
         right_content.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
 
-        root_layout.addWidget(blank_left_space)
-        root_layout.addWidget(right_content)
+        content_row_layout.addWidget(blank_left_space)
+        content_row_layout.addWidget(right_content)
+
+        root_layout.addWidget(title_row)
+        root_layout.addWidget(toggles_row)
+        root_layout.addWidget(content_row)
 
         self.main_layout = QVBoxLayout(right_content)
         self.main_layout.setContentsMargins(1, 1, 1, 1)
         self.main_layout.setSpacing(2)
-        self.main_layout.addWidget(self.title_frame, alignment= Qt.AlignCenter)
 
         # =============================================================
         # Script / Buttons Section
@@ -275,18 +295,6 @@ class EXEBuilderApp(QWidget):
         apps_title_layout.addStretch()
 
         # =================================================
-        # INLINE ROW (Apps title + toggles)
-        # =================================================
-
-        apps_toggles_row = QWidget()
-        apps_toggles_layout = QHBoxLayout(apps_toggles_row)
-        apps_toggles_layout.setContentsMargins(5,5,5,5)
-        apps_toggles_layout.setSpacing(1)
-
-        apps_toggles_layout.addWidget(self.apps_title_frame,alignment=Qt.AlignCenter | Qt.AlignBottom)
-        apps_toggles_layout.addWidget(toggles_wrapper,alignment=Qt.AlignCenter | Qt.AlignBottom)
-
-        # =================================================
         # Apps ROW (buttons)
         # =================================================
 
@@ -303,7 +311,7 @@ class EXEBuilderApp(QWidget):
         # FINAL ATTACH
         # =================================================
 
-        self.main_layout.addWidget(apps_toggles_row)   # ✅ inline row
+        self.main_layout.addWidget(self.apps_title_frame,alignment=Qt.AlignCenter)
         combined_layout.addWidget(apps_row)
 
         row2_layout.addWidget(combined_frame)
