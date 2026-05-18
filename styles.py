@@ -60,6 +60,11 @@ SCROLLBAR_DOWN_ARROW_ICON = ":/icons/Icons/scroll_down_white.svg"
 CHECKBOX_CHECK_BLACK_ICON = _stylesheet_url("Icons/check_black.svg")
 CHECKBOX_CHECK_DISABLED_ICON = _stylesheet_url("Icons/check_disabled.svg")
 
+UTILITY_ICON_BUTTON_SIZE = (35, 35)
+DELETE_BUTTON_TEXT = "❌"
+DELETE_ALL_BUTTON_TEXT = "💥"
+REFRESH_BUTTON_TEXT = "🔃"
+
 
 def combo_box_scrollbar_style() -> str:
     return vertical_scrollbar_style("QComboBox QAbstractItemView")
@@ -202,6 +207,14 @@ def build_disabled_button(radius: int = 4) -> str:
             background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
         }}
     """
+
+
+def utility_icon_button_style() -> str:
+    return button_base(border_width=4)
+
+
+def utility_icon_button_disabled_style(building: bool) -> str:
+    return build_disabled_button() if building else utility_icon_button_style()
 
 
 ENV_SYNC_BUTTON_STYLE = f"""

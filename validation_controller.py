@@ -5,8 +5,11 @@ from styles import (
     APPEND_PY_VERSION_STYLE,
     BUILD_DISABLED_TITLE_FRAME_STYLE,
     Colors,
+    DELETE_ALL_BUTTON_TEXT,
+    DELETE_BUTTON_TEXT,
     ENV_SYNC_BUTTON_STYLE,
     ENV_SYNC_STATUS_LINE_STYLE,
+    REFRESH_BUTTON_TEXT,
     build_disabled_button,
     build_disabled_checkbox,
     build_disabled_line_edit_style,
@@ -17,6 +20,8 @@ from styles import (
     qcolor_name,
     status_text_style,
     TITLE_FRAME_STYLE,
+    utility_icon_button_disabled_style,
+    utility_icon_button_style,
 )
 
 class ValidationController:
@@ -191,12 +196,29 @@ class ValidationController:
         # -------------------------------
         # BUTTON HELPER
         # -------------------------------
+        def is_utility_icon_button(btn):
+            return btn in (
+                getattr(app, "delete_recent_icons", None),
+                getattr(app, "delete_recent_folder", None),
+                getattr(app, "delete_all_icons", None),
+                getattr(app, "delete_all_folders", None),
+                getattr(app, "python_delete_all_interpreter", None),
+                getattr(app, "python_delete_interpreter", None),
+                getattr(app, "refresh_btn", None),
+                getattr(app, "output_refresh_btn", None),
+                getattr(app, "icon_clear_btn", None),
+                getattr(app, "script_clear_btn", None),
+                getattr(app, "interpreter_refresh_btn", None),
+            )
+
         def set_btn(btn, enabled, color=None):
             btn.setEnabled(enabled)
 
             if not enabled:
                 if isinstance(btn, QCheckBox):
                     btn.setStyleSheet(build_disabled_checkbox())
+                elif is_utility_icon_button(btn):
+                    btn.setStyleSheet(utility_icon_button_disabled_style(building))
                 elif building:
                     btn.setStyleSheet(build_disabled_button())
                 else:
@@ -207,7 +229,10 @@ class ValidationController:
                 if isinstance(btn, QCheckBox):
                     btn.setStyleSheet("")
                     return
-                btn.setStyleSheet(button_base(border_width=4))
+                if is_utility_icon_button(btn):
+                    btn.setStyleSheet(utility_icon_button_style())
+                else:
+                    btn.setStyleSheet(button_base(border_width=4))
 
         # -------------------------------
         # VALUE STATE (TEXT-BASED)
@@ -234,18 +259,20 @@ class ValidationController:
         # ICON
         icon_enabled = not building and icon_has_value
         set_btn(app.delete_recent_icons, icon_enabled)
-        app.delete_recent_icons.setText("❌" if icon_enabled else "")
+        app.delete_recent_icons.setText(DELETE_BUTTON_TEXT if icon_enabled else "")
 
         # SCRIPT
         script_enabled = not building and script_has_value
         set_btn(app.delete_recent_folder, script_enabled)
-        app.delete_recent_folder.setText("❌" if script_enabled else "")
+        app.delete_recent_folder.setText(DELETE_BUTTON_TEXT if script_enabled else "")
 
         # INTERPRETER
         interpreter_enabled = not building and interpreter_has_value
 
         set_btn(app.python_delete_interpreter, interpreter_enabled)
-        app.python_delete_interpreter.setText("❌" if interpreter_enabled else "")
+        app.python_delete_interpreter.setText(
+            DELETE_BUTTON_TEXT if interpreter_enabled else ""
+        )
 
         set_btn(app.delete_all_icons, not building and has_recent_icons)
         set_btn(app.delete_all_folders, not building and has_recent_scripts)
@@ -488,30 +515,30 @@ class ValidationController:
             else:
                 # DELETE BUTTONS → respect actual state
                 if btn == app.delete_recent_icons:
-                    btn.setText("❌" if icon_has_value else "")
+                    btn.setText(DELETE_BUTTON_TEXT if icon_has_value else "")
                 elif btn == app.delete_recent_folder:
-                    btn.setText("❌" if script_has_value else "")
+                    btn.setText(DELETE_BUTTON_TEXT if script_has_value else "")
                 elif btn == app.python_delete_interpreter:
-                    btn.setText("❌" if interpreter_has_value else "")
+                    btn.setText(DELETE_BUTTON_TEXT if interpreter_has_value else "")
 
                 elif btn == app.delete_all_icons:
-                    btn.setText("💥" if has_recent_icons else "")
+                    btn.setText(DELETE_ALL_BUTTON_TEXT if has_recent_icons else "")
                 elif btn == app.delete_all_folders:
-                    btn.setText("💥" if has_recent_scripts else "")
+                    btn.setText(DELETE_ALL_BUTTON_TEXT if has_recent_scripts else "")
                 elif btn == app.python_delete_all_interpreter:
-                    btn.setText("💥" if has_recent_interpreters else "")
+                    btn.setText(DELETE_ALL_BUTTON_TEXT if has_recent_interpreters else "")
 
                 # REFRESH / CLEAR (state-driven)
                 elif btn == app.interpreter_refresh_btn:
-                    btn.setText("🔃" if interpreter_has_value else "")
+                    btn.setText(REFRESH_BUTTON_TEXT if interpreter_has_value else "")
                 elif btn == app.script_clear_btn:
-                    btn.setText("🔃" if script_has_value else "")
+                    btn.setText(REFRESH_BUTTON_TEXT if script_has_value else "")
                 elif btn == app.icon_clear_btn:
-                    btn.setText("🔃" if icon_has_value else "")
+                    btn.setText(REFRESH_BUTTON_TEXT if icon_has_value else "")
                 elif btn == app.output_refresh_btn:
-                    btn.setText("🔃" if not is_desktop else "")
+                    btn.setText(REFRESH_BUTTON_TEXT if not is_desktop else "")
                 elif btn == app.refresh_btn:
-                    btn.setText("🔃" if can_revert_name else "")
+                    btn.setText(REFRESH_BUTTON_TEXT if can_revert_name else "")
                             
         # -------------------------------
         # LOCK + GREY INPUTS DURING BUILD

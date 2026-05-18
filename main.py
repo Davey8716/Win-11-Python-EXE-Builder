@@ -28,8 +28,12 @@ from styles import (
     APP_TITLE_LABEL_STYLE,
     CENTER_DIVIDER_STYLE,
     COMBO_BOX_STYLE,
+    DELETE_ALL_BUTTON_TEXT,
+    DELETE_BUTTON_TEXT,
     ENV_SYNC_BUTTON_STYLE,
     ENV_SYNC_STATUS_LINE_STYLE,
+    REFRESH_BUTTON_TEXT,
+    UTILITY_ICON_BUTTON_SIZE,
     combo_box_popup_style,
     MAIN_FRAME_STYLE,
     TITLE_FRAME_STYLE,
@@ -465,8 +469,8 @@ class EXEBuilderApp(QWidget):
         self.select_interpreter.lineEdit().setReadOnly(True)
         self.select_interpreter.setEnabled(True)
 
-        self.python_delete_interpreter = QPushButton("❌")
-        self.python_delete_all_interpreter = QPushButton("💥")
+        self.python_delete_interpreter = QPushButton(DELETE_BUTTON_TEXT)
+        self.python_delete_all_interpreter = QPushButton(DELETE_ALL_BUTTON_TEXT)
 
         interpreter_btn_layout.addWidget(self.interpreter_btn)
         interpreter_btn_layout.addWidget(self.select_interpreter)
@@ -485,8 +489,8 @@ class EXEBuilderApp(QWidget):
         self.python_entry_input = PathDisplayLineEdit()
         self.python_entry_input.setPlaceholderText("No python entry is selected.")
 
-        self.interpreter_refresh_btn = QPushButton("🔃")
-        self.interpreter_refresh_btn.setFixedSize(35,35)
+        self.interpreter_refresh_btn = QPushButton(REFRESH_BUTTON_TEXT)
+        self.interpreter_refresh_btn.setFixedSize(*UTILITY_ICON_BUTTON_SIZE)
 
         interpreter_entry_layout.addWidget(self.python_entry_input)
         interpreter_entry_layout.addWidget(self.interpreter_refresh_btn)
@@ -556,8 +560,8 @@ class EXEBuilderApp(QWidget):
         self.select_recent_icons.lineEdit().setReadOnly(True)
         self.select_recent_icons.setEnabled(True)
 
-        self.delete_recent_icons = QPushButton("❌")
-        self.delete_all_icons = QPushButton("💥")
+        self.delete_recent_icons = QPushButton(DELETE_BUTTON_TEXT)
+        self.delete_all_icons = QPushButton(DELETE_ALL_BUTTON_TEXT)
 
         # -------- Row 2: ICO Converter (below) --------
 
@@ -645,8 +649,8 @@ class EXEBuilderApp(QWidget):
         self.recent_folder_dropdown.lineEdit().setReadOnly(True)
         self.recent_folder_dropdown.setEnabled(True)
         
-        self.delete_recent_folder = QPushButton("❌")
-        self.delete_all_folders = QPushButton("💥")
+        self.delete_recent_folder = QPushButton(DELETE_BUTTON_TEXT)
+        self.delete_all_folders = QPushButton(DELETE_ALL_BUTTON_TEXT)
    
         folder_row = QHBoxLayout()
         folder_row.setContentsMargins(0, 0, 0, 0)
@@ -1053,7 +1057,7 @@ class EXEBuilderApp(QWidget):
             
         ]:
 
-            delete_btns.setFixedSize(35,35)
+            delete_btns.setFixedSize(*UTILITY_ICON_BUTTON_SIZE)
             delete_btns.setEnabled(True)
         
         for refresh_btns in [
@@ -1063,8 +1067,8 @@ class EXEBuilderApp(QWidget):
             self.script_clear_btn,
             self.interpreter_refresh_btn,
         ]:
-            refresh_btns.setText("🔃")
-            refresh_btns.setFixedSize(35,35)
+            refresh_btns.setText(REFRESH_BUTTON_TEXT)
+            refresh_btns.setFixedSize(*UTILITY_ICON_BUTTON_SIZE)
 
         for output_paths in [
             self.env_sync_log_input,
