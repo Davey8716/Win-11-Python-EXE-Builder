@@ -61,9 +61,15 @@ CHECKBOX_CHECK_BLACK_ICON = _stylesheet_url("Icons/check_black.svg")
 CHECKBOX_CHECK_DISABLED_ICON = _stylesheet_url("Icons/check_disabled.svg")
 
 UTILITY_ICON_BUTTON_SIZE = (35, 35)
-DELETE_BUTTON_TEXT = "❌"
-DELETE_ALL_BUTTON_TEXT = "💥"
-REFRESH_BUTTON_TEXT = "🔃"
+DELETE_BUTTON_TEXT = ""
+DELETE_BUTTON_ICON = _resource_path("Icons/White Cross.svg")
+DELETE_BUTTON_ICON_SIZE = (18, 18)
+DELETE_ALL_BUTTON_TEXT = ""
+DELETE_ALL_BUTTON_ICON = _resource_path("Icons/Double Cross.svg")
+DELETE_ALL_BUTTON_ICON_SIZE = (18, 18)
+REFRESH_BUTTON_TEXT = ""
+REFRESH_BUTTON_ICON = _resource_path("Icons/Refresh.svg")
+REFRESH_BUTTON_ICON_SIZE = (18, 18)
 
 
 def combo_box_scrollbar_style() -> str:

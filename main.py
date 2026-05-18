@@ -8,11 +8,11 @@ from build_controller import BuildController
 from environment_sync_controller import EnvironmentSyncController
 from path_hover import attach_path_hovers
 from tooltips import attach_tooltips
-from PySide6.QtCore import QPoint, Qt
+from PySide6.QtCore import QPoint, QSize, Qt
 from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit,QHBoxLayout, QComboBox,QTextEdit,QListView
 from validation_controller import ValidationController
 from activation_controller import ActivationController
-from PySide6.QtGui import QFont, QPalette
+from PySide6.QtGui import QFont, QIcon, QPalette
 from PySide6.QtWidgets import QSizePolicy
 from file_pickers import FilePickerController
 from path_display_line_edit import PathDisplayLineEdit
@@ -28,10 +28,16 @@ from styles import (
     APP_TITLE_LABEL_STYLE,
     CENTER_DIVIDER_STYLE,
     COMBO_BOX_STYLE,
+    DELETE_ALL_BUTTON_ICON,
+    DELETE_ALL_BUTTON_ICON_SIZE,
     DELETE_ALL_BUTTON_TEXT,
+    DELETE_BUTTON_ICON,
+    DELETE_BUTTON_ICON_SIZE,
     DELETE_BUTTON_TEXT,
     ENV_SYNC_BUTTON_STYLE,
     ENV_SYNC_STATUS_LINE_STYLE,
+    REFRESH_BUTTON_ICON,
+    REFRESH_BUTTON_ICON_SIZE,
     REFRESH_BUTTON_TEXT,
     UTILITY_ICON_BUTTON_SIZE,
     combo_box_popup_style,
@@ -470,7 +476,11 @@ class EXEBuilderApp(QWidget):
         self.select_interpreter.setEnabled(True)
 
         self.python_delete_interpreter = QPushButton(DELETE_BUTTON_TEXT)
+        self.python_delete_interpreter.setIcon(QIcon(str(DELETE_BUTTON_ICON)))
+        self.python_delete_interpreter.setIconSize(QSize(*DELETE_BUTTON_ICON_SIZE))
         self.python_delete_all_interpreter = QPushButton(DELETE_ALL_BUTTON_TEXT)
+        self.python_delete_all_interpreter.setIcon(QIcon(str(DELETE_ALL_BUTTON_ICON)))
+        self.python_delete_all_interpreter.setIconSize(QSize(*DELETE_ALL_BUTTON_ICON_SIZE))
 
         interpreter_btn_layout.addWidget(self.interpreter_btn)
         interpreter_btn_layout.addWidget(self.select_interpreter)
@@ -561,7 +571,11 @@ class EXEBuilderApp(QWidget):
         self.select_recent_icons.setEnabled(True)
 
         self.delete_recent_icons = QPushButton(DELETE_BUTTON_TEXT)
+        self.delete_recent_icons.setIcon(QIcon(str(DELETE_BUTTON_ICON)))
+        self.delete_recent_icons.setIconSize(QSize(*DELETE_BUTTON_ICON_SIZE))
         self.delete_all_icons = QPushButton(DELETE_ALL_BUTTON_TEXT)
+        self.delete_all_icons.setIcon(QIcon(str(DELETE_ALL_BUTTON_ICON)))
+        self.delete_all_icons.setIconSize(QSize(*DELETE_ALL_BUTTON_ICON_SIZE))
 
         # -------- Row 2: ICO Converter (below) --------
 
@@ -650,7 +664,11 @@ class EXEBuilderApp(QWidget):
         self.recent_folder_dropdown.setEnabled(True)
         
         self.delete_recent_folder = QPushButton(DELETE_BUTTON_TEXT)
+        self.delete_recent_folder.setIcon(QIcon(str(DELETE_BUTTON_ICON)))
+        self.delete_recent_folder.setIconSize(QSize(*DELETE_BUTTON_ICON_SIZE))
         self.delete_all_folders = QPushButton(DELETE_ALL_BUTTON_TEXT)
+        self.delete_all_folders.setIcon(QIcon(str(DELETE_ALL_BUTTON_ICON)))
+        self.delete_all_folders.setIconSize(QSize(*DELETE_ALL_BUTTON_ICON_SIZE))
    
         folder_row = QHBoxLayout()
         folder_row.setContentsMargins(0, 0, 0, 0)
@@ -1068,6 +1086,8 @@ class EXEBuilderApp(QWidget):
             self.interpreter_refresh_btn,
         ]:
             refresh_btns.setText(REFRESH_BUTTON_TEXT)
+            refresh_btns.setIcon(QIcon(str(REFRESH_BUTTON_ICON)))
+            refresh_btns.setIconSize(QSize(*REFRESH_BUTTON_ICON_SIZE))
             refresh_btns.setFixedSize(*UTILITY_ICON_BUTTON_SIZE)
 
         for output_paths in [

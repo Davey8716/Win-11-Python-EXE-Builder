@@ -6,6 +6,7 @@ from styles import (
     Colors,
     ENV_SYNC_BUTTON_STYLE,
     ENV_SYNC_STATUS_LINE_STYLE,
+    REFRESH_BUTTON_TEXT,
     build_disabled_button,
     build_disabled_checkbox,
     build_disabled_line_edit_style,
@@ -193,7 +194,7 @@ def test_exe_refresh_enabled_when_name_empty(monkeypatch, tmp_path):
     controller.update_ui_state()
 
     assert app.refresh_btn.enabled is True
-    assert app.refresh_btn.text == "🔃"
+    assert app.refresh_btn.text == REFRESH_BUTTON_TEXT
 
 
 def test_exe_refresh_disabled_when_name_matches_script_default(monkeypatch, tmp_path):
@@ -286,7 +287,7 @@ def test_exe_refresh_enabled_when_name_differs_from_script_default(monkeypatch, 
     controller.update_ui_state()
 
     assert app.refresh_btn.enabled is True
-    assert app.refresh_btn.text == "🔃"
+    assert app.refresh_btn.text == REFRESH_BUTTON_TEXT
 
 
 def test_exe_refresh_disabled_without_valid_script(monkeypatch, tmp_path):
