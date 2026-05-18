@@ -275,6 +275,9 @@ class EnvironmentSyncController(QObject):
         if app is None or not hasattr(app, "env_sync_rows_layout"):
             return
 
+        if hasattr(app, "env_sync_row_labels"):
+            app.env_sync_row_labels.clear()
+
         self._clear_layout(app.env_sync_rows_layout)
 
         if not plan.profiles:

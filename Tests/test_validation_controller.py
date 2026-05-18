@@ -2,6 +2,14 @@ import os
 from types import SimpleNamespace
 
 import validation_controller
+from styles import (
+    Colors,
+    ENV_SYNC_BUTTON_STYLE,
+    ENV_SYNC_STATUS_LINE_STYLE,
+    build_disabled_button,
+    build_disabled_line_edit_style,
+    qcolor_name,
+)
 from validation_controller import ValidationController
 
 
@@ -129,6 +137,16 @@ def make_app(tmp_path, exe_name="", script_name="main.py", entry_script=None):
         open_output_dir_after_build=DummyCheckbox(),
         minimize_after_build=DummyCheckbox(),
         close_after_build=DummyCheckbox(),
+        env_sync_scan_btn=DummyButton(),
+        env_sync_match_btn=DummyButton(),
+        env_sync_log_input=DummyInput("Environment sync ready."),
+        env_sync_intro=DummyLabel(),
+        env_sync_status_labels=[DummyLabel(), DummyLabel(), DummyLabel()],
+        env_sync_row_labels=[DummyLabel(), DummyLabel(), DummyLabel()],
+        environment_sync_controller=SimpleNamespace(
+            is_running=False,
+            last_plan=SimpleNamespace(total_actions=1),
+        ),
         open_python_site_btn=DummyButton(),
         interpreter_btn=DummyButton(),
         interpreter_refresh_btn=DummyButton(),
@@ -158,6 +176,7 @@ def make_app(tmp_path, exe_name="", script_name="main.py", entry_script=None):
         exe_name_input=DummyInput(exe_name),
         status_label=DummyLabel(),
         title_frame=DummyFrame(),
+        env_sync_title_frame=DummyFrame(),
         apps_title_frame=DummyFrame(),
         icons_title_frame=DummyFrame(),
         python_title_frame=DummyFrame(),
@@ -185,6 +204,53 @@ def test_exe_refresh_disabled_when_name_matches_script_default(monkeypatch, tmp_
 
     assert app.refresh_btn.enabled is False
     assert app.refresh_btn.text == ""
+
+
+def test_environment_sync_uses_disabled_build_styling(monkeypatch, tmp_path):
+    monkeypatch.setattr(validation_controller, "QCheckBox", DummyCheckbox)
+    app = make_app(tmp_path, exe_name="main")
+    app.building = True
+
+    controller = ValidationController(app)
+    controller.update_ui_state()
+
+    assert app.env_sync_scan_btn.enabled is False
+    assert app.env_sync_match_btn.enabled is False
+    assert app.env_sync_scan_btn.stylesheet == build_disabled_button()
+    assert app.env_sync_match_btn.stylesheet == build_disabled_button()
+    assert app.env_sync_log_input.stylesheet == build_disabled_line_edit_style()
+
+    disabled_text = qcolor_name(Colors.BUILD_DISABLED_TEXT)
+    for label in [
+        app.env_sync_intro,
+        *app.env_sync_status_labels,
+        *app.env_sync_row_labels,
+    ]:
+        assert disabled_text in label.stylesheet
+
+
+def test_environment_sync_restores_normal_styling_when_not_building(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setattr(validation_controller, "QCheckBox", DummyCheckbox)
+    app = make_app(tmp_path, exe_name="main")
+
+    controller = ValidationController(app)
+    controller.update_ui_state()
+
+    assert app.env_sync_scan_btn.enabled is True
+    assert app.env_sync_match_btn.enabled is True
+    assert app.env_sync_scan_btn.stylesheet == ENV_SYNC_BUTTON_STYLE
+    assert app.env_sync_match_btn.stylesheet == ENV_SYNC_BUTTON_STYLE
+    assert app.env_sync_log_input.stylesheet == ENV_SYNC_STATUS_LINE_STYLE
+
+    normal_text = qcolor_name(Colors.TEXT_LIGHT)
+    for label in [
+        app.env_sync_intro,
+        *app.env_sync_status_labels,
+        *app.env_sync_row_labels,
+    ]:
+        assert normal_text in label.stylesheet
 
 
 def test_exe_refresh_enabled_when_name_differs_from_script_default(monkeypatch, tmp_path):

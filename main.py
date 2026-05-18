@@ -308,12 +308,12 @@ class EXEBuilderApp(QWidget):
         env_sync_layout.setContentsMargins(6,6,6,6)
         env_sync_layout.setSpacing(4)
 
-        env_sync_intro = QLabel(
+        self.env_sync_intro = QLabel(
             "Scans installed Python profiles and syncs every version toward one union package set."
         )
-        env_sync_intro.setWordWrap(True)
-        env_sync_intro.setFixedWidth(485)
-        env_sync_intro.setFont(QFont("Rubik UI", 10, QFont.Bold))
+        self.env_sync_intro.setWordWrap(True)
+        self.env_sync_intro.setFixedWidth(485)
+        self.env_sync_intro.setFont(QFont("Rubik UI", 10, QFont.Bold))
         
         self.env_sync_log_input = QLineEdit()
         self.env_sync_log_input.setReadOnly(True)
@@ -345,6 +345,9 @@ class EXEBuilderApp(QWidget):
         env_sync_status_header_layout.setContentsMargins(0,0,0,0)
         env_sync_status_header_layout.setSpacing(4)
 
+        self.env_sync_status_labels = []
+        self.env_sync_row_labels = []
+
         for text, width in [
             ("Python Version", 125),
             ("Packages", 80),
@@ -353,6 +356,7 @@ class EXEBuilderApp(QWidget):
             label = QLabel(text)
             label.setFixedWidth(width)
             label.setFont(QFont("Rubik UI", 9, QFont.Bold))
+            self.env_sync_status_labels.append(label)
             env_sync_status_header_layout.addWidget(label)
 
         env_sync_status_header_layout.addStretch()
@@ -362,7 +366,7 @@ class EXEBuilderApp(QWidget):
         self.env_sync_rows_layout.setContentsMargins(0,0,0,0)
         self.env_sync_rows_layout.setSpacing(2)
 
-        env_sync_layout.addWidget(env_sync_intro)
+        env_sync_layout.addWidget(self.env_sync_intro)
         env_sync_layout.addWidget(env_sync_action_row)
         env_sync_layout.addWidget(env_sync_status_header)
         env_sync_layout.addWidget(env_sync_rows_container)
@@ -1174,6 +1178,9 @@ class EXEBuilderApp(QWidget):
             label = QLabel(text)
             label.setFixedWidth(width)
             label.setFont(QFont("Rubik UI", 9, QFont.Bold))
+            if not hasattr(self, "env_sync_row_labels"):
+                self.env_sync_row_labels = []
+            self.env_sync_row_labels.append(label)
             row_layout.addWidget(label)
 
         row_layout.addStretch()

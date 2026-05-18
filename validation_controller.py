@@ -5,6 +5,8 @@ from styles import (
     APPEND_PY_VERSION_STYLE,
     BUILD_DISABLED_TITLE_FRAME_STYLE,
     Colors,
+    ENV_SYNC_BUTTON_STYLE,
+    ENV_SYNC_STATUS_LINE_STYLE,
     build_disabled_button,
     build_disabled_checkbox,
     build_disabled_line_edit_style,
@@ -12,6 +14,7 @@ from styles import (
     button_with_border,
     filled_button,
     line_edit_style,
+    qcolor_name,
     status_text_style,
     TITLE_FRAME_STYLE,
 )
@@ -417,6 +420,50 @@ class ValidationController:
                 frame.setStyleSheet(
                     BUILD_DISABLED_TITLE_FRAME_STYLE if building else TITLE_FRAME_STYLE
                 )
+
+        # -------------------------------
+        # ENVIRONMENT SYNC GREY STATE
+        # -------------------------------
+        for btn in [
+            getattr(app, "env_sync_scan_btn", None),
+            getattr(app, "env_sync_match_btn", None),
+        ]:
+            if btn:
+                btn.setStyleSheet(
+                    build_disabled_button() if building else ENV_SYNC_BUTTON_STYLE
+                )
+
+        if hasattr(app, "env_sync_log_input"):
+            app.env_sync_log_input.setStyleSheet(
+                build_disabled_line_edit_style()
+                if building
+                else ENV_SYNC_STATUS_LINE_STYLE
+            )
+
+        env_sync_label_color = (
+            Colors.BUILD_DISABLED_TEXT if building else Colors.TEXT_LIGHT
+        )
+        env_sync_label_style = (
+            f"QLabel {{ color: {qcolor_name(env_sync_label_color)}; }}"
+        )
+
+        env_sync_labels = []
+        for attr in [
+            "env_sync_intro",
+            "env_sync_status_labels",
+            "env_sync_row_labels",
+        ]:
+            widgets = getattr(app, attr, None)
+            if widgets is None:
+                continue
+            if isinstance(widgets, list):
+                env_sync_labels.extend(widgets)
+            else:
+                env_sync_labels.append(widgets)
+
+        for label in env_sync_labels:
+            if label:
+                label.setStyleSheet(env_sync_label_style)
 
         # -------------------------------
         # ICON BUTTON TEXT (match grey state)
