@@ -257,12 +257,14 @@ APPEND_PY_VERSION_STYLE = f"""
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
         border: none;
+        border-radius: 4px;
     }}
 
     QPushButton:checked {{
         background-color: {qcolor_name(Colors.SUCCESS)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
         border: none;
+        border-radius: 4px;
     }}
 
     QPushButton:pressed {{
@@ -272,6 +274,7 @@ APPEND_PY_VERSION_STYLE = f"""
     QPushButton:disabled {{
         color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
         background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
+        border-radius: 4px;
     }}
 """
 
