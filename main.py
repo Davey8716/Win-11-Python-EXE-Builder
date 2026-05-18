@@ -28,6 +28,7 @@ from styles import (
     APP_TITLE_LABEL_STYLE,
     CENTER_DIVIDER_STYLE,
     COMBO_BOX_STYLE,
+    COMBO_BOX_LINE_EDIT_STYLE,
     DELETE_ALL_BUTTON_ICON,
     DELETE_ALL_BUTTON_ICON_SIZE,
     DELETE_ALL_BUTTON_TEXT,
@@ -808,10 +809,6 @@ class EXEBuilderApp(QWidget):
         
         self.date_time_dropdown.setEditable(True)
         self.date_time_dropdown.lineEdit().setReadOnly(True)
-        self.date_time_dropdown.lineEdit().setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        self.date_time_dropdown.lineEdit().setStyleSheet(
-            "padding-left: 18px; padding-right: 8px;"
-        )
         self.date_time_dropdown.setCurrentIndex(0)
         self.date_time_dropdown.setEnabled(True)
             
@@ -944,8 +941,8 @@ class EXEBuilderApp(QWidget):
         ]:
             dropdowns.setStyleSheet(COMBO_BOX_STYLE)
             if dropdowns.isEditable() and dropdowns.lineEdit():
-                alignment = Qt.AlignLeft | Qt.AlignVCenter if dropdowns is self.date_time_dropdown else Qt.AlignCenter
-                dropdowns.lineEdit().setAlignment(alignment)
+                dropdowns.lineEdit().setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+                dropdowns.lineEdit().setStyleSheet(COMBO_BOX_LINE_EDIT_STYLE)
 
         frames = [
             env_sync_frame,

@@ -324,6 +324,24 @@ COMBO_BOX_STYLE = f"""
     }}
 """
 
+COMBO_BOX_LINE_EDIT_STYLE = f"""
+    QLineEdit {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+        border: none;
+        padding-left: 18px;
+        padding-right: 8px;
+        font-family: "Rubik UI";
+        font-size: 15px;
+        font-weight: bold;
+    }}
+
+    QLineEdit:disabled {{
+        background-color: {qcolor_name(Colors.COMBO_DISABLED_BG)};
+        color: {qcolor_name(Colors.COMBO_DISABLED_TEXT)};
+    }}
+"""
+
 ENV_SYNC_STATUS_LINE_STYLE = f"""
     QLineEdit {{
         background-color: {qcolor_name(Colors.TITLE_BG)};

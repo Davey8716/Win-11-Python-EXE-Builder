@@ -7,6 +7,28 @@ from ui_highlights import flash_add_highlight, flash_delete_highlight
 
 MAX_RECENTS = 50
 
+def _title_case_recent_part(value, preserve_extension=False):
+    if not value:
+        return value
+
+    if preserve_extension:
+        stem, extension = os.path.splitext(value)
+        if stem:
+            return f"{stem.title()}{extension}"
+
+    return value.title()
+
+
+def _recent_display_label(index, parent, name):
+    display_name = _title_case_recent_part(name, preserve_extension=True)
+
+    if parent:
+        display_parent = _title_case_recent_part(parent)
+        return f"{index}. {display_parent}\\{display_name}"
+
+    return f"{index}. {display_name}"
+
+
 class RecentController:
     def __init__(self, app):
         self.app = app
@@ -186,10 +208,7 @@ class RecentController:
             name = os.path.basename(ap)
             parent = os.path.basename(os.path.dirname(ap))
 
-            if parent:
-                display = f"{index}. {parent}\\{name}"
-            else:
-                display = f"{index}. {name}"
+            display = _recent_display_label(index, parent, name)
 
             app.select_interpreter.addItem(display, ap)
             index += 1
@@ -423,10 +442,7 @@ class RecentController:
             name = os.path.basename(ap)
             parent = os.path.basename(os.path.dirname(ap))
 
-            if parent:
-                display = f"{index}. {parent}\\{name}"
-            else:
-                display = f"{index}. {name}"
+            display = _recent_display_label(index, parent, name)
 
             app.recent_folder_dropdown.addItem(display, ap)
             index += 1
@@ -708,10 +724,7 @@ class RecentController:
             name = os.path.basename(ap)
             parent = os.path.basename(os.path.dirname(ap))
 
-            if parent:
-                display = f"{index}. {parent}\\{name}"
-            else:
-                display = f"{index}. {name}"
+            display = _recent_display_label(index, parent, name)
 
             app.select_recent_icons.addItem(display, ap)
             index += 1
