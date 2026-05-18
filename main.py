@@ -275,8 +275,8 @@ class EXEBuilderApp(QWidget):
         self.right_content, self.right_layout = self._create_content_column()
         self.main_layout = self.right_layout
 
-        content_row_layout.addWidget(self.left_content)
-        content_row_layout.addWidget(self.right_content)
+        content_row_layout.addWidget(self.left_content, alignment=Qt.AlignTop)
+        content_row_layout.addWidget(self.right_content, alignment=Qt.AlignTop)
 
         root_layout.addWidget(title_row)
         root_layout.addWidget(toggles_title_row)
