@@ -240,6 +240,16 @@ class EXEBuilderApp(QWidget):
         content_row_layout.setContentsMargins(0, 0, 0, 0)
         content_row_layout.setSpacing(0)
 
+        build_title_row = QWidget()
+        build_title_row_layout = QHBoxLayout(build_title_row)
+        build_title_row_layout.setContentsMargins(0, 0, 0, 0)
+        build_title_row_layout.setSpacing(0)
+
+        build_frame_row = QWidget()
+        build_frame_row_layout = QHBoxLayout(build_frame_row)
+        build_frame_row_layout.setContentsMargins(0, 0, 0, 0)
+        build_frame_row_layout.setSpacing(0)
+
         blank_left_space = QWidget()
         blank_left_space.setFixedWidth(525)
         blank_left_space.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
@@ -254,6 +264,8 @@ class EXEBuilderApp(QWidget):
         root_layout.addWidget(title_row)
         root_layout.addWidget(toggles_row)
         root_layout.addWidget(content_row)
+        root_layout.addWidget(build_title_row)
+        root_layout.addWidget(build_frame_row)
 
         self.main_layout = QVBoxLayout(right_content)
         self.main_layout.setContentsMargins(1, 1, 1, 1)
@@ -994,8 +1006,8 @@ class EXEBuilderApp(QWidget):
             widget.installEventFilter(self)
         
         
-        self.main_layout.addWidget(build_title_frame, alignment= Qt.AlignCenter)
-        self.main_layout.addWidget(build_frame,alignment=Qt.AlignCenter)
+        build_title_row_layout.addWidget(build_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        build_frame_row_layout.addWidget(build_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
 
         attach_tooltips(self)
         attach_path_hovers(self)
