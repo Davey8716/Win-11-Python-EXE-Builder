@@ -308,10 +308,26 @@ TITLE_FRAME_STYLE = f"""
     QFrame {{
         border: none;
         border-radius: 4px;
-        background-color: {qcolor_name(Colors.TITLE_BG)};
+        background-color: {qcolor_name(Colors.WINDOW)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
     }}
     QLabel {{
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+    }}
+"""
+
+APP_TITLE_CONTAINER_STYLE = f"""
+    QFrame#appTitleFrame {{
+        border: none;
+        border-radius: 0px;
+        background-color: {qcolor_name(Colors.WINDOW)};
+    }}
+"""
+
+APP_TITLE_LABEL_STYLE = f"""
+    QLabel#appTitleLabel {{
+        border: none;
+        background-color: transparent;
         color: {qcolor_name(Colors.TEXT_LIGHT)};
     }}
 """

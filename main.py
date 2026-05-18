@@ -24,6 +24,8 @@ from PySide6.QtGui import QFontMetrics
 from PySide6.QtGui import QTextCursor, QTextBlockFormat
 from styles import (
     APPEND_PY_VERSION_INITIAL_STYLE,
+    APP_TITLE_CONTAINER_STYLE,
+    APP_TITLE_LABEL_STYLE,
     COMBO_BOX_STYLE,
     combo_box_popup_style,
     MAIN_FRAME_STYLE,
@@ -130,20 +132,25 @@ class EXEBuilderApp(QWidget):
         # Title + Tooltip Toggle
         # =============================================================
         self.title_frame = QFrame()
-        self.title_frame.setFrameShape(QFrame.StyledPanel)
-        self.title_frame.setFrameShadow(QFrame.Raised)
+        self.title_frame.setObjectName("appTitleFrame")
+        self.title_frame.setFrameShape(QFrame.NoFrame)
         self.title_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.title_frame.setFixedSize(350,40)
+        self.title_frame.setStyleSheet(APP_TITLE_CONTAINER_STYLE)
 
         title_layout = QHBoxLayout(self.title_frame)
         title_layout.setContentsMargins(5,5,5,5)
+        title_layout.setSpacing(0)
 
-        title_label = QLabel(" Win 11 → Python → EXE Builder")
-        title_label.setFont(QFont("Rubik UI", 15, QFont.Bold))
-        title_label.setFixedSize(350,30)
+        self.title_label = QLabel(" Win 11 → Python → EXE Builder")
+        self.title_label.setObjectName("appTitleLabel")
+        self.title_label.setFont(QFont("Rubik UI", 15, QFont.Bold))
+        self.title_label.setFixedHeight(30)
+        self.title_label.setAlignment(Qt.AlignCenter)
+        self.title_label.setStyleSheet(APP_TITLE_LABEL_STYLE)
 
         title_layout.addStretch()
-        title_layout.addWidget(title_label)
+        title_layout.addWidget(self.title_label)
         title_layout.addStretch()
 
         # -------------------------------
@@ -799,7 +806,6 @@ class EXEBuilderApp(QWidget):
                 frame.setStyleSheet(MAIN_FRAME_STYLE)
                 
         frames = [
-            self.title_frame,
             self.apps_title_frame,
             self.icons_title_frame,
             self.python_title_frame,
@@ -810,10 +816,6 @@ class EXEBuilderApp(QWidget):
         for frame in frames:
             if frame:
                 frame.setStyleSheet(TITLE_FRAME_STYLE)
-        
-            if frame == self.title_frame:
-            # ignore or custom logic
-                continue
 
             frame.setFixedSize(100, 35)
             frame.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
