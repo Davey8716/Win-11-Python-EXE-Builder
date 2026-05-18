@@ -173,13 +173,13 @@ class EXEBuilderApp(QWidget):
         build_options_title_layout.addStretch()
 
         toggles_frame = QFrame()
-        toggles_frame.setFixedSize(420, 85)
+        toggles_frame.setFixedSize(450, 65)
         toggles_frame.setFrameShape(QFrame.StyledPanel)
         toggles_frame.setFrameShadow(QFrame.Raised)
         toggles_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         toggles_layout = QVBoxLayout(toggles_frame)
-        toggles_layout.setContentsMargins(5,5,5,5)
+        toggles_layout.setContentsMargins(8, 8, 8, 8)
         toggles_layout.setSpacing(2)
 
         self.tooltips_checkbox = QCheckBox("Tooltips")
