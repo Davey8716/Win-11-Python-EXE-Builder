@@ -151,6 +151,12 @@ def attach_tooltips(app):
     # -----------------------------
 
     QtTooltip(
+        app.env_sync_log_input,
+        "Shows Environment Sync scan progress, package install progress,\n"
+        "and final sync results. This does not affect the EXE build status."
+    )
+
+    QtTooltip(
         app.env_sync_scan_btn,
         "Scans Python installs under AppData\\Local\\Programs\\Python.\n"
         "Compares installed package names and versions across all detected profiles."

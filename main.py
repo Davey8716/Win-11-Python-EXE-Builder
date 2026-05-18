@@ -301,6 +301,13 @@ class EXEBuilderApp(QWidget):
         env_sync_intro.setWordWrap(True)
         env_sync_intro.setFixedWidth(485)
         env_sync_intro.setFont(QFont("Rubik UI", 10, QFont.Bold))
+        
+        self.env_sync_log_input = QLineEdit()
+        self.env_sync_log_input.setReadOnly(True)
+        self.env_sync_log_input.setFixedWidth(485)
+        self.env_sync_log_input.setPlaceholderText("Environment sync ready.")
+        self.env_sync_log_input.setText("Environment sync ready.")
+        self.env_sync_log_input.setFont(QFont("Rubik UI", 10, QFont.Bold))
 
         env_sync_action_row = QWidget()
         env_sync_action_layout = QHBoxLayout(env_sync_action_row)
@@ -334,11 +341,6 @@ class EXEBuilderApp(QWidget):
 
         env_sync_status_header_layout.addStretch()
 
-        self.env_sync_summary_label = QLabel("Not scanned.")
-        self.env_sync_summary_label.setWordWrap(True)
-        self.env_sync_summary_label.setFixedWidth(485)
-        self.env_sync_summary_label.setFont(QFont("Rubik UI", 9, QFont.Bold))
-
         env_sync_rows_container = QWidget()
         self.env_sync_rows_layout = QVBoxLayout(env_sync_rows_container)
         self.env_sync_rows_layout.setContentsMargins(0,0,0,0)
@@ -346,9 +348,9 @@ class EXEBuilderApp(QWidget):
 
         env_sync_layout.addWidget(env_sync_intro)
         env_sync_layout.addWidget(env_sync_action_row)
-        env_sync_layout.addWidget(self.env_sync_summary_label)
         env_sync_layout.addWidget(env_sync_status_header)
         env_sync_layout.addWidget(env_sync_rows_container)
+        env_sync_layout.addWidget(self.env_sync_log_input)
         self.add_env_sync_status_row("-", "-", "Press Scan Profiles")
 
         self.left_layout.addWidget(self.env_sync_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
@@ -969,6 +971,7 @@ class EXEBuilderApp(QWidget):
 
         inputs = [
             (self.exe_name_input, "Exe has not been named."),
+            (self.env_sync_log_input, "Environment sync ready."),
             (self.python_entry_input, "No Python interpreter selected."),
             (self.icon_path_input, "No icon selected."),
             (self.output_path_input, "No output folder selected."),
@@ -1033,6 +1036,7 @@ class EXEBuilderApp(QWidget):
             refresh_btns.setFixedSize(35,35)
 
         for output_paths in [
+            self.env_sync_log_input,
             self.python_entry_input,
             self.script_path_input,
             self.icon_path_input,
@@ -1189,6 +1193,13 @@ class EXEBuilderApp(QWidget):
         # 🔑 CLEAR SELECTION (this fixes the green highlight)
         cursor.clearSelection()
         self.status_label.setTextCursor(cursor)
+
+    def set_env_sync_status(self, text):
+        if not hasattr(self, "env_sync_log_input"):
+            return
+
+        single_line = " ".join(str(text).splitlines()).strip()
+        self.env_sync_log_input.setText(single_line)
 
     def closeEvent(self, event):
         self._is_closing = True

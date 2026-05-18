@@ -278,7 +278,7 @@ class EnvironmentSyncController(QObject):
         self._clear_layout(app.env_sync_rows_layout)
 
         if not plan.profiles:
-            app.env_sync_summary_label.setText(
+            app.set_env_sync_status(
                 "No Python installs found under AppData\\Local\\Programs\\Python."
             )
             app.env_sync_match_btn.setEnabled(False)
@@ -291,7 +291,7 @@ class EnvironmentSyncController(QObject):
         if plan.baseline_version:
             summary += f" | baseline {plan.baseline_version}"
 
-        app.env_sync_summary_label.setText(summary)
+        app.set_env_sync_status(summary)
 
         for profile in plan.profiles:
             installed_count = len(profile.packages)
@@ -326,22 +326,13 @@ class EnvironmentSyncController(QObject):
 
     def _on_worker_progress(self, message):
         if self.app is not None:
-            self.app.set_status(message)
+            self.app.set_env_sync_status(message)
 
     def _on_worker_finished(self, action, payload):
         if action == "scan":
             plan = payload
             self.last_plan = plan
             self.update_ui_from_plan(plan)
-
-            if not plan.profiles:
-                self.app.set_status("No Python profiles found.")
-            elif plan.total_actions:
-                self.app.set_status(
-                    f"Scan complete.\n{plan.total_actions} sync actions needed."
-                )
-            else:
-                self.app.set_status("Scan complete.\nAll profiles are synced.")
             return
 
         results = payload
@@ -352,24 +343,19 @@ class EnvironmentSyncController(QObject):
             self.update_ui_from_plan(self.last_plan)
 
         if failed_count:
-            if hasattr(self.app, "env_sync_summary_label"):
-                failure_preview = self._sync_failure_preview(results)
-                current = self.app.env_sync_summary_label.text()
-                self.app.env_sync_summary_label.setText(
-                    f"{current} | failed: {failure_preview}"
-                )
+            failure_preview = self._sync_failure_preview(results)
 
-            self.app.set_status(
+            self.app.set_env_sync_status(
                 f"Dependency sync finished.\n"
-                f"Installed {installed_count}; failed {failed_count}."
+                f"Installed {installed_count}; failed {failed_count}: {failure_preview}"
             )
         else:
-            self.app.set_status(
+            self.app.set_env_sync_status(
                 f"Dependency sync complete.\nInstalled {installed_count} packages."
             )
 
     def _on_worker_failed(self, action, message):
-        self.app.set_status(f"Environment {action} failed.\n{message}")
+        self.app.set_env_sync_status(f"Environment {action} failed.\n{message}")
 
     def _clear_worker_refs(self):
         self._thread = None
