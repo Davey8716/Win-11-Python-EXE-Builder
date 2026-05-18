@@ -378,6 +378,13 @@ APP_TITLE_LABEL_STYLE = f"""
     }}
 """
 
+CENTER_DIVIDER_STYLE = f"""
+    QFrame#centerDivider {{
+        background-color: {qcolor_name(Colors.WHITE)};
+        border: none;
+    }}
+"""
+
 BUILD_DISABLED_TITLE_FRAME_STYLE = f"""
     QFrame {{
         border: none;

@@ -8,7 +8,7 @@ from build_controller import BuildController
 from environment_sync_controller import EnvironmentSyncController
 from path_hover import attach_path_hovers
 from tooltips import attach_tooltips
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QPoint, Qt
 from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit,QHBoxLayout, QComboBox,QTextEdit,QListView
 from validation_controller import ValidationController
 from activation_controller import ActivationController
@@ -26,6 +26,7 @@ from styles import (
     APPEND_PY_VERSION_INITIAL_STYLE,
     APP_TITLE_CONTAINER_STYLE,
     APP_TITLE_LABEL_STYLE,
+    CENTER_DIVIDER_STYLE,
     COMBO_BOX_STYLE,
     ENV_SYNC_BUTTON_STYLE,
     ENV_SYNC_STATUS_LINE_STYLE,
@@ -246,9 +247,9 @@ class EXEBuilderApp(QWidget):
         toggles_row_layout.setSpacing(0)
         toggles_row_layout.addWidget(toggles_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
 
-        content_row = QWidget()
-        content_row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-        content_row_layout = QHBoxLayout(content_row)
+        self.content_row = QWidget()
+        self.content_row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        content_row_layout = QHBoxLayout(self.content_row)
         content_row_layout.setContentsMargins(0, 0, 0, 0)
         content_row_layout.setSpacing(0)
 
@@ -267,14 +268,21 @@ class EXEBuilderApp(QWidget):
         self.left_content, self.left_layout = self._create_content_column()
         self.right_content, self.right_layout = self._create_content_column()
         self.main_layout = self.right_layout
+        self.center_divider = QFrame()
+        self.center_divider.setObjectName("centerDivider")
+        self.center_divider.setFrameShape(QFrame.NoFrame)
+        self.center_divider.setFixedWidth(2)
+        self.center_divider.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        self.center_divider.setStyleSheet(CENTER_DIVIDER_STYLE)
 
         content_row_layout.addWidget(self.left_content, alignment=Qt.AlignTop)
+        content_row_layout.addWidget(self.center_divider, alignment=Qt.AlignBottom)
         content_row_layout.addWidget(self.right_content, alignment=Qt.AlignTop)
 
         root_layout.addWidget(title_row)
         root_layout.addWidget(toggles_title_row)
         root_layout.addWidget(toggles_row)
-        root_layout.addWidget(content_row)
+        root_layout.addWidget(self.content_row)
         root_layout.addWidget(build_title_row)
         root_layout.addWidget(build_frame_row)
 
@@ -1161,6 +1169,7 @@ class EXEBuilderApp(QWidget):
 
         self.validator.update_ui_state()
         self.validation_controller.update_build_button()
+        self._sync_center_divider_height()
 
     def add_env_sync_status_row(self, version, package_count, status):
         if not hasattr(self, "env_sync_rows_layout"):
@@ -1186,10 +1195,41 @@ class EXEBuilderApp(QWidget):
 
         row_layout.addStretch()
         self.env_sync_rows_layout.addWidget(row)
+        self._sync_center_divider_height()
+
+    def _sync_center_divider_height(self):
+        if not all(
+            hasattr(self, attr)
+            for attr in ("left_content", "right_content", "content_row", "center_divider")
+        ):
+            return
+
+        content_height = max(
+            self.left_content.sizeHint().height(),
+            self.right_content.sizeHint().height(),
+        )
+        if content_height <= 0:
+            return
+
+        divider_top_offset = self._center_divider_top_offset()
+        self.content_row.setFixedHeight(content_height)
+        self.center_divider.setFixedHeight(max(1, content_height - divider_top_offset))
+
+    def _center_divider_top_offset(self):
+        if not hasattr(self, "icons_title"):
+            return 0
+
+        text_bounds = QFontMetrics(self.icons_title.font()).boundingRect(
+            self.icons_title.text()
+        )
+        label_height = self.icons_title.height() or self.icons_title.sizeHint().height()
+        text_top_offset = max(0, (label_height - text_bounds.height()) // 2)
+        title_position = self.icons_title.mapTo(self.content_row, QPoint(0, 0))
+        return max(0, title_position.y() + text_top_offset)
 
     def _create_content_column(self):
         content = QWidget()
-        content.setFixedWidth(525)
+        content.setFixedWidth(524)
         content.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         layout = QVBoxLayout(content)
