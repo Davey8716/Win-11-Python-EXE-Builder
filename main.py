@@ -250,26 +250,18 @@ class EXEBuilderApp(QWidget):
         build_frame_row_layout.setContentsMargins(0, 0, 0, 0)
         build_frame_row_layout.setSpacing(0)
 
-        blank_left_space = QWidget()
-        blank_left_space.setFixedWidth(525)
-        blank_left_space.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        self.left_content, self.left_layout = self._create_content_column()
+        self.right_content, self.right_layout = self._create_content_column()
+        self.main_layout = self.right_layout
 
-        right_content = QWidget()
-        right_content.setFixedWidth(525)
-        right_content.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
-
-        content_row_layout.addWidget(blank_left_space)
-        content_row_layout.addWidget(right_content)
+        content_row_layout.addWidget(self.left_content)
+        content_row_layout.addWidget(self.right_content)
 
         root_layout.addWidget(title_row)
         root_layout.addWidget(toggles_row)
         root_layout.addWidget(content_row)
         root_layout.addWidget(build_title_row)
         root_layout.addWidget(build_frame_row)
-
-        self.main_layout = QVBoxLayout(right_content)
-        self.main_layout.setContentsMargins(1, 1, 1, 1)
-        self.main_layout.setSpacing(2)
 
         # =============================================================
         # Script / Buttons Section
@@ -318,16 +310,6 @@ class EXEBuilderApp(QWidget):
         self.open_python_site_btn = QPushButton("Python.org")
         apps_layout.addWidget(self.open_python_site_btn)
         apps_layout.addStretch()
-
-        # =================================================
-        # FINAL ATTACH
-        # =================================================
-
-        self.main_layout.addWidget(self.apps_title_frame,alignment=Qt.AlignCenter)
-        combined_layout.addWidget(apps_row)
-
-        row2_layout.addWidget(combined_frame)
-        self.main_layout.addWidget(row2)
 
         # =================================================
         # Interpreter (VERTICAL stack)
@@ -393,12 +375,12 @@ class EXEBuilderApp(QWidget):
         interpreter_layout.addWidget(interpreter_entry_row)
 
         # --- Final attach ---
-        self.main_layout.addWidget(self.apps_title_frame,alignment=Qt.AlignCenter)
+        self.left_layout.addWidget(self.apps_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
         combined_layout.addWidget(apps_row)
         combined_layout.addWidget(interpreter_container)
 
-        row2_layout.addWidget(combined_frame,alignment=Qt.AlignCenter)
-        self.main_layout.addWidget(row2)
+        row2_layout.addWidget(combined_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        self.left_layout.addWidget(row2, alignment=Qt.AlignHCenter | Qt.AlignTop)
  
         # =============================================================
         # Icon Picker
@@ -494,8 +476,8 @@ class EXEBuilderApp(QWidget):
         icon_block_layout.addWidget(icon_entry_row)
         
         icon_frame_layout.addWidget(icon_block)
-        self.main_layout.addWidget(self.icons_title_frame,alignment=Qt.AlignCenter)
-        self.main_layout.addWidget(icon_frame, alignment= Qt.AlignCenter)
+        self.main_layout.addWidget(self.icons_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        self.main_layout.addWidget(icon_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
 
         # =================================================
         # PYTHON FILE TITLE FRAME
@@ -573,8 +555,8 @@ class EXEBuilderApp(QWidget):
 
         script_layout.setContentsMargins(1,1,1,1)
         python_layout.addWidget(script_row)
-        self.main_layout.addWidget(self.python_title_frame,alignment=Qt.AlignCenter)
-        self.main_layout.addWidget(python_frame,alignment = Qt.AlignCenter)
+        self.main_layout.addWidget(self.python_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        self.main_layout.addWidget(python_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
 
         # =============================================================
         # Output Folder
@@ -744,8 +726,8 @@ class EXEBuilderApp(QWidget):
         exe_layout.addWidget(self.refresh_btn)
 
         output_layout.addWidget(exe_row)
-        self.main_layout.addWidget(self.output_title_frame, alignment=Qt.AlignCenter)
-        self.main_layout.addWidget(output_frame,alignment=Qt.AlignCenter)
+        self.main_layout.addWidget(self.output_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        self.main_layout.addWidget(output_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
         
         # =============================================================
         # Build FRAME
@@ -1056,6 +1038,18 @@ class EXEBuilderApp(QWidget):
 
         self.validator.update_ui_state()
         self.validation_controller.update_build_button()
+
+    def _create_content_column(self):
+        content = QWidget()
+        content.setFixedWidth(525)
+        content.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(1, 1, 1, 1)
+        layout.setSpacing(2)
+        layout.setAlignment(Qt.AlignTop)
+
+        return content, layout
 
     def close_app(self):
         QApplication.instance().quit()
