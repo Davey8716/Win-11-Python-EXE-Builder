@@ -400,7 +400,7 @@ class EXEBuilderApp(QWidget):
         apps_title_layout = QHBoxLayout(self.apps_title_frame)
         apps_title_layout.setContentsMargins(2,2,2,2)
 
-        self.apps_title = QLabel("Interpreter Section")
+        self.apps_title = QLabel("Interpreter Select")
         self.apps_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
 
         apps_title_layout.addStretch()
@@ -503,7 +503,7 @@ class EXEBuilderApp(QWidget):
         icons_title_layout.setContentsMargins(3,3,3,3)
         icons_title_layout.setSpacing(3)
 
-        self.icons_title = QLabel("Icons Section")
+        self.icons_title = QLabel("Icons Select")
         self.icons_title.setFixedHeight(30)
         self.icons_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
 
@@ -688,7 +688,7 @@ class EXEBuilderApp(QWidget):
         output_title_layout.setContentsMargins(3,3,3,3)
         output_title_layout.setSpacing(3)
 
-        self.output_title = QLabel("Output Section")
+        self.output_title = QLabel("Output Select")
         self.output_title.setFixedHeight(30)
         self.output_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
 
