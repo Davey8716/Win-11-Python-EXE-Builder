@@ -423,6 +423,19 @@ ENV_SYNC_STATUS_LINE_STYLE = f"""
     }}
 """
 
+ENV_SYNC_SCROLL_AREA_STYLE = f"""
+    QScrollArea {{
+        background-color: {qcolor_name(Colors.PANEL_BG)};
+        border: none;
+    }}
+
+    QScrollArea QWidget {{
+        background-color: {qcolor_name(Colors.PANEL_BG)};
+    }}
+
+    {vertical_scrollbar_style("QScrollArea")}
+"""
+
 MAIN_FRAME_STYLE = f"""
     QFrame {{
         border: none;

@@ -15,7 +15,7 @@ from environment_sync_controller import EnvironmentSyncController
 from path_hover import attach_path_hovers
 from tooltips import attach_tooltips
 from PySide6.QtCore import QPoint, QSize, Qt
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit,QHBoxLayout, QComboBox,QTextEdit,QListView
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit,QHBoxLayout, QComboBox,QTextEdit,QListView,QScrollArea
 from validation_controller import ValidationController
 from activation_controller import ActivationController
 from PySide6.QtGui import QFont, QIcon, QPalette
@@ -42,6 +42,7 @@ from styles import (
     DELETE_BUTTON_ICON_SIZE,
     DELETE_BUTTON_TEXT,
     ENV_SYNC_BUTTON_STYLE,
+    ENV_SYNC_SCROLL_AREA_STYLE,
     ENV_SYNC_STATUS_LINE_STYLE,
     BUILD_OPTIONS_FRAME_STYLE,
     REFRESH_BUTTON_ICON,
@@ -387,9 +388,26 @@ class EXEBuilderApp(QWidget):
         self.env_sync_rows_layout.setContentsMargins(0,0,0,0)
         self.env_sync_rows_layout.setSpacing(2)
 
+        env_sync_visible_rows = 5
+        env_sync_row_height = 22
+        env_sync_row_spacing = self.env_sync_rows_layout.spacing()
+        env_sync_scroll_height = (
+            env_sync_visible_rows * env_sync_row_height
+            + (env_sync_visible_rows - 1) * env_sync_row_spacing
+        )
+
+        self.env_sync_rows_scroll_area = QScrollArea()
+        self.env_sync_rows_scroll_area.setWidgetResizable(True)
+        self.env_sync_rows_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.env_sync_rows_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.env_sync_rows_scroll_area.setFixedHeight(env_sync_scroll_height)
+        self.env_sync_rows_scroll_area.setFrameShape(QFrame.NoFrame)
+        self.env_sync_rows_scroll_area.setStyleSheet(ENV_SYNC_SCROLL_AREA_STYLE)
+        self.env_sync_rows_scroll_area.setWidget(self.env_sync_rows_container)
+
         env_sync_layout.addWidget(self.env_sync_action_row)
         env_sync_layout.addWidget(self.env_sync_status_header)
-        env_sync_layout.addWidget(self.env_sync_rows_container)
+        env_sync_layout.addWidget(self.env_sync_rows_scroll_area)
         env_sync_layout.addWidget(self.env_sync_log_input)
         self.add_env_sync_status_row("-", "-", "Press Scan Profiles")
 
@@ -1189,6 +1207,7 @@ class EXEBuilderApp(QWidget):
             return
 
         row = QWidget()
+        row.setFixedHeight(22)
         row_layout = QHBoxLayout(row)
         row_layout.setContentsMargins(0,0,0,0)
         row_layout.setSpacing(4)
