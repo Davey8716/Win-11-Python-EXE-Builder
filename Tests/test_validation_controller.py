@@ -205,6 +205,7 @@ def test_exe_refresh_disabled_when_name_matches_script_default(monkeypatch, tmp_
 
     assert app.refresh_btn.enabled is False
     assert app.refresh_btn.text == ""
+    assert app.refresh_btn.stylesheet == build_disabled_button()
 
 
 def test_environment_sync_uses_disabled_build_styling(monkeypatch, tmp_path):
@@ -276,6 +277,33 @@ def test_open_output_directory_enabled_for_non_desktop_output(monkeypatch, tmp_p
     assert app.open_output_dir_after_build.stylesheet == ""
 
 
+def test_output_refresh_disabled_for_desktop_output_uses_build_style(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setattr(validation_controller, "QCheckBox", DummyCheckbox)
+    app = make_app(tmp_path, exe_name="main")
+    desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+    app.output_path_input.setText(desktop)
+
+    controller = ValidationController(app)
+    controller.update_ui_state()
+
+    assert app.output_refresh_btn.enabled is False
+    assert app.output_refresh_btn.text == ""
+    assert app.output_refresh_btn.stylesheet == build_disabled_button()
+
+
+def test_output_refresh_enabled_for_non_desktop_output(monkeypatch, tmp_path):
+    monkeypatch.setattr(validation_controller, "QCheckBox", DummyCheckbox)
+    app = make_app(tmp_path, exe_name="main")
+
+    controller = ValidationController(app)
+    controller.update_ui_state()
+
+    assert app.output_refresh_btn.enabled is True
+    assert app.output_refresh_btn.text == REFRESH_BUTTON_TEXT
+
+
 def test_exe_refresh_enabled_when_name_differs_from_script_default(monkeypatch, tmp_path):
     monkeypatch.setattr(validation_controller, "QCheckBox", DummyCheckbox)
     app = make_app(tmp_path, exe_name="CustomApp", script_name="launcher.py")
@@ -298,3 +326,4 @@ def test_exe_refresh_disabled_without_valid_script(monkeypatch, tmp_path):
 
     assert app.refresh_btn.enabled is False
     assert app.refresh_btn.text == ""
+    assert app.refresh_btn.stylesheet == build_disabled_button()

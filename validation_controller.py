@@ -286,6 +286,11 @@ class ValidationController:
             if not enabled:
                 if isinstance(btn, QCheckBox):
                     btn.setStyleSheet(build_disabled_checkbox())
+                elif btn in (
+                    getattr(app, "refresh_btn", None),
+                    getattr(app, "output_refresh_btn", None),
+                ):
+                    btn.setStyleSheet(build_disabled_button())
                 elif is_utility_icon_button(btn):
                     btn.setStyleSheet(utility_icon_button_disabled_style(building))
                 elif building:
