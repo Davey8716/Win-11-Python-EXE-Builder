@@ -142,6 +142,7 @@ class EXEBuilderApp(QWidget):
         self.close_after_build_enabled = getattr(self, "close_after_build_enabled", True)
         self.minimize_after_build_enabled = getattr(self, "minimize_after_build_enabled", True)
         self.open_output_dir_after_build_enabled = getattr(self, "open_output_dir_after_build_enabled", False)
+        self.suppress_exit_dialogue_enabled = getattr(self, "suppress_exit_dialogue_enabled", False)
         self.tooltips_enabled = getattr(self, "tooltips_enabled", True)
         self.script_path = getattr(self, "script_path", "")
         self.icon_path = getattr(self, "icon_path", "")
@@ -195,7 +196,7 @@ class EXEBuilderApp(QWidget):
         build_options_title_layout.addStretch()
 
         toggles_frame = QFrame()
-        toggles_frame.setFixedSize(450, 65)
+        toggles_frame.setFixedSize(450, 88)
         toggles_frame.setFrameShape(QFrame.StyledPanel)
         toggles_frame.setFrameShadow(QFrame.Raised)
         toggles_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -206,6 +207,7 @@ class EXEBuilderApp(QWidget):
 
         self.tooltips_checkbox = QCheckBox("Tooltips")
         self.minimize_after_build = QCheckBox("Minimize After Build")
+        self.suppress_exit_dialogue = QCheckBox("Surpress Exit Dialogue")
         self.open_output_dir_after_build = QCheckBox("Open Output Directory")
         self.close_after_build = QCheckBox("Close After Build")
 
@@ -223,6 +225,7 @@ class EXEBuilderApp(QWidget):
 
         left_toggle_column.addWidget(self.tooltips_checkbox, alignment=Qt.AlignLeft | Qt.AlignTop)
         left_toggle_column.addWidget(self.minimize_after_build, alignment=Qt.AlignLeft | Qt.AlignTop)
+        left_toggle_column.addWidget(self.suppress_exit_dialogue, alignment=Qt.AlignLeft | Qt.AlignTop)
         left_toggle_column.addStretch()
 
         right_toggle_column.addWidget(self.open_output_dir_after_build, alignment=Qt.AlignLeft | Qt.AlignTop)
@@ -1053,11 +1056,14 @@ class EXEBuilderApp(QWidget):
         for cb in [
             self.tooltips_checkbox,
             self.minimize_after_build,
+            self.suppress_exit_dialogue,
             self.close_after_build,
         ]:
-            cb.setFixedSize(200, 24)
+            cb.setFixedSize(225, 24)
             cb.setChecked(True)
             cb.setFont(QFont("Rubik UI", 13, QFont.Bold))
+
+        self.suppress_exit_dialogue.setChecked(False)
 
         self.open_output_dir_after_build.setFixedSize(215, 24)
         self.open_output_dir_after_build.setChecked(True)
@@ -1199,6 +1205,7 @@ class EXEBuilderApp(QWidget):
         self.script_path_input.textChanged.connect(self.ui_handlers.on_script_path_change)
         self.minimize_after_build.stateChanged.connect(self.ui_handlers.on_minimize_toggle)
         self.open_output_dir_after_build.stateChanged.connect(self.ui_handlers.on_open_output_dir_toggle)
+        self.suppress_exit_dialogue.stateChanged.connect(self.ui_handlers.on_suppress_exit_dialogue_toggle)
         self.close_after_build.stateChanged.connect(self.ui_handlers.on_close_toggle)
 
         self.validator.update_ui_state()
@@ -1369,7 +1376,11 @@ class EXEBuilderApp(QWidget):
         self.env_sync_log_input.setCursorPosition(0)
 
     def closeEvent(self, event):
-        if not self._is_closing and not self._confirm_manual_close():
+        should_confirm_close = (
+            not self._is_closing
+            and not getattr(self, "suppress_exit_dialogue_enabled", False)
+        )
+        if should_confirm_close and not self._confirm_manual_close():
             event.ignore()
             return
 

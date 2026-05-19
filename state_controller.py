@@ -79,6 +79,7 @@ class StateController:
             # -------------------------
             for name in (
                 "tooltips_checkbox",
+                "suppress_exit_dialogue",
                 "script_path_input",
                 "icon_path_input",
                 "output_path_input",
@@ -97,6 +98,7 @@ class StateController:
             self.app.close_after_build_enabled = data.get("close_after_build_enabled", True)
             self.app.minimize_after_build_enabled = data.get("minimize_after_build_enabled", True)
             self.app.open_output_dir_after_build_enabled = data.get("open_output_dir_after_build_enabled", False)
+            self.app.suppress_exit_dialogue_enabled = data.get("suppress_exit_dialogue_enabled", False)
 
             self.app.script_path = _norm(data.get("last_script_path", ""))
             self.app.icon_path = _norm(data.get("last_icon_path", ""))
@@ -153,6 +155,11 @@ class StateController:
 
             if hasattr(self.app, "tooltips_checkbox"):
                 self.app.tooltips_checkbox.setChecked(self.app.tooltips_enabled)
+
+            if hasattr(self.app, "suppress_exit_dialogue"):
+                self.app.suppress_exit_dialogue.setChecked(
+                    getattr(self.app, "suppress_exit_dialogue_enabled", False)
+                )
 
             if hasattr(self.app, "script_path_input"):
                 self.app.script_path_input.set_display_path(self.app.script_path)
@@ -288,6 +295,7 @@ class StateController:
             "close_after_build_enabled": getattr(self.app, "close_after_build_enabled", True),
             "minimize_after_build_enabled": getattr(self.app, "minimize_after_build_enabled", True),
             "open_output_dir_after_build_enabled": getattr(self.app, "open_output_dir_after_build_enabled", False),
+            "suppress_exit_dialogue_enabled": getattr(self.app, "suppress_exit_dialogue_enabled", False),
 
             # --- User flags ---
             "icon_user_cleared": getattr(self.app, "icon_user_cleared", False),

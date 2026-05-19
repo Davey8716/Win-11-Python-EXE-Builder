@@ -167,6 +167,12 @@ class UIHandlers:
         app.state_ctrl.save_state()
         app.validator.update_ui_state()
 
+    def on_suppress_exit_dialogue_toggle(self, state):
+        app = self.app
+        app.suppress_exit_dialogue_enabled = bool(state)
+        app.state_ctrl.save_state()
+        app.validator.update_ui_state()
+
     def on_close_toggle(self, state):
         app = self.app
         app.close_after_build_enabled = bool(state)
