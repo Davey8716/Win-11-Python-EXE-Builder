@@ -602,7 +602,7 @@ def status_text_style(text_color: QColor, border_width: int = 3) -> str:
         QTextEdit {{
             background-color: {qcolor_name(Colors.PANEL_BG)};
             color: {qcolor_name(text_color)};
-            border: 1px solid {qcolor_name(Colors.BLACK)};
+            border: none;
         }}
     """
 
