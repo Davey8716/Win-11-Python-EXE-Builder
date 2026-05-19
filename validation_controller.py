@@ -13,6 +13,8 @@ from styles import (
     DELETE_BUTTON_ICON_SIZE,
     DELETE_BUTTON_TEXT,
     ENV_SYNC_BUTTON_STYLE,
+    ENV_SYNC_SCROLL_AREA_DISABLED_STYLE,
+    ENV_SYNC_SCROLL_AREA_STYLE,
     ENV_SYNC_STATUS_LINE_STYLE,
     REFRESH_BUTTON_ICON,
     REFRESH_BUTTON_ICON_SIZE,
@@ -555,6 +557,18 @@ class ValidationController:
                 if building
                 else ENV_SYNC_STATUS_LINE_STYLE
             )
+
+        if hasattr(app, "env_sync_rows_scroll_area"):
+            app.env_sync_rows_scroll_area.setStyleSheet(
+                ENV_SYNC_SCROLL_AREA_DISABLED_STYLE
+                if building
+                else ENV_SYNC_SCROLL_AREA_STYLE
+            )
+            for scrollbar in (
+                app.env_sync_rows_scroll_area.verticalScrollBar(),
+                app.env_sync_rows_scroll_area.horizontalScrollBar(),
+            ):
+                scrollbar.setEnabled(not building)
 
         env_sync_label_color = (
             Colors.BUILD_DISABLED_TEXT if building else Colors.TEXT_LIGHT

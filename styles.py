@@ -196,6 +196,40 @@ def vertical_scrollbar_style(owner_selector: str) -> str:
 """
 
 
+def disabled_scrollbar_style(owner_selector: str) -> str:
+    return f"""
+    {owner_selector} QScrollBar:disabled,
+    {owner_selector} QScrollBar:vertical:disabled,
+    {owner_selector} QScrollBar:horizontal:disabled {{
+        background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
+    }}
+
+    {owner_selector} QScrollBar::handle:disabled {{
+        background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
+        border-radius: 4px;
+    }}
+
+    {owner_selector} QScrollBar::sub-line:disabled,
+    {owner_selector} QScrollBar::add-line:disabled {{
+        background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
+    }}
+
+    {owner_selector} QScrollBar::up-arrow:disabled,
+    {owner_selector} QScrollBar::down-arrow:disabled,
+    {owner_selector} QScrollBar::left-arrow:disabled,
+    {owner_selector} QScrollBar::right-arrow:disabled {{
+        background-color: transparent;
+        image: none;
+        color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+    }}
+
+    {owner_selector} QScrollBar::add-page:disabled,
+    {owner_selector} QScrollBar::sub-page:disabled {{
+        background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
+    }}
+"""
+
+
 def button_base(border_width: int = 3) -> str:
     return f"""
         QPushButton {{
@@ -439,6 +473,20 @@ ENV_SYNC_SCROLL_AREA_STYLE = f"""
     }}
 
     {vertical_scrollbar_style("QScrollArea")}
+"""
+
+ENV_SYNC_SCROLL_AREA_DISABLED_STYLE = f"""
+    QScrollArea {{
+        background-color: {qcolor_name(Colors.PANEL_BG)};
+        border: none;
+    }}
+
+    QScrollArea QWidget {{
+        background-color: {qcolor_name(Colors.PANEL_BG)};
+    }}
+
+    {vertical_scrollbar_style("QScrollArea")}
+    {disabled_scrollbar_style("QScrollArea")}
 """
 
 MAIN_FRAME_STYLE = f"""
