@@ -962,7 +962,6 @@ class EXEBuilderApp(QWidget):
         frames = [
             self.env_sync_frame,
             combined_frame,
-            interpreter_container,
             icon_frame,
             python_frame,
             output_frame,
