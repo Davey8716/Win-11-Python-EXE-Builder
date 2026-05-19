@@ -1,0 +1,17 @@
+MASS_DATETIME_BUILD_SENTINEL = "__BUILD_ALL_DATETIME_OUTPUTS__"
+MASS_DATETIME_BUILD_LABEL = "Build All Date/Time Outputs"
+NO_DATETIME_LABEL = "No Date Time Appended"
+
+DATETIME_FORMAT_OPTIONS = [
+    ("ISO | YYYY-MM-DD", "%Y-%m-%d"),
+    ("ISO | YYYY-MM-DD_HH-MM", "%Y-%m-%d_%H-%M"),
+    ("UK | DD-MM-YYYY", "%d-%m-%Y"),
+    ("UK | DD-MM-YYYY_HH-MM", "%d-%m-%Y_%H-%M"),
+    ("USA | MM-DD-YYYY", "%m-%d-%Y"),
+    ("USA | MM-DD-YYYY_HH-MM", "%m-%d-%Y_%H-%M"),
+]
+
+MASS_DATETIME_BUILD_SEQUENCE = [
+    (NO_DATETIME_LABEL, None),
+    *DATETIME_FORMAT_OPTIONS,
+]

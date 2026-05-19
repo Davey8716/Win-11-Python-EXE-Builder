@@ -1,9 +1,14 @@
 import os
+from datetime import datetime as real_datetime
 from pathlib import Path
 from types import SimpleNamespace
 
 import build_controller
 from build_controller import BuildController
+from datetime_build_options import (
+    MASS_DATETIME_BUILD_SENTINEL,
+    NO_DATETIME_LABEL,
+)
 
 
 class DummyInput:
@@ -12,6 +17,9 @@ class DummyInput:
 
     def text(self):
         return self._value
+
+    def setText(self, value):
+        self._value = value
 
 
 def make_app(**overrides):
@@ -105,6 +113,37 @@ class DummyToggle:
         self.checked = value
 
 
+class DummyDropdown:
+    def __init__(self, options, current_index=0):
+        self.options = list(options)
+        self.current_index = current_index
+        self.signals_blocked = False
+
+    def currentData(self):
+        return self.options[self.current_index]["data"]
+
+    def count(self):
+        return len(self.options)
+
+    def itemText(self, index):
+        return self.options[index]["text"]
+
+    def findData(self, value):
+        for index, option in enumerate(self.options):
+            if option["data"] == value:
+                return index
+        return -1
+
+    def setCurrentIndex(self, index):
+        self.current_index = index
+
+    def blockSignals(self, value):
+        self.signals_blocked = value
+
+    def currentText(self):
+        return self.options[self.current_index]["text"]
+
+
 class DummyValidationController:
     def update_ui_state(self):
         pass
@@ -144,6 +183,224 @@ class FakeWorker:
 
     def deleteLater(self):
         pass
+
+
+class CapturingWorker:
+    def __init__(self, app, cmd):
+        app.captured_cmds.append(cmd)
+        self.finished = DummySignal()
+
+    def moveToThread(self, _thread):
+        pass
+
+    def run(self):
+        pass
+
+    def deleteLater(self):
+        pass
+
+
+class FixedDateTime:
+    @classmethod
+    def now(cls):
+        return real_datetime(2026, 5, 19, 12, 34, 56)
+
+
+def make_buildable_app(tmp_path, date_time_dropdown=None, **overrides):
+    project_root = tmp_path / "project"
+    project_root.mkdir()
+    script = project_root / "launcher.py"
+    script.write_text("print('hello')\n", encoding="utf-8")
+
+    output_dir = tmp_path / "dist"
+    output_dir.mkdir()
+
+    python_dir = tmp_path / "Python314"
+    python_dir.mkdir()
+    python_exe = python_dir / "python.exe"
+    python_exe.write_text("", encoding="utf-8")
+
+    app = make_app(
+        script_path_input=DummyInput(str(script)),
+        output_path_input=DummyInput(str(output_dir)),
+        build_process=None,
+        icon_path="",
+        output_path="",
+        build_btn=DummyButton(),
+        status_label=DummyLabel(),
+        validation_controller=DummyValidationController(),
+        last_build_counter=0,
+        append_datetime=False,
+        datetime_format="",
+        append_py_version=False,
+        repaint=lambda: None,
+        set_status=lambda message: setattr(app, "last_status", message),
+        python_interpreter_path=str(python_exe),
+        entry_script=str(script),
+        project_root=str(project_root),
+        captured_cmds=[],
+        date_time_dropdown=date_time_dropdown,
+        state_ctrl=SimpleNamespace(save_state=lambda: setattr(app, "saved_state", True)),
+        open_output_dir_after_build_enabled=False,
+        minimize_after_build_enabled=False,
+        close_after_build_enabled=False,
+        showMinimized=lambda: setattr(app, "minimized", True),
+        close_app=lambda: setattr(app, "closed", True),
+    )
+
+    for name, value in overrides.items():
+        setattr(app, name, value)
+
+    return app
+
+
+def mass_datetime_dropdown():
+    return DummyDropdown(
+        [
+            {"text": NO_DATETIME_LABEL, "data": None},
+            {"text": "Build All Date/Time Outputs", "data": MASS_DATETIME_BUILD_SENTINEL},
+            {"text": "ISO | YYYY-MM-DD", "data": "%Y-%m-%d"},
+            {"text": "ISO | YYYY-MM-DD_HH-MM", "data": "%Y-%m-%d_%H-%M"},
+            {"text": "UK | DD-MM-YYYY", "data": "%d-%m-%Y"},
+            {"text": "UK | DD-MM-YYYY_HH-MM", "data": "%d-%m-%Y_%H-%M"},
+            {"text": "USA | MM-DD-YYYY", "data": "%m-%d-%Y"},
+            {"text": "USA | MM-DD-YYYY_HH-MM", "data": "%m-%d-%Y_%H-%M"},
+        ],
+        current_index=1,
+    )
+
+
+def build_names(app):
+    names = []
+    for cmd in app.captured_cmds:
+        for part in cmd:
+            if part.startswith("--name="):
+                names.append(part.removeprefix("--name="))
+                break
+    return names
+
+
+def patch_build_runtime(monkeypatch):
+    monkeypatch.setattr(build_controller, "validate_bundle_inputs", lambda app: (True, ""))
+    monkeypatch.setattr(build_controller, "QThread", DummyThread)
+    monkeypatch.setattr(build_controller, "BuildWorker", CapturingWorker)
+    monkeypatch.setattr(build_controller, "get_tray_icon_pyinstaller_args", lambda _icon: [])
+    monkeypatch.setattr(BuildController, "start_eta", lambda self: None)
+    monkeypatch.setattr(BuildController, "stop_eta", lambda self: None)
+    monkeypatch.setattr(build_controller, "datetime", FixedDateTime)
+    monkeypatch.setattr(
+        build_controller.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout="", stderr=""),
+    )
+    monkeypatch.setattr(build_controller.QTimer, "singleShot", lambda _ms, callback: callback())
+
+
+def test_mass_datetime_build_runs_all_outputs_in_sequence(tmp_path, monkeypatch):
+    patch_build_runtime(monkeypatch)
+    app = make_buildable_app(tmp_path, date_time_dropdown=mass_datetime_dropdown())
+    controller = BuildController(app)
+
+    controller.build_exe(None)
+    for _ in range(6):
+        controller._on_build_complete_ui(0, "", "")
+
+    assert build_names(app) == [
+        "Builder",
+        "Builder_2026-05-19",
+        "Builder_2026-05-19_12-34",
+        "Builder_19-05-2026",
+        "Builder_19-05-2026_12-34",
+        "Builder_05-19-2026",
+        "Builder_05-19-2026_12-34",
+    ]
+    assert controller._mass_datetime_active is True
+
+    controller._on_build_complete_ui(0, "", "")
+
+    assert controller._mass_datetime_active is False
+    assert app.append_datetime is False
+    assert app.datetime_format == ""
+    assert app.date_time_dropdown.currentText() == NO_DATETIME_LABEL
+
+
+def test_mass_datetime_build_waits_for_success_before_next_output(tmp_path, monkeypatch):
+    patch_build_runtime(monkeypatch)
+    app = make_buildable_app(tmp_path, date_time_dropdown=mass_datetime_dropdown())
+    controller = BuildController(app)
+
+    controller.build_exe(None)
+
+    assert build_names(app) == ["Builder"]
+
+    controller._on_build_complete_ui(0, "", "")
+
+    assert build_names(app) == ["Builder", "Builder_2026-05-19"]
+
+
+def test_mass_datetime_build_stops_on_failure_and_restores_state(tmp_path, monkeypatch):
+    patch_build_runtime(monkeypatch)
+    dropdown = mass_datetime_dropdown()
+    app = make_buildable_app(
+        tmp_path,
+        date_time_dropdown=dropdown,
+        append_datetime=True,
+        datetime_format="%Y-%m-%d",
+        _mass_datetime_restore_state={
+            "append_datetime": True,
+            "datetime_format": "%Y-%m-%d",
+        },
+    )
+    controller = BuildController(app)
+
+    controller.build_exe(None)
+    controller._on_build_complete_ui(1, "", "failed")
+
+    assert build_names(app) == ["Builder"]
+    assert controller._mass_datetime_active is False
+    assert app.append_datetime is True
+    assert app.datetime_format == "%Y-%m-%d"
+    assert app.date_time_dropdown.currentText() == "ISO | YYYY-MM-DD"
+    assert app.status_label.stylesheet == build_controller.status_text_style(
+        build_controller.Colors.ERROR,
+        border_width=1,
+    )
+
+
+def test_mass_datetime_build_cancel_restores_state(tmp_path, monkeypatch):
+    patch_build_runtime(monkeypatch)
+    import build_cancellation
+
+    dropdown = mass_datetime_dropdown()
+    app = make_buildable_app(
+        tmp_path,
+        date_time_dropdown=dropdown,
+        append_datetime=True,
+        datetime_format="%d-%m-%Y",
+        _mass_datetime_restore_state={
+            "append_datetime": True,
+            "datetime_format": "%d-%m-%Y",
+        },
+    )
+    controller = BuildController(app)
+
+    controller.build_exe(None)
+    app.build_process = object()
+
+    def fake_cancel(self):
+        self.app.build_process = None
+        self.app.building = False
+        self.app.cancelled = True
+
+    monkeypatch.setattr(build_cancellation.BuildCancellation, "cancel_build", fake_cancel)
+
+    controller.build_exe(None)
+
+    assert app.cancelled is True
+    assert controller._mass_datetime_active is False
+    assert app.append_datetime is True
+    assert app.datetime_format == "%d-%m-%Y"
+    assert app.date_time_dropdown.currentText() == "UK | DD-MM-YYYY"
 
 
 def test_build_exe_adds_project_root_to_paths_and_data(tmp_path, monkeypatch):

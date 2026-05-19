@@ -1,8 +1,13 @@
 import os
 import json
 
+from datetime_build_options import (
+    MASS_DATETIME_BUILD_SENTINEL,
+    NO_DATETIME_LABEL as DATETIME_NO_DATETIME_LABEL,
+)
+
 class StateController:
-    NO_DATETIME_LABEL = "No Date Time Appended"
+    NO_DATETIME_LABEL = DATETIME_NO_DATETIME_LABEL
 
     def __init__(self, app):
         self.app = app
@@ -253,6 +258,12 @@ class StateController:
                 existing_data.get("env_sync_profiles", [])
             )
 
+        append_datetime = getattr(self.app, "append_datetime", False)
+        datetime_format = getattr(self.app, "datetime_format", None)
+        if datetime_format == MASS_DATETIME_BUILD_SENTINEL:
+            append_datetime = False
+            datetime_format = None
+
         data = {
             # --- Paths / core selections ---
             "last_script_path": _norm(self.app.script_path),
@@ -284,8 +295,8 @@ class StateController:
             "interpreter_user_cleared": getattr(self.app, "interpreter_user_cleared", False),
 
             # --- Datetime ---
-            "append_datetime": getattr(self.app, "append_datetime", False),
-            "datetime_format": getattr(self.app, "datetime_format", None),
+            "append_datetime": append_datetime,
+            "datetime_format": datetime_format,
             "append_py_version": getattr(self.app, "append_py_version", False),
         }
 

@@ -5,6 +5,12 @@ import threading
 
 from ctypes import wintypes
 from build_controller import BuildController
+from datetime_build_options import (
+    DATETIME_FORMAT_OPTIONS,
+    MASS_DATETIME_BUILD_LABEL,
+    MASS_DATETIME_BUILD_SENTINEL,
+    NO_DATETIME_LABEL,
+)
 from environment_sync_controller import EnvironmentSyncController
 from path_hover import attach_path_hovers
 from tooltips import attach_tooltips
@@ -748,14 +754,6 @@ class EXEBuilderApp(QWidget):
         self.appened_py_version.setStyleSheet(APPEND_PY_VERSION_INITIAL_STYLE)
                 
         self.date_time_dropdown.clear()
-        date_format_prefixes = {
-            "%Y-%m-%d": "ISO",
-            "%Y-%m-%d_%H-%M": "ISO",
-            "%d-%m-%Y": "UK",
-            "%d-%m-%Y_%H-%M": "UK",
-            "%m-%d-%Y": "USA",
-            "%m-%d-%Y_%H-%M": "USA",
-        }
 
         def _add(label, data=None, enabled=True):
             self.date_time_dropdown.addItem(label, data)
@@ -763,37 +761,36 @@ class EXEBuilderApp(QWidget):
             if not enabled:
                 item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
 
-        def _add_format(label, data):
-            prefix = date_format_prefixes[data]
-            _add(f"{prefix} | {label}", data)
-
         # Header
         _add("Append Date/Time", None, enabled=False)
 
         _add("──────────", enabled=False)
         # Top option
-        _add("No Date Time Appended", None)
+        _add(NO_DATETIME_LABEL, None)
+
+        _add("──────────", enabled=False)
+        _add(MASS_DATETIME_BUILD_LABEL, MASS_DATETIME_BUILD_SENTINEL)
 
         # ISO
         _add("──────────", enabled=False)
         _add("ISO", enabled=False)
-        _add_format("YYYY-MM-DD", "%Y-%m-%d")
-        _add_format("YYYY-MM-DD_HH-MM", "%Y-%m-%d_%H-%M")
+        for label, data in DATETIME_FORMAT_OPTIONS[0:2]:
+            _add(label, data)
 
         # UK
         _add("──────────", enabled=False)
         _add("UK", enabled=False)
-        _add_format("DD-MM-YYYY", "%d-%m-%Y")
-        _add_format("DD-MM-YYYY_HH-MM", "%d-%m-%Y_%H-%M")
+        for label, data in DATETIME_FORMAT_OPTIONS[2:4]:
+            _add(label, data)
 
         # USA
         _add("──────────", enabled=False)
         _add("USA", enabled=False)
-        _add_format("MM-DD-YYYY", "%m-%d-%Y")
-        _add_format("MM-DD-YYYY_HH-MM", "%m-%d-%Y_%H-%M")
+        for label, data in DATETIME_FORMAT_OPTIONS[4:6]:
+            _add(label, data)
 
         date_dropdown_metrics = QFontMetrics(self.date_time_dropdown.font())
-        longest_date_label = "USA | MM-DD-YYYY_HH-MM"
+        longest_date_label = MASS_DATETIME_BUILD_LABEL
         date_dropdown_width = max(245, date_dropdown_metrics.horizontalAdvance(longest_date_label) + 64)
         self.date_time_dropdown.setFixedSize(date_dropdown_width, 35)
 

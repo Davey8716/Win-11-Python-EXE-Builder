@@ -1,5 +1,6 @@
 
 import os,webbrowser
+from datetime_build_options import MASS_DATETIME_BUILD_SENTINEL
 from ui_highlights import flash_delete_highlight
 
 class UIHandlers:
@@ -223,6 +224,24 @@ class UIHandlers:
         app = self.app
 
         data = app.date_time_dropdown.currentData()
+
+        if data == MASS_DATETIME_BUILD_SENTINEL:
+            app.mass_datetime_build_selected = True
+            if not hasattr(app, "_mass_datetime_restore_state"):
+                app._mass_datetime_restore_state = {
+                    "append_datetime": getattr(app, "append_datetime", False),
+                    "datetime_format": getattr(app, "datetime_format", None),
+                }
+            if hasattr(app, "state_ctrl"):
+                app.state_ctrl.save_state()
+            if hasattr(app, "validator"):
+                app.validator.validation_status_message()
+                self.app.validator.update_ui_state()
+            return
+
+        app.mass_datetime_build_selected = False
+        if hasattr(app, "_mass_datetime_restore_state"):
+            delattr(app, "_mass_datetime_restore_state")
 
         if data is None:
             # 🔴 OFF (None selected)

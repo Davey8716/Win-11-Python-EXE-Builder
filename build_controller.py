@@ -1,6 +1,11 @@
 import datetime,os,sys,subprocess,time
 from PySide6.QtGui import QFont
 from bundle_validation import validate_bundle_inputs
+from datetime_build_options import (
+    MASS_DATETIME_BUILD_SENTINEL,
+    MASS_DATETIME_BUILD_SEQUENCE,
+    NO_DATETIME_LABEL,
+)
 from datetime import datetime
 from PySide6.QtCore import QObject, Signal,QTimer
 from PySide6.QtCore import QThread
@@ -17,8 +22,140 @@ class BuildController(QObject):
     def __init__(self, app):
         super().__init__()
         self.app = app
+        self._mass_datetime_active = False
+        self._mass_datetime_queue = []
+        self._mass_datetime_total = 0
+        self._mass_datetime_index = 0
+        self._mass_datetime_current_label = ""
+        self._mass_datetime_restore_state = None
 
         self.build_complete_signal.connect(self._on_build_complete_ui)
+
+    # ============================================================
+    # MASS DATE/TIME BUILD QUEUE
+    # ============================================================
+
+    def _datetime_dropdown_data(self):
+        dropdown = getattr(self.app, "date_time_dropdown", None)
+        if dropdown is None or not hasattr(dropdown, "currentData"):
+            return None
+        return dropdown.currentData()
+
+    def _find_no_datetime_index(self):
+        dropdown = getattr(self.app, "date_time_dropdown", None)
+        if dropdown is None or not hasattr(dropdown, "count"):
+            return -1
+
+        for index in range(dropdown.count()):
+            if dropdown.itemText(index) == NO_DATETIME_LABEL:
+                return index
+
+        return -1
+
+    def _set_datetime_dropdown_index(self, index):
+        dropdown = getattr(self.app, "date_time_dropdown", None)
+        if dropdown is None or index == -1:
+            return
+
+        if hasattr(dropdown, "blockSignals"):
+            dropdown.blockSignals(True)
+        dropdown.setCurrentIndex(index)
+        if hasattr(dropdown, "blockSignals"):
+            dropdown.blockSignals(False)
+
+    def _set_datetime_dropdown_for_state(self, append_datetime, datetime_format):
+        dropdown = getattr(self.app, "date_time_dropdown", None)
+        if dropdown is None:
+            return
+
+        index = -1
+        if append_datetime and datetime_format and hasattr(dropdown, "findData"):
+            index = dropdown.findData(datetime_format)
+        elif not append_datetime:
+            index = self._find_no_datetime_index()
+
+        self._set_datetime_dropdown_index(index)
+
+    def _apply_datetime_build_option(self, label, datetime_format):
+        app = self.app
+        app.append_datetime = bool(datetime_format)
+        app.datetime_format = datetime_format or ""
+        self._set_datetime_dropdown_for_state(app.append_datetime, app.datetime_format)
+
+        self._mass_datetime_current_label = label
+        self._mass_datetime_index += 1
+        app.set_status(
+            f"Mass build {self._mass_datetime_index}/{self._mass_datetime_total}: {label}"
+        )
+
+    def _start_mass_datetime_build(self):
+        app = self.app
+        restore_state = getattr(app, "_mass_datetime_restore_state", None) or {
+            "append_datetime": getattr(app, "append_datetime", False),
+            "datetime_format": getattr(app, "datetime_format", None),
+        }
+
+        self._mass_datetime_restore_state = restore_state
+        self._mass_datetime_queue = list(MASS_DATETIME_BUILD_SEQUENCE)
+        self._mass_datetime_total = len(self._mass_datetime_queue)
+        self._mass_datetime_index = 0
+        self._mass_datetime_current_label = ""
+        self._mass_datetime_active = True
+        app.mass_datetime_build_selected = True
+
+        self._run_next_mass_datetime_build()
+
+    def _run_next_mass_datetime_build(self):
+        if not self._mass_datetime_queue:
+            return
+
+        label, datetime_format = self._mass_datetime_queue.pop(0)
+        self._apply_datetime_build_option(label, datetime_format)
+        self.build_exe(None)
+
+    def _restore_mass_datetime_state(self):
+        app = self.app
+        restore_state = self._mass_datetime_restore_state or {
+            "append_datetime": False,
+            "datetime_format": "",
+        }
+
+        append_datetime = restore_state.get("append_datetime", False)
+        datetime_format = restore_state.get("datetime_format", None)
+
+        app.append_datetime = append_datetime
+        app.datetime_format = datetime_format or ""
+        app.mass_datetime_build_selected = False
+
+        if hasattr(app, "_mass_datetime_restore_state"):
+            delattr(app, "_mass_datetime_restore_state")
+
+        self._set_datetime_dropdown_for_state(append_datetime, app.datetime_format)
+
+    def _finish_mass_datetime_build(self):
+        self._mass_datetime_queue = []
+        self._mass_datetime_total = 0
+        self._mass_datetime_index = 0
+        self._mass_datetime_current_label = ""
+        self._mass_datetime_active = False
+        self._restore_mass_datetime_state()
+
+    def _cancel_mass_datetime_build(self):
+        if self._mass_datetime_active:
+            self._finish_mass_datetime_build()
+
+    def _abort_current_build(self, message):
+        app = self.app
+        app.build_cancellation.abort_build(message)
+        self.stop_eta()
+        app.building = False
+        app.build_process = None
+
+        if self._mass_datetime_active:
+            self._finish_mass_datetime_build()
+
+        app.validation_controller.update_ui_state()
+        app.validation_controller.update_build_button()
 
     # ============================================================
     # ETA LOOP
@@ -146,8 +283,16 @@ class BuildController(QObject):
     # Build EXE
     # -------------------------------------------------------------
 
-    def build_exe(self, app):
+    def build_exe(self, app=None):
         app = self.app
+
+        if (
+            not self._mass_datetime_active
+            and self._datetime_dropdown_data() == MASS_DATETIME_BUILD_SENTINEL
+        ):
+            self._start_mass_datetime_build()
+            return
+
         app.building = True
         app._eta_running = True
 
@@ -162,6 +307,7 @@ class BuildController(QObject):
 
 
         if app.build_process:
+            self._cancel_mass_datetime_build()
             app.build_cancellation.cancel_build()
             return
 
@@ -197,7 +343,7 @@ class BuildController(QObject):
         ok, error = validate_bundle_inputs(app)
 
         if not ok:
-            app.build_cancellation.abort_build(error)
+            self._abort_current_build(error)
             return
 
         # ==================================================
@@ -218,16 +364,16 @@ class BuildController(QObject):
         # ==================================================
 
         if not entry_point or not os.path.isfile(entry_point):
-            app.build_cancellation.abort_build("Invalid or missing entry script.")
+            self._abort_current_build("Invalid or missing entry script.")
             return
 
         if not project_root or not os.path.isdir(project_root):
-            app.build_cancellation.abort_build("Invalid project folder.")
+            self._abort_current_build("Invalid project folder.")
             return
 
         exe_name = app.exe_name_input.text().strip()
         if not exe_name:
-            app.build_cancellation.abort_build("Please enter an EXE name.")
+            self._abort_current_build("Please enter an EXE name.")
             return
 
         # ==================================================
@@ -236,7 +382,7 @@ class BuildController(QObject):
 
         python = app.python_interpreter_path
         if not python or not os.path.isfile(python):
-            app.build_cancellation.abort_build(
+            self._abort_current_build(
                 "Python interpreter not found.\n"
                 "Please select a Python interpreter before building."
             )
@@ -251,7 +397,7 @@ class BuildController(QObject):
         )
 
         if result.returncode != 0:
-            app.build_cancellation.abort_build(
+            self._abort_current_build(
                 "PyInstaller is not available in the selected Python interpreter.\n\n"
                 "Install it with:\n\npip install pyinstaller"
             )
@@ -267,9 +413,7 @@ class BuildController(QObject):
         # --------------------------------------------------
 
         if not outdir or not os.path.isdir(outdir):
-            app.set_status("Output folder does not exist.")
-            app.build_ui_controller.restore_build_ui()
-            app.validation_controller.validation_status_message()  # 🔑 force red
+            self._abort_current_build("Output folder does not exist.")
             return
 
         # 🔑 Test write access (handles protected folders)
@@ -284,6 +428,11 @@ class BuildController(QObject):
                 "This location is read-only. Choose another."
             )
 
+            self.stop_eta()
+            app.building = False
+            app.build_process = None
+            if self._mass_datetime_active:
+                self._finish_mass_datetime_build()
 
             app.validation_controller.update_ui_state()
             return
@@ -409,10 +558,23 @@ class BuildController(QObject):
 
     def _on_build_complete_ui(self, ret, out, err):
         app = self.app
+        mass_active = self._mass_datetime_active
 
         if ret == 0:
             app.last_build_seconds = int(time.time() - app.build_start_time)
-            msg = "Build complete."
+            if mass_active and self._mass_datetime_queue:
+                self.stop_eta()
+                app.building = False
+                app.build_process = None
+                QTimer.singleShot(0, self._run_next_mass_datetime_build)
+                return
+
+            if mass_active:
+                self._finish_mass_datetime_build()
+                msg = "Mass date/time build complete."
+            else:
+                msg = "Build complete."
+
             app.status_label.setStyleSheet(status_text_style(Colors.SUCCESS, border_width=1))
             if getattr(app, "minimize_after_build_enabled", False):
                 app.showMinimized()
@@ -422,7 +584,12 @@ class BuildController(QObject):
             app.state_ctrl.save_state()
 
         else:
-            msg = "Build failed. See debug log."
+            if mass_active:
+                failed_label = self._mass_datetime_current_label
+                self._finish_mass_datetime_build()
+                msg = f"Mass build failed on {failed_label}. See debug log."
+            else:
+                msg = "Build failed. See debug log."
             app.status_label.setStyleSheet(status_text_style(Colors.ERROR, border_width=1))
 
         self.stop_eta()
