@@ -135,7 +135,7 @@ class EXEBuilderApp(QWidget):
         self.last_build_counter = 0
         
         self.setFixedSize(1050, 820)
-        self.setWindowTitle(" Win 11 → Python → EXE Builder")
+        self.setWindowTitle(" ")
         self.setContentsMargins(0,0,0,0)
         
         self.close_after_build_enabled = getattr(self, "close_after_build_enabled", True)
@@ -395,7 +395,6 @@ class EXEBuilderApp(QWidget):
             env_sync_visible_rows * env_sync_row_height
             + (env_sync_visible_rows - 1) * env_sync_row_spacing
         )
-        self._env_sync_rows_scroll_base_height = env_sync_scroll_height
 
         self.env_sync_rows_scroll_area = QScrollArea()
         self.env_sync_rows_scroll_area.setWidgetResizable(True)
@@ -1201,7 +1200,6 @@ class EXEBuilderApp(QWidget):
 
         self.validator.update_ui_state()
         self.validation_controller.update_build_button()
-        self._align_interpreter_title_to_output_select()
         self._sync_center_divider_height()
 
     def add_env_sync_status_row(self, version, package_count, status):
@@ -1237,37 +1235,6 @@ class EXEBuilderApp(QWidget):
         )
         self.env_sync_rows_layout.addWidget(row)
         self._sync_center_divider_height()
-
-    def _align_interpreter_title_to_output_select(self):
-        if not all(
-            hasattr(self, attr)
-            for attr in (
-                "apps_title_frame",
-                "output_title_frame",
-                "content_row",
-                "env_sync_rows_scroll_area",
-            )
-        ):
-            return
-
-        base_height = getattr(
-            self,
-            "_env_sync_rows_scroll_base_height",
-            self.env_sync_rows_scroll_area.height(),
-        )
-        self.env_sync_rows_scroll_area.setFixedHeight(base_height)
-
-        for widget in (self, self.content_row, self.left_content, self.right_content):
-            layout = widget.layout()
-            if layout is not None:
-                layout.activate()
-
-        interpreter_top = self.apps_title_frame.mapTo(self.content_row, QPoint(0, 0)).y()
-        output_top = self.output_title_frame.mapTo(self.content_row, QPoint(0, 0)).y()
-        alignment_delta = max(0, output_top - interpreter_top)
-
-        if alignment_delta:
-            self.env_sync_rows_scroll_area.setFixedHeight(base_height + alignment_delta)
 
     def _sync_center_divider_height(self):
         if not all(
