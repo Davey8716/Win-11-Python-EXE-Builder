@@ -422,6 +422,12 @@ COMBO_BOX_STYLE = f"""
         background-color: {qcolor_name(Colors.WHITE)};
     }}
 
+    QComboBox::drop-down:disabled,
+    QComboBox::down-arrow:disabled {{
+        background-color: {qcolor_name(Colors.COMBO_DISABLED_BG)};
+        color: {qcolor_name(Colors.COMBO_DISABLED_TEXT)};
+    }}
+
     {combo_box_popup_style("QComboBox QAbstractItemView")}
 
     QComboBox:disabled,
