@@ -9,6 +9,7 @@ from styles import (
     REFRESH_BUTTON_TEXT,
     build_disabled_button,
     build_disabled_checkbox,
+    build_disabled_checkbox_without_checkmark,
     build_disabled_line_edit_style,
     qcolor_name,
 )
@@ -258,12 +259,18 @@ def test_open_output_directory_disabled_for_desktop_output(monkeypatch, tmp_path
     app = make_app(tmp_path, exe_name="main")
     desktop = os.path.join(os.path.expanduser("~"), "Desktop")
     app.output_path_input.setText(desktop)
+    app.open_output_dir_after_build.setChecked(True)
 
     controller = ValidationController(app)
     controller.update_ui_state()
 
     assert app.open_output_dir_after_build.enabled is False
-    assert app.open_output_dir_after_build.stylesheet == build_disabled_checkbox()
+    assert app.open_output_dir_after_build.isChecked() is True
+    assert (
+        app.open_output_dir_after_build.stylesheet
+        == build_disabled_checkbox_without_checkmark()
+    )
+    assert "image: none;" in app.open_output_dir_after_build.stylesheet
 
 
 def test_open_output_directory_enabled_for_non_desktop_output(monkeypatch, tmp_path):

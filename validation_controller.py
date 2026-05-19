@@ -19,6 +19,7 @@ from styles import (
     REFRESH_BUTTON_TEXT,
     build_disabled_button,
     build_disabled_checkbox,
+    build_disabled_checkbox_without_checkmark,
     build_disabled_line_edit_style,
     button_base,
     button_with_border,
@@ -365,6 +366,10 @@ class ValidationController:
         # Tooltips
         set_btn(app.tooltips_checkbox, not building)
         set_btn(app.open_output_dir_after_build, not building and not is_desktop)
+        if not building and is_desktop:
+            app.open_output_dir_after_build.setStyleSheet(
+                build_disabled_checkbox_without_checkmark()
+            )
         # 🔑 mutual exclusion + build lock
         min_checked = app.minimize_after_build.isChecked()
         close_checked = app.close_after_build.isChecked()

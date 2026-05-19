@@ -306,6 +306,34 @@ def build_disabled_checkbox() -> str:
     """
 
 
+def build_disabled_checkbox_without_checkmark() -> str:
+    return f"""
+        QCheckBox {{
+            color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+        }}
+        QCheckBox::indicator {{
+            width: 14px;
+            height: 14px;
+            background-color: {qcolor_name(Colors.DISABLED_BG)};
+            border: 1px solid {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+            border-radius: 3px;
+        }}
+        QCheckBox::indicator:checked {{
+            background-color: {qcolor_name(Colors.DISABLED_BG)};
+            border: 1px solid {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+            image: none;
+        }}
+        QCheckBox::indicator:checked:disabled {{
+            background-color: {qcolor_name(Colors.DISABLED_BG)};
+            border: 1px solid {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+            image: none;
+        }}
+        QCheckBox:disabled {{
+            color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+        }}
+    """
+
+
 APPEND_PY_VERSION_STYLE = f"""
     QPushButton {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
