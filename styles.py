@@ -235,7 +235,7 @@ def button_base(border_width: int = 3) -> str:
         QPushButton {{
             background-color: {qcolor_name(Colors.TITLE_BG)};
             color: {qcolor_name(Colors.TEXT_LIGHT)};
-            border: none;
+            border: 1px solid {qcolor_name(Colors.BLACK)};
             border-radius: 4px;
         }}
         QPushButton:hover {{
@@ -249,7 +249,7 @@ def button_with_border(border_color: QColor, border_width: int = 4) -> str:
         QPushButton {{
             background-color: {qcolor_name(Colors.TITLE_BG)};
             color: {qcolor_name(Colors.TEXT_LIGHT)};
-            border: none;
+            border: 1px solid {qcolor_name(Colors.BLACK)};
             border-radius: 4px;
         }}
         QPushButton:hover {{
@@ -266,7 +266,7 @@ def filled_button(background_color: QColor, border_width: int = 4, radius: int =
         QPushButton {{
             background-color: {qcolor_name(background_color)};
             color: {qcolor_name(Colors.TEXT_LIGHT)};
-            border: none;
+            border: 1px solid {qcolor_name(Colors.BLACK)};
             border-radius: {radius}px;
         }}
         QPushButton:hover {{
@@ -280,7 +280,7 @@ def build_disabled_button(radius: int = 4) -> str:
         QPushButton {{
             background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
             color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
-            border: none;
+            border: 1px solid {qcolor_name(Colors.BLACK)};
             border-radius: {radius}px;
         }}
         QPushButton:hover {{
@@ -301,7 +301,7 @@ ENV_SYNC_BUTTON_STYLE = f"""
     QPushButton {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: none;
+        border: 1px solid {qcolor_name(Colors.BLACK)};
         border-radius: 4px;
     }}
     QPushButton:hover {{
@@ -314,7 +314,7 @@ ENV_SYNC_BUTTON_STYLE = f"""
     QPushButton:disabled {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: none;
+        border: 1px solid {qcolor_name(Colors.BLACK)};
     }}
     QPushButton:disabled:hover {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
@@ -377,14 +377,14 @@ APPEND_PY_VERSION_STYLE = f"""
     QPushButton {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: none;
+        border: 1px solid {qcolor_name(Colors.BLACK)};
         border-radius: 4px;
     }}
 
     QPushButton:checked {{
         background-color: {qcolor_name(Colors.SUCCESS)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: none;
+        border: 1px solid {qcolor_name(Colors.BLACK)};
         border-radius: 4px;
     }}
 
@@ -395,6 +395,7 @@ APPEND_PY_VERSION_STYLE = f"""
     QPushButton:disabled {{
         color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
         background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
+        border: 1px solid {qcolor_name(Colors.BLACK)};
         border-radius: 4px;
     }}
 """
@@ -405,7 +406,7 @@ COMBO_BOX_STYLE = f"""
     QComboBox {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: none;
+        border: 1px solid {qcolor_name(Colors.BLACK)};
         padding: 3px;
         font-weight:bold;
         font-size: 15px;
@@ -452,7 +453,7 @@ ENV_SYNC_STATUS_LINE_STYLE = f"""
     QLineEdit {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: none;
+        border: 1px solid {qcolor_name(Colors.BLACK)};
         border-radius: 4px;
         padding: 3px 8px;
         font-weight: bold;
@@ -462,7 +463,7 @@ ENV_SYNC_STATUS_LINE_STYLE = f"""
     QLineEdit:disabled {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: none;
+        border: 1px solid {qcolor_name(Colors.BLACK)};
     }}
 """
 
@@ -601,7 +602,7 @@ def status_text_style(text_color: QColor, border_width: int = 3) -> str:
         QTextEdit {{
             background-color: {qcolor_name(Colors.PANEL_BG)};
             color: {qcolor_name(text_color)};
-            border: none;
+            border: 1px solid {qcolor_name(Colors.BLACK)};
         }}
     """
 
@@ -611,7 +612,7 @@ def line_edit_style(text_color: QColor, border_color: QColor = Colors.WINDOW) ->
         QLineEdit {{
             background-color: {qcolor_name(Colors.PANEL_BG)};
             color: {qcolor_name(text_color)};
-            border: none;
+            border: 1px solid {qcolor_name(Colors.BLACK)};
         }}
     """
 
@@ -621,7 +622,7 @@ def build_disabled_line_edit_style() -> str:
         QLineEdit {{
             background-color: {qcolor_name(Colors.PANEL_BG)};
             color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
-            border: none;
+            border: 1px solid {qcolor_name(Colors.BLACK)};
         }}
     """
 
@@ -648,7 +649,7 @@ SCRIPT_PICKER_DROPDOWN_STYLE = f"""
     QComboBox {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: none;
+        border: 1px solid {qcolor_name(Colors.BLACK)};
         border-radius: 4px;
         padding: 4px 8px;
         font-family: "Rubik UI";
@@ -681,7 +682,7 @@ SCRIPT_PICKER_CONFIRM_STYLE = f"""
     QPushButton {{
         background-color: {qcolor_name(Colors.SUCCESS)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: none;
+        border: 1px solid {qcolor_name(Colors.BLACK)};
         border-radius: 4px;
         padding: 6px 10px;
         font-family: "Rubik UI";
@@ -715,7 +716,7 @@ CONFIRMATION_MESSAGE_BOX_STYLE = f"""
     QMessageBox QPushButton {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: none;
+        border: 1px solid {qcolor_name(Colors.BLACK)};
         border-radius: 4px;
         min-width: 80px;
         min-height: 28px;
