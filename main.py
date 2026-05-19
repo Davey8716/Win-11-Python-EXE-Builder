@@ -399,7 +399,7 @@ class EXEBuilderApp(QWidget):
         self.env_sync_rows_scroll_area = QScrollArea()
         self.env_sync_rows_scroll_area.setWidgetResizable(True)
         self.env_sync_rows_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.env_sync_rows_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.env_sync_rows_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.env_sync_rows_scroll_area.setFixedHeight(env_sync_scroll_height)
         self.env_sync_rows_scroll_area.setFrameShape(QFrame.NoFrame)
         self.env_sync_rows_scroll_area.setStyleSheet(ENV_SYNC_SCROLL_AREA_STYLE)
@@ -1212,11 +1212,14 @@ class EXEBuilderApp(QWidget):
         row_layout.setContentsMargins(0,0,0,0)
         row_layout.setSpacing(4)
 
-        for text, width in [
+        column_data = [
             (version, 125),
             (package_count, 80),
-            (status, 275),
-        ]:
+            (status, max(275, QFontMetrics(QFont("Rubik UI", 10, QFont.Bold)).horizontalAdvance(str(status)) + 12)),
+        ]
+        row_width = sum(width for _, width in column_data) + row_layout.spacing() * (len(column_data) - 1)
+
+        for text, width in column_data:
             label = QLabel(text)
             label.setFixedWidth(width)
             label.setFont(QFont("Rubik UI", 10, QFont.Bold))
@@ -1226,6 +1229,10 @@ class EXEBuilderApp(QWidget):
             row_layout.addWidget(label)
 
         row_layout.addStretch()
+        row.setMinimumWidth(row_width)
+        self.env_sync_rows_container.setMinimumWidth(
+            max(self.env_sync_rows_container.minimumWidth(), row_width)
+        )
         self.env_sync_rows_layout.addWidget(row)
         self._sync_center_divider_height()
 

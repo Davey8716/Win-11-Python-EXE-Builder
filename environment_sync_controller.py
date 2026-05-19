@@ -346,6 +346,8 @@ class EnvironmentSyncController(QObject):
             app.env_sync_row_labels.clear()
 
         self._clear_layout(app.env_sync_rows_layout)
+        if hasattr(app, "env_sync_rows_container"):
+            app.env_sync_rows_container.setMinimumWidth(0)
         if hasattr(app, "_sync_center_divider_height"):
             app._sync_center_divider_height()
 
