@@ -973,6 +973,7 @@ class EXEBuilderApp(QWidget):
 
         for frame in frames:
             if frame:
+                frame.setObjectName("configurationFrame")
                 frame.setStyleSheet(MAIN_FRAME_STYLE)
 
         toggles_frame.setStyleSheet(BUILD_OPTIONS_FRAME_STYLE)

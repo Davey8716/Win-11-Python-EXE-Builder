@@ -494,8 +494,9 @@ ENV_SYNC_SCROLL_AREA_DISABLED_STYLE = f"""
 """
 
 MAIN_FRAME_STYLE = f"""
-    QFrame {{
-        border: none;
+    QFrame#configurationFrame,
+    QWidget#configurationFrame {{
+        border: 1px solid {qcolor_name(Colors.BLACK)};
         border-radius: 6px;
         background-color: {qcolor_name(Colors.PANEL_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
