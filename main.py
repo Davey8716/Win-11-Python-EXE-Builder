@@ -42,6 +42,7 @@ from styles import (
     REFRESH_BUTTON_ICON_SIZE,
     REFRESH_BUTTON_TEXT,
     UTILITY_ICON_BUTTON_SIZE,
+    apply_native_title_bar_style,
     combo_box_popup_style,
     MAIN_FRAME_STYLE,
     TITLE_FRAME_STYLE,
@@ -1308,4 +1309,5 @@ if __name__ == "__main__":
 
     window = EXEBuilderApp()
     window.show()
+    apply_native_title_bar_style(window)
     sys.exit(app.exec())

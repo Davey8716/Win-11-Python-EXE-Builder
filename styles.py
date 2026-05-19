@@ -1,4 +1,6 @@
+import ctypes
 import sys
+from ctypes import wintypes
 from pathlib import Path
 
 from PySide6.QtGui import QColor
@@ -44,6 +46,39 @@ class Colors:
 
 def qcolor_name(color: QColor) -> str:
     return color.name(QColor.HexRgb)
+
+
+def _windows_colorref(color: QColor) -> int:
+    return color.red() | (color.green() << 8) | (color.blue() << 16)
+
+
+def apply_native_title_bar_style(window) -> None:
+    if sys.platform != "win32":
+        return
+
+    try:
+        hwnd = int(window.winId())
+        dark_mode = ctypes.c_int(1)
+        caption_color = ctypes.c_uint(_windows_colorref(Colors.WINDOW))
+        text_color = ctypes.c_uint(_windows_colorref(Colors.WHITE))
+        border_color = ctypes.c_uint(_windows_colorref(Colors.WINDOW))
+
+        attributes = [
+            (20, dark_mode),
+            (35, caption_color),
+            (36, text_color),
+            (34, border_color),
+        ]
+
+        for attribute, value in attributes:
+            ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                wintypes.HWND(hwnd),
+                ctypes.c_uint(attribute),
+                ctypes.byref(value),
+                ctypes.sizeof(value),
+            )
+    except (AttributeError, OSError, TypeError, ValueError):
+        return
 
 
 def _resource_path(relative_path: str) -> Path:
