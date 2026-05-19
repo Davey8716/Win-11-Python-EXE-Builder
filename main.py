@@ -15,7 +15,7 @@ from environment_sync_controller import EnvironmentSyncController
 from path_hover import attach_path_hovers
 from tooltips import attach_tooltips
 from PySide6.QtCore import QPoint, QSize, Qt
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit,QHBoxLayout, QComboBox,QTextEdit,QListView,QScrollArea
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit,QHBoxLayout, QComboBox,QTextEdit,QListView,QScrollArea,QMessageBox,QDialogButtonBox
 from validation_controller import ValidationController
 from activation_controller import ActivationController
 from PySide6.QtGui import QFont, QIcon, QPalette
@@ -35,6 +35,7 @@ from styles import (
     CENTER_DIVIDER_STYLE,
     COMBO_BOX_STYLE,
     COMBO_BOX_LINE_EDIT_STYLE,
+    CONFIRMATION_MESSAGE_BOX_STYLE,
     DELETE_ALL_BUTTON_ICON,
     DELETE_ALL_BUTTON_ICON_SIZE,
     DELETE_ALL_BUTTON_TEXT,
@@ -155,7 +156,7 @@ class EXEBuilderApp(QWidget):
         self.title_frame.setObjectName("appTitleFrame")
         self.title_frame.setFrameShape(QFrame.NoFrame)
         self.title_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        self.title_frame.setFixedSize(350,40)
+        self.title_frame.setFixedSize(430,44)
         self.title_frame.setStyleSheet(APP_TITLE_CONTAINER_STYLE)
 
         title_layout = QHBoxLayout(self.title_frame)
@@ -164,8 +165,8 @@ class EXEBuilderApp(QWidget):
 
         self.title_label = QLabel(" Win 11 → Python → EXE Builder")
         self.title_label.setObjectName("appTitleLabel")
-        self.title_label.setFont(QFont("Rubik UI", 15, QFont.Bold))
-        self.title_label.setFixedHeight(30)
+        self.title_label.setFont(QFont("Rubik UI", 18, QFont.Bold))
+        self.title_label.setFixedHeight(34)
         self.title_label.setAlignment(Qt.AlignCenter)
         self.title_label.setStyleSheet(APP_TITLE_LABEL_STYLE)
 
@@ -248,9 +249,10 @@ class EXEBuilderApp(QWidget):
 
         title_row = QWidget()
         title_row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        title_row.setFixedHeight(44)
         title_row_layout = QHBoxLayout(title_row)
-        title_row_layout.setContentsMargins(0, 1, 0, 0)
-        title_row_layout.setSpacing(0)
+        title_row_layout.setContentsMargins(0, 0, 0, 0)
+        title_row_layout.setSpacing(20)
         title_row_layout.addWidget(self.title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
 
         toggles_title_row = QWidget()
@@ -1312,7 +1314,35 @@ class EXEBuilderApp(QWidget):
         return content, layout
 
     def close_app(self):
+        self._is_closing = True
         QApplication.instance().quit()
+
+    def _confirm_manual_close(self):
+        dialog = QMessageBox(self)
+        dialog.setWindowTitle(" ")
+        dialog.setText("Are you sure you want to close?")
+        dialog.setIcon(QMessageBox.NoIcon)
+        close_button = dialog.addButton("Close", QMessageBox.AcceptRole)
+        cancel_button = dialog.addButton("Cancel", QMessageBox.RejectRole)
+        dialog.setDefaultButton(cancel_button)
+        dialog.setEscapeButton(cancel_button)
+        dialog.setStyleSheet(CONFIRMATION_MESSAGE_BOX_STYLE)
+        dialog.setWindowFlags(
+            (dialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+            | Qt.MSWindowsFixedSizeDialogHint
+        )
+
+        button_box = dialog.findChild(QDialogButtonBox)
+        if button_box is not None:
+            button_box.setCenterButtons(True)
+
+        apply_native_title_bar_style(
+            dialog,
+            caption=Colors.PANEL_BG,
+            border=Colors.PANEL_BG,
+        )
+        dialog.exec()
+        return dialog.clickedButton() == close_button
 
     def set_status(self, text):
         self.status_label.setPlainText(text)
@@ -1339,8 +1369,13 @@ class EXEBuilderApp(QWidget):
         self.env_sync_log_input.setCursorPosition(0)
 
     def closeEvent(self, event):
+        if not self._is_closing and not self._confirm_manual_close():
+            event.ignore()
+            return
+
         self._is_closing = True
         self.state_ctrl.save_state()
+        event.accept()
 
 # -------------------------------------------------------------
 # Launch

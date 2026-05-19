@@ -52,16 +52,21 @@ def _windows_colorref(color: QColor) -> int:
     return color.red() | (color.green() << 8) | (color.blue() << 16)
 
 
-def apply_native_title_bar_style(window) -> None:
+def apply_native_title_bar_style(
+    window,
+    caption: QColor = Colors.WINDOW,
+    text: QColor = Colors.WHITE,
+    border: QColor = Colors.WINDOW,
+) -> None:
     if sys.platform != "win32":
         return
 
     try:
         hwnd = int(window.winId())
         dark_mode = ctypes.c_int(1)
-        caption_color = ctypes.c_uint(_windows_colorref(Colors.WINDOW))
-        text_color = ctypes.c_uint(_windows_colorref(Colors.WHITE))
-        border_color = ctypes.c_uint(_windows_colorref(Colors.WINDOW))
+        caption_color = ctypes.c_uint(_windows_colorref(caption))
+        text_color = ctypes.c_uint(_windows_colorref(text))
+        border_color = ctypes.c_uint(_windows_colorref(border))
 
         attributes = [
             (20, dark_mode),
@@ -640,9 +645,11 @@ SCRIPT_PICKER_CONFIRM_STYLE = f"""
     }}
 """
 
-RECENT_DELETE_MESSAGE_BOX_STYLE = f"""
+CONFIRMATION_MESSAGE_BOX_STYLE = f"""
     QMessageBox {{
         background-color: {qcolor_name(Colors.POPUP_BG)};
+        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border-radius: 6px;
     }}
 
     QMessageBox QLabel {{
@@ -651,7 +658,30 @@ RECENT_DELETE_MESSAGE_BOX_STYLE = f"""
         font-size: 13px;
         font-weight: bold;
     }}
+
+    QMessageBox QPushButton {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+        border: none;
+        border-radius: 4px;
+        min-width: 80px;
+        min-height: 28px;
+        padding: 4px 12px;
+        font-family: "Rubik UI";
+        font-size: 13px;
+        font-weight: bold;
+    }}
+
+    QMessageBox QPushButton:hover {{
+        background-color: {qcolor_name(Colors.SURFACE_SELECTED_HOVER)};
+    }}
+
+    QMessageBox QPushButton:pressed {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+    }}
 """
+
+RECENT_DELETE_MESSAGE_BOX_STYLE = CONFIRMATION_MESSAGE_BOX_STYLE
 
 TOOLTIP_STYLE = f"""
     QLabel {{
