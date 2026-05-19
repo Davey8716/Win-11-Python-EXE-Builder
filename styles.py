@@ -413,8 +413,12 @@ COMBO_BOX_STYLE = f"""
 
     QComboBox::drop-down {{
         border: none;
-        background: {qcolor_name(Colors.WINDOW)};
+        background: {qcolor_name(Colors.WHITE)};
         padding: 10px;
+    }}
+
+    QComboBox::down-arrow {{
+        background-color: {qcolor_name(Colors.WHITE)};
     }}
 
     {combo_box_popup_style("QComboBox QAbstractItemView")}
