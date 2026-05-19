@@ -702,7 +702,7 @@ SCRIPT_PICKER_CONFIRM_STYLE = f"""
 CONFIRMATION_MESSAGE_BOX_STYLE = f"""
     QMessageBox {{
         background-color: {qcolor_name(Colors.POPUP_BG)};
-        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border: none;
         border-radius: 6px;
     }}
 
