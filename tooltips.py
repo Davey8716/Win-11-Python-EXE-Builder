@@ -190,6 +190,12 @@ def attach_tooltips(app):
     )
 
     QtTooltip(
+        app.suppress_exit_dialogue,
+        "Skip the exit confirmation popup when closing the app.\n"
+        "When enabled, the native X close exits immediately."
+    )
+
+    QtTooltip(
         app.close_after_build,
         "If toggled the app will close after a build.\n"
         "Mutually excluse to the minimize after build toggle."
