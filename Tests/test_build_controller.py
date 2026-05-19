@@ -1,4 +1,5 @@
 import os
+import warnings
 from datetime import datetime as real_datetime
 from pathlib import Path
 from types import SimpleNamespace
@@ -88,6 +89,21 @@ class DummyButton:
 
     def setText(self, value):
         self.text = value
+
+
+class WarningSignal(DummySignal):
+    def disconnect(self, *_args, **_kwargs):
+        warnings.warn(
+            'Failed to disconnect (None) from signal "clicked()".',
+            RuntimeWarning,
+            stacklevel=2,
+        )
+
+
+class WarningButton(DummyButton):
+    def __init__(self):
+        super().__init__()
+        self.clicked = WarningSignal()
 
 
 class DummyLabel:
@@ -401,6 +417,23 @@ def test_mass_datetime_build_cancel_restores_state(tmp_path, monkeypatch):
     assert app.append_datetime is True
     assert app.datetime_format == "%d-%m-%Y"
     assert app.date_time_dropdown.currentText() == "UK | DD-MM-YYYY"
+
+
+def test_build_exe_suppresses_empty_clicked_disconnect_warning(tmp_path, monkeypatch):
+    patch_build_runtime(monkeypatch)
+    app = make_buildable_app(tmp_path, build_btn=WarningButton())
+    controller = BuildController(app)
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        controller.build_exe(None)
+
+    assert not [
+        warning
+        for warning in caught
+        if issubclass(warning.category, RuntimeWarning)
+        and "Failed to disconnect" in str(warning.message)
+    ]
 
 
 def test_build_exe_adds_project_root_to_paths_and_data(tmp_path, monkeypatch):

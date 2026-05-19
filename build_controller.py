@@ -1,4 +1,4 @@
-import datetime,os,sys,subprocess,time
+import datetime,os,sys,subprocess,time,warnings
 from PySide6.QtGui import QFont
 from bundle_validation import validate_bundle_inputs
 from datetime_build_options import (
@@ -156,6 +156,18 @@ class BuildController(QObject):
 
         app.validation_controller.update_ui_state()
         app.validation_controller.update_build_button()
+
+    def _disconnect_build_button_clicked(self):
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message=r'.*Failed to disconnect.*from signal "clicked\(\)".*',
+                category=RuntimeWarning,
+            )
+            try:
+                self.app.build_btn.clicked.disconnect()
+            except (RuntimeError, TypeError):
+                pass
 
     # ============================================================
     # ETA LOOP
@@ -351,7 +363,7 @@ class BuildController(QObject):
         # ==================================================
 
         app.build_btn.setText("Cancel EXE")
-        app.build_btn.clicked.disconnect()
+        self._disconnect_build_button_clicked()
         app.build_btn.clicked.connect(self.build_exe)
         app.status_label.setFixedWidth(250)
         app.validation_controller.update_ui_state()

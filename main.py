@@ -791,7 +791,7 @@ class EXEBuilderApp(QWidget):
 
         date_dropdown_metrics = QFontMetrics(self.date_time_dropdown.font())
         longest_date_label = MASS_DATETIME_BUILD_LABEL
-        date_dropdown_width = max(245, date_dropdown_metrics.horizontalAdvance(longest_date_label) + 64)
+        date_dropdown_width = max(270, date_dropdown_metrics.horizontalAdvance(longest_date_label) + 64)
         self.date_time_dropdown.setFixedSize(date_dropdown_width, 35)
 
         model = self.date_time_dropdown.model()
