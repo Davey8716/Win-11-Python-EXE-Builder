@@ -621,7 +621,7 @@ class EXEBuilderApp(QWidget):
         python_title_layout.setContentsMargins(3,3,3,3)
         python_title_layout.setSpacing(3)
 
-        self.python_title = QLabel("File Section")
+        self.python_title = QLabel("File Select")
         self.python_title.setFixedHeight(30)
         self.python_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
 

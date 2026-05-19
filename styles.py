@@ -453,7 +453,7 @@ BUILD_DISABLED_TITLE_FRAME_STYLE = f"""
     QFrame {{
         border: none;
         border-radius: 4px;
-        background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
+        background-color: {qcolor_name(Colors.WINDOW)};
         color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
     }}
     QLabel {{
