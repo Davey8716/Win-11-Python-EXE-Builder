@@ -200,11 +200,6 @@ def attach_tooltips(app):
     # -----------------------------
 
     QtTooltip(
-        app.script_path_input,
-        "File path to python script folder and file."
-    )
-
-    QtTooltip(
         app.open_python_site_btn,
         "Direct link to python.org."
     )
@@ -304,14 +299,6 @@ def attach_tooltips(app):
         "This determines which Python installation PyInstaller runs under."
     )
 
-    QtTooltip(
-        app.python_entry_input,
-        "Displays the full path to the Python interpreter.\n"
-        "That will be used for building EXEs.\n"
-        "This is read only.\n"
-        "Once a path has been set the navigation is locked to where pyton interpreters are.\n"
-    )
-
     # -----------------------------
     # Icon picker
     # -----------------------------
@@ -328,11 +315,6 @@ def attach_tooltips(app):
         "For use as custom EXE icons."
     )
 
-    QtTooltip(
-        app.icon_path_input,
-        "File path to Icon if used."
-    )
-    
     QtTooltip(
         app.delete_recent_icons,
             "Deletes current icon in the path line output."
@@ -373,11 +355,6 @@ def attach_tooltips(app):
         "\nFormats without minutes will overwrite builds from the same day." 
         "\nFormats including minutes usually produce a unique file per build." 
         "\nAs most builds take longer than a minute.\nIf a name is reused, wait briefly before rebuilding."
-    )
-
-    QtTooltip(
-        app.output_path_input,
-        "File path to the EXE output folder."
     )
 
     QtTooltip(
