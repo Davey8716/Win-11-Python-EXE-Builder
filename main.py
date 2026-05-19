@@ -37,6 +37,7 @@ from styles import (
     DELETE_BUTTON_TEXT,
     ENV_SYNC_BUTTON_STYLE,
     ENV_SYNC_STATUS_LINE_STYLE,
+    BUILD_OPTIONS_FRAME_STYLE,
     REFRESH_BUTTON_ICON,
     REFRESH_BUTTON_ICON_SIZE,
     REFRESH_BUTTON_TEXT,
@@ -944,7 +945,6 @@ class EXEBuilderApp(QWidget):
             python_frame,
             output_frame,
             build_frame,
-            toggles_frame,
         ]
 
         build_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
@@ -952,6 +952,8 @@ class EXEBuilderApp(QWidget):
         for frame in frames:
             if frame:
                 frame.setStyleSheet(MAIN_FRAME_STYLE)
+
+        toggles_frame.setStyleSheet(BUILD_OPTIONS_FRAME_STYLE)
                 
         frames = [
             self.build_options_title_frame,

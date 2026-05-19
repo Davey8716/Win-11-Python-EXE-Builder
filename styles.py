@@ -387,6 +387,33 @@ MAIN_FRAME_STYLE = f"""
     }}
 """
 
+BUILD_OPTIONS_FRAME_STYLE = f"""
+    QFrame {{
+        border: none;
+        border-radius: 6px;
+        background-color: {qcolor_name(Colors.WINDOW)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+    }}
+    QLabel {{
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+    }}
+    QCheckBox {{
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+    }}
+    QCheckBox::indicator {{
+        width: 14px;
+        height: 14px;
+        background-color: {qcolor_name(Colors.WHITE)};
+        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border-radius: 3px;
+    }}
+    QCheckBox::indicator:checked {{
+        background-color: {qcolor_name(Colors.WHITE)};
+        border: 1px solid {qcolor_name(Colors.BLACK)};
+        image: url({CHECKBOX_CHECK_BLACK_ICON});
+    }}
+"""
+
 TITLE_FRAME_STYLE = f"""
     QFrame {{
         border: none;
