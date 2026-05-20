@@ -55,6 +55,7 @@ def test_initialize_debug_log_uses_selected_output_folder(tmp_path):
 
     assert log_path.parent == tmp_path
     assert log_path.name.startswith("EXE_BUILDER_DEBUG_Builder_project_")
+    assert log_path.suffix == ".log"
     assert log_path.exists()
 
     contents = log_path.read_text(encoding="utf-8")
@@ -72,6 +73,46 @@ def test_build_debug_log_name_appends_python_version_when_enabled(tmp_path):
     log_name = controller._build_debug_log_name(str(tmp_path / "project" / "main.py"))
 
     assert "py3.14" in log_name
+
+
+def test_mass_datetime_debug_log_reuses_single_txt_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(build_controller, "datetime", FixedDateTime)
+
+    script = tmp_path / "project" / "main.py"
+    script.parent.mkdir()
+    script.write_text("print('hello')\n", encoding="utf-8")
+
+    app = make_app(
+        entry_script=str(script),
+        project_root=str(script.parent),
+        python_interpreter_path=str(tmp_path / "Python314" / "python.exe"),
+    )
+    controller = BuildController(app)
+    controller._mass_datetime_active = True
+    controller._mass_datetime_total = 7
+    controller._mass_datetime_index = 1
+    controller._mass_datetime_current_label = NO_DATETIME_LABEL
+
+    controller._initialize_debug_log(str(script), str(tmp_path))
+
+    first_log_path = Path(app.debug_log_path)
+    assert first_log_path.parent == tmp_path
+    assert first_log_path.name.startswith("EXE_BUILDER_BUILD_ALL_DEBUG_Builder_project_")
+    assert first_log_path.suffix == ".txt"
+    assert first_log_path.exists()
+
+    controller._mass_datetime_index = 2
+    controller._mass_datetime_current_label = "ISO | YYYY-MM-DD"
+    controller._initialize_debug_log(str(script), str(tmp_path))
+
+    assert Path(app.debug_log_path) == first_log_path
+
+    contents = first_log_path.read_text(encoding="utf-8")
+    assert contents.count("BUILD ALL DATE/TIME OUTPUTS STARTED") == 1
+    assert f"BUILD ALL DATE/TIME OUTPUT 1/7: {NO_DATETIME_LABEL}" in contents
+    assert "BUILD ALL DATE/TIME OUTPUT 2/7: ISO | YYYY-MM-DD" in contents
+    assert contents.count(f"ENTRY_SCRIPT={repr(str(script))}") == 2
+    assert f"OUTPUT_DIR={repr(str(tmp_path))}" in contents
 
 
 class DummySignal:

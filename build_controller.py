@@ -28,6 +28,7 @@ class BuildController(QObject):
         self._mass_datetime_index = 0
         self._mass_datetime_current_label = ""
         self._mass_datetime_restore_state = None
+        self._mass_datetime_debug_log_path = ""
         self.build_thread = None
         self.worker = None
 
@@ -102,6 +103,7 @@ class BuildController(QObject):
         self._mass_datetime_total = len(self._mass_datetime_queue)
         self._mass_datetime_index = 0
         self._mass_datetime_current_label = ""
+        self._mass_datetime_debug_log_path = ""
         self._mass_datetime_active = True
         app.mass_datetime_build_selected = True
 
@@ -140,6 +142,7 @@ class BuildController(QObject):
         self._mass_datetime_index = 0
         self._mass_datetime_current_label = ""
         self._mass_datetime_active = False
+        self._mass_datetime_debug_log_path = ""
         self._restore_mass_datetime_state()
 
     def _cancel_mass_datetime_build(self):
@@ -274,6 +277,26 @@ class BuildController(QObject):
 
         return "_".join(parts) + ".log"
 
+    def _build_mass_datetime_debug_log_name(self, script):
+        script = os.path.normpath(script) if script else ""
+        script_name = os.path.splitext(os.path.basename(script))[0].lower() if script else ""
+        parent_name = os.path.basename(os.path.dirname(script)) if script else ""
+
+        parts = ["EXE_BUILDER_BUILD_ALL_DEBUG"]
+
+        if script:
+            parts.append(self.app.exe_name_input.text().strip() or "exe")
+
+            if script_name in {"main", "app", "run"} and parent_name:
+                parts.append(parent_name)
+
+        if getattr(self.app, "append_py_version", False):
+            parts.append(self._get_python_version_suffix())
+
+        parts.append(datetime.now().strftime("%d-%m-%Y_%H-%M-%S"))
+
+        return "_".join(parts) + ".txt"
+
     def _get_pyinstaller_search_paths(self, project_root):
         if not project_root:
             return []
@@ -311,6 +334,10 @@ class BuildController(QObject):
 
     def _initialize_debug_log(self, script, outdir):
         app = self.app
+        if self._mass_datetime_active:
+            self._initialize_mass_datetime_debug_log(script, outdir)
+            return
+
         app.debug_log_path = os.path.join(outdir, self._build_debug_log_name(script)) if outdir else ""
 
         if not app.debug_log_path or not os.path.isdir(outdir):
@@ -321,6 +348,43 @@ class BuildController(QObject):
                 f.write("BUILD STARTED\n")
 
             with open(app.debug_log_path, "a", encoding="utf-8") as f:
+                f.write(f"ENTRY_SCRIPT={repr(app.entry_script)}\n")
+                f.write(f"PROJECT_ROOT={repr(app.project_root)}\n")
+                f.write(f"OUTPUT_DIR={repr(outdir)}\n")
+                f.write(f"PYTHON_INTERPRETER_PATH={repr(app.python_interpreter_path)}\n")
+                f.write(f"IS_FROZEN={getattr(sys, 'frozen', False)}\n")
+        except OSError:
+            pass
+
+    def _initialize_mass_datetime_debug_log(self, script, outdir):
+        app = self.app
+        is_first_mass_log_write = not self._mass_datetime_debug_log_path
+
+        if is_first_mass_log_write and outdir:
+            self._mass_datetime_debug_log_path = os.path.join(
+                outdir,
+                self._build_mass_datetime_debug_log_name(script),
+            )
+
+        app.debug_log_path = self._mass_datetime_debug_log_path
+
+        if not app.debug_log_path or not os.path.isdir(outdir):
+            return
+
+        try:
+            mode = "w" if is_first_mass_log_write else "a"
+
+            with open(app.debug_log_path, mode, encoding="utf-8") as f:
+                if is_first_mass_log_write:
+                    f.write("BUILD ALL DATE/TIME OUTPUTS STARTED\n")
+
+                f.write("\n")
+                f.write(
+                    "BUILD ALL DATE/TIME OUTPUT "
+                    f"{self._mass_datetime_index}/{self._mass_datetime_total}: "
+                    f"{self._mass_datetime_current_label}\n"
+                )
+                f.write("BUILD STARTED\n")
                 f.write(f"ENTRY_SCRIPT={repr(app.entry_script)}\n")
                 f.write(f"PROJECT_ROOT={repr(app.project_root)}\n")
                 f.write(f"OUTPUT_DIR={repr(outdir)}\n")
