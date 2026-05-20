@@ -405,7 +405,7 @@ class EXEBuilderApp(QWidget):
         self.env_sync_rows_scroll_area = QScrollArea()
         self.env_sync_rows_scroll_area.setWidgetResizable(True)
         self.env_sync_rows_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.env_sync_rows_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.env_sync_rows_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.env_sync_rows_scroll_area.setFixedHeight(env_sync_scroll_height)
         self.env_sync_rows_scroll_area.setFrameShape(QFrame.NoFrame)
         self.env_sync_rows_scroll_area.setStyleSheet(ENV_SYNC_SCROLL_AREA_STYLE)
@@ -415,7 +415,7 @@ class EXEBuilderApp(QWidget):
         env_sync_layout.addWidget(self.env_sync_status_header)
         env_sync_layout.addWidget(self.env_sync_rows_scroll_area)
         env_sync_layout.addWidget(self.env_sync_log_input)
-        self.add_env_sync_status_row("-", "-", "Press Scan Profiles")
+        self.add_env_sync_status_row("", "", "Press Scan Profiles")
 
         self.left_layout.addWidget(self.env_sync_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
         self.left_layout.addWidget(self.env_sync_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
