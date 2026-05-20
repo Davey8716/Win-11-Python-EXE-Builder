@@ -1,10 +1,11 @@
 import json
 import os
+import recent_controller
 from types import SimpleNamespace
 
 from PySide6.QtCore import Qt
 
-from recent_controller import RecentController, _wrap_delete_confirmation_path
+from recent_controller import Colors, RecentController, _wrap_delete_confirmation_path
 
 
 class DummyDropdownItem:
@@ -61,6 +62,64 @@ class DummyValidator:
 
     def validation_status_message(self):
         pass
+
+
+class FakeButtonBox:
+    def __init__(self):
+        self.centered = False
+
+    def setCenterButtons(self, centered):
+        self.centered = centered
+
+
+class FakeMessageBox:
+    NoIcon = 0
+    Yes = 1
+    No = 2
+
+    instances = []
+
+    def __init__(self, parent=None):
+        self.parent = parent
+        self.title = ""
+        self.text = ""
+        self.icon = None
+        self.buttons = None
+        self.default_button = None
+        self.stylesheet = ""
+        self.flags = 0
+        self.button_box = FakeButtonBox()
+        FakeMessageBox.instances.append(self)
+
+    def setWindowTitle(self, title):
+        self.title = title
+
+    def setText(self, text):
+        self.text = text
+
+    def setIcon(self, icon):
+        self.icon = icon
+
+    def setStandardButtons(self, buttons):
+        self.buttons = buttons
+
+    def setDefaultButton(self, button):
+        self.default_button = button
+
+    def setStyleSheet(self, stylesheet):
+        self.stylesheet = stylesheet
+
+    def windowFlags(self):
+        return self.flags
+
+    def setWindowFlags(self, flags):
+        self.flags = flags
+
+    def findChild(self, _child_type):
+        return self.button_box
+
+    def exec(self):
+        return self.Yes
 
 
 def make_app(tmp_path, state_data):
@@ -187,5 +246,45 @@ def test_singular_delete_methods_use_shared_confirmation(monkeypatch, tmp_path):
         ("Delete Interpreter", interpreter),
         ("Delete Recent File", script),
         ("Delete Recent Icon", icon),
+    ]
+
+
+def test_singular_delete_confirmation_styles_native_title_bar(monkeypatch, tmp_path):
+    style_calls = []
+    app = make_app(tmp_path, {})
+    controller = RecentController(app)
+
+    FakeMessageBox.instances = []
+
+    def record_native_title_style(dialog, caption=None, text=None, border=None):
+        style_calls.append(
+            {
+                "dialog": dialog,
+                "caption": caption,
+                "text": text,
+                "border": border,
+            }
+        )
+
+    monkeypatch.setattr(recent_controller, "QMessageBox", FakeMessageBox)
+    monkeypatch.setattr(
+        recent_controller,
+        "apply_native_title_bar_style",
+        record_native_title_style,
+    )
+
+    assert controller._confirm_delete_recent_item(
+        "Delete Interpreter",
+        r"C:\Python314\python.exe",
+    )
+
+    assert len(FakeMessageBox.instances) == 1
+    assert style_calls == [
+        {
+            "dialog": FakeMessageBox.instances[0],
+            "caption": Colors.PANEL_BG,
+            "text": None,
+            "border": Colors.PANEL_BG,
+        }
     ]
 

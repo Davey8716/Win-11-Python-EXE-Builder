@@ -2,7 +2,11 @@ import time
 import os, json
 from PySide6.QtWidgets import QMessageBox, QDialogButtonBox
 from PySide6.QtCore import Qt
-from styles import RECENT_DELETE_MESSAGE_BOX_STYLE
+from styles import (
+    Colors,
+    RECENT_DELETE_MESSAGE_BOX_STYLE,
+    apply_native_title_bar_style,
+)
 from ui_highlights import flash_add_highlight, flash_delete_highlight
 
 MAX_RECENTS = 50
@@ -91,7 +95,12 @@ class RecentController:
     def __init__(self, app):
         self.app = app
 
-    def _show_recent_delete_confirmation(self, title, message):
+    def _show_recent_delete_confirmation(
+        self,
+        title,
+        message,
+        style_native_title_bar=False,
+    ):
         dialog = QMessageBox(self.app)
         dialog.setWindowTitle(title)
         dialog.setText(message)
@@ -104,6 +113,13 @@ class RecentController:
             | Qt.MSWindowsFixedSizeDialogHint
         )
 
+        if style_native_title_bar:
+            apply_native_title_bar_style(
+                dialog,
+                caption=Colors.PANEL_BG,
+                border=Colors.PANEL_BG,
+            )
+
         button_box = dialog.findChild(QDialogButtonBox)
         if button_box is not None:
             button_box.setCenterButtons(True)
@@ -115,6 +131,7 @@ class RecentController:
         return self._show_recent_delete_confirmation(
             title,
             f"Are you sure you want to remove:\n\n{formatted_path}",
+            style_native_title_bar=True,
         )
 
     def on_recent_interpreter_selected(self, index):
