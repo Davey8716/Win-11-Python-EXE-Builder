@@ -4,6 +4,7 @@ from types import SimpleNamespace
 import validation_controller
 from styles import (
     Colors,
+    COMBO_BOX_LINE_EDIT_STYLE,
     COMBO_BOX_STYLE,
     ENV_SYNC_BUTTON_STYLE,
     ENV_SYNC_STATUS_LINE_STYLE,
@@ -21,10 +22,14 @@ def test_combo_box_disabled_style_greys_drop_down_and_arrow():
     disabled_bg = qcolor_name(Colors.COMBO_DISABLED_BG)
     disabled_text = qcolor_name(Colors.COMBO_DISABLED_TEXT)
 
+    assert "QComboBox {" in COMBO_BOX_STYLE
+    assert "border-radius: 4px;" in COMBO_BOX_STYLE
     assert "QComboBox::drop-down:disabled" in COMBO_BOX_STYLE
     assert "QComboBox::down-arrow:disabled" in COMBO_BOX_STYLE
+    assert "QComboBox:disabled" in COMBO_BOX_STYLE
     assert f"background-color: {disabled_bg};" in COMBO_BOX_STYLE
     assert f"color: {disabled_text};" in COMBO_BOX_STYLE
+    assert "border-radius: 4px;" in COMBO_BOX_LINE_EDIT_STYLE
 
 
 class DummyCheckbox:

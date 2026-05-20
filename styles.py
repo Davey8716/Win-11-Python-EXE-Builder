@@ -415,6 +415,7 @@ COMBO_BOX_STYLE = f"""
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
         border: 2px solid {qcolor_name(Colors.BLACK)};
+        border-radius: 4px;
         padding: 3px;
         font-weight:bold;
         font-size: 15px;
@@ -442,6 +443,7 @@ COMBO_BOX_STYLE = f"""
     QComboBox:disabled QLineEdit {{
         background-color: {qcolor_name(Colors.COMBO_DISABLED_BG)};
         color: {qcolor_name(Colors.COMBO_DISABLED_TEXT)};
+        border-radius: 4px;
     }}
 """
 
@@ -450,6 +452,7 @@ COMBO_BOX_LINE_EDIT_STYLE = f"""
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
         border: none;
+        border-radius: 4px;
         padding-left: 18px;
         padding-right: 8px;
         font-family: "Rubik UI";
@@ -460,6 +463,7 @@ COMBO_BOX_LINE_EDIT_STYLE = f"""
     QLineEdit:disabled {{
         background-color: {qcolor_name(Colors.COMBO_DISABLED_BG)};
         color: {qcolor_name(Colors.COMBO_DISABLED_TEXT)};
+        border-radius: 4px;
     }}
 """
 
