@@ -1053,6 +1053,16 @@ class EXEBuilderApp(QWidget):
                 widget.setPlaceholderText(text)
                 widget.setFont(font)
 
+        section_output_line_height = 30
+        for widget in [
+            self.python_entry_input,
+            self.icon_path_input,
+            self.script_path_input,
+            self.output_path_input,
+            self.exe_name_input,
+        ]:
+            widget.setFixedHeight(section_output_line_height)
+
         for cb in [
             self.tooltips_checkbox,
             self.minimize_after_build,
