@@ -133,6 +133,13 @@ def combo_box_popup_style(owner_selector: str = "QAbstractItemView") -> str:
     }}
 
     {vertical_scrollbar_style(owner_selector)}
+
+    {owner_selector} QScrollBar:vertical,
+    {owner_selector} QScrollBar::handle,
+    {owner_selector} QScrollBar::sub-line:vertical,
+    {owner_selector} QScrollBar::add-line:vertical {{
+        border: 2px solid {qcolor_name(Colors.BLACK)};
+    }}
 """
 
 
@@ -236,7 +243,7 @@ def button_base(border_width: int = 3) -> str:
         QPushButton {{
             background-color: {qcolor_name(Colors.TITLE_BG)};
             color: {qcolor_name(Colors.TEXT_LIGHT)};
-            border: 1px solid {qcolor_name(Colors.BLACK)};
+            border: 2px solid {qcolor_name(Colors.BLACK)};
             border-radius: 4px;
         }}
         QPushButton:hover {{
@@ -250,7 +257,7 @@ def button_with_border(border_color: QColor, border_width: int = 4) -> str:
         QPushButton {{
             background-color: {qcolor_name(Colors.TITLE_BG)};
             color: {qcolor_name(Colors.TEXT_LIGHT)};
-            border: 1px solid {qcolor_name(Colors.BLACK)};
+            border: 2px solid {qcolor_name(Colors.BLACK)};
             border-radius: 4px;
         }}
         QPushButton:hover {{
@@ -267,7 +274,7 @@ def filled_button(background_color: QColor, border_width: int = 4, radius: int =
         QPushButton {{
             background-color: {qcolor_name(background_color)};
             color: {qcolor_name(Colors.TEXT_LIGHT)};
-            border: 1px solid {qcolor_name(Colors.BLACK)};
+            border: 2px solid {qcolor_name(Colors.BLACK)};
             border-radius: {radius}px;
         }}
         QPushButton:hover {{
@@ -281,7 +288,7 @@ def build_disabled_button(radius: int = 4) -> str:
         QPushButton {{
             background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
             color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
-            border: 1px solid {qcolor_name(Colors.BLACK)};
+            border: 2px solid {qcolor_name(Colors.BLACK)};
             border-radius: {radius}px;
         }}
         QPushButton:hover {{
@@ -302,7 +309,7 @@ ENV_SYNC_BUTTON_STYLE = f"""
     QPushButton {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border: 2px solid {qcolor_name(Colors.BLACK)};
         border-radius: 4px;
     }}
     QPushButton:hover {{
@@ -315,7 +322,7 @@ ENV_SYNC_BUTTON_STYLE = f"""
     QPushButton:disabled {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border: 2px solid {qcolor_name(Colors.BLACK)};
     }}
     QPushButton:disabled:hover {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
@@ -332,12 +339,12 @@ def build_disabled_checkbox() -> str:
             width: 14px;
             height: 14px;
             background-color: {qcolor_name(Colors.DISABLED_BG)};
-            border: 1px solid {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+            border: 2px solid {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
             border-radius: 3px;
         }}
         QCheckBox::indicator:checked {{
             background-color: {qcolor_name(Colors.DISABLED_BG)};
-            border: 1px solid {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+            border: 2px solid {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
             image: url({CHECKBOX_CHECK_DISABLED_ICON});
         }}
         QCheckBox:disabled {{
@@ -355,17 +362,17 @@ def build_disabled_checkbox_without_checkmark() -> str:
             width: 14px;
             height: 14px;
             background-color: {qcolor_name(Colors.DISABLED_BG)};
-            border: 1px solid {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+            border: 2px solid {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
             border-radius: 3px;
         }}
         QCheckBox::indicator:checked {{
             background-color: {qcolor_name(Colors.DISABLED_BG)};
-            border: 1px solid {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+            border: 2px solid {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
             image: none;
         }}
         QCheckBox::indicator:checked:disabled {{
             background-color: {qcolor_name(Colors.DISABLED_BG)};
-            border: 1px solid {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+            border: 2px solid {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
             image: none;
         }}
         QCheckBox:disabled {{
@@ -378,14 +385,14 @@ APPEND_PY_VERSION_STYLE = f"""
     QPushButton {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border: 2px solid {qcolor_name(Colors.BLACK)};
         border-radius: 4px;
     }}
 
     QPushButton:checked {{
         background-color: {qcolor_name(Colors.SUCCESS)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border: 2px solid {qcolor_name(Colors.BLACK)};
         border-radius: 4px;
     }}
 
@@ -396,7 +403,7 @@ APPEND_PY_VERSION_STYLE = f"""
     QPushButton:disabled {{
         color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
         background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
-        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border: 2px solid {qcolor_name(Colors.BLACK)};
         border-radius: 4px;
     }}
 """
@@ -407,7 +414,7 @@ COMBO_BOX_STYLE = f"""
     QComboBox {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border: 2px solid {qcolor_name(Colors.BLACK)};
         padding: 3px;
         font-weight:bold;
         font-size: 15px;
@@ -460,7 +467,7 @@ ENV_SYNC_STATUS_LINE_STYLE = f"""
     QLineEdit {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border: 2px solid {qcolor_name(Colors.BLACK)};
         border-radius: 4px;
         padding: 3px 8px;
         font-weight: bold;
@@ -470,14 +477,14 @@ ENV_SYNC_STATUS_LINE_STYLE = f"""
     QLineEdit:disabled {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border: 2px solid {qcolor_name(Colors.BLACK)};
     }}
 """
 
 ENV_SYNC_SCROLL_AREA_STYLE = f"""
     QScrollArea {{
         background-color: {qcolor_name(Colors.PANEL_BG)};
-        border: none;
+        border: 2px solid {qcolor_name(Colors.BLACK)};
     }}
 
     QScrollArea QWidget {{
@@ -485,12 +492,19 @@ ENV_SYNC_SCROLL_AREA_STYLE = f"""
     }}
 
     {vertical_scrollbar_style("QScrollArea")}
+
+    QScrollArea QScrollBar:vertical,
+    QScrollArea QScrollBar::handle,
+    QScrollArea QScrollBar::sub-line:vertical,
+    QScrollArea QScrollBar::add-line:vertical {{
+        border: 2px solid {qcolor_name(Colors.BLACK)};
+    }}
 """
 
 ENV_SYNC_SCROLL_AREA_DISABLED_STYLE = f"""
     QScrollArea {{
         background-color: {qcolor_name(Colors.PANEL_BG)};
-        border: none;
+        border: 2px solid {qcolor_name(Colors.BLACK)};
     }}
 
     QScrollArea QWidget {{
@@ -504,7 +518,7 @@ ENV_SYNC_SCROLL_AREA_DISABLED_STYLE = f"""
 MAIN_FRAME_STYLE = f"""
     QFrame#configurationFrame,
     QWidget#configurationFrame {{
-        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border: 2px solid {qcolor_name(Colors.BLACK)};
         border-radius: 6px;
         background-color: {qcolor_name(Colors.PANEL_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
@@ -519,12 +533,12 @@ MAIN_FRAME_STYLE = f"""
         width: 14px;
         height: 14px;
         background-color: {qcolor_name(Colors.WHITE)};
-        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border: 2px solid {qcolor_name(Colors.BLACK)};
         border-radius: 3px;
     }}
     QCheckBox::indicator:checked {{
         background-color: {qcolor_name(Colors.WHITE)};
-        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border: 2px solid {qcolor_name(Colors.BLACK)};
         image: url({CHECKBOX_CHECK_BLACK_ICON});
     }}
 """
@@ -546,12 +560,12 @@ BUILD_OPTIONS_FRAME_STYLE = f"""
         width: 14px;
         height: 14px;
         background-color: {qcolor_name(Colors.WHITE)};
-        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border: 2px solid {qcolor_name(Colors.BLACK)};
         border-radius: 3px;
     }}
     QCheckBox::indicator:checked {{
         background-color: {qcolor_name(Colors.WHITE)};
-        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border: 2px solid {qcolor_name(Colors.BLACK)};
         image: url({CHECKBOX_CHECK_BLACK_ICON});
     }}
 """
@@ -619,7 +633,7 @@ def line_edit_style(text_color: QColor, border_color: QColor = Colors.WINDOW) ->
         QLineEdit {{
             background-color: {qcolor_name(Colors.PANEL_BG)};
             color: {qcolor_name(text_color)};
-            border: 1px solid {qcolor_name(Colors.BLACK)};
+            border: 2px solid {qcolor_name(Colors.BLACK)};
         }}
     """
 
@@ -629,7 +643,7 @@ def build_disabled_line_edit_style() -> str:
         QLineEdit {{
             background-color: {qcolor_name(Colors.PANEL_BG)};
             color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
-            border: 1px solid {qcolor_name(Colors.BLACK)};
+            border: 2px solid {qcolor_name(Colors.BLACK)};
         }}
     """
 
@@ -656,7 +670,7 @@ SCRIPT_PICKER_DROPDOWN_STYLE = f"""
     QComboBox {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border: 2px solid {qcolor_name(Colors.BLACK)};
         border-radius: 4px;
         padding: 4px 8px;
         font-family: "Rubik UI";
@@ -689,7 +703,7 @@ SCRIPT_PICKER_CONFIRM_STYLE = f"""
     QPushButton {{
         background-color: {qcolor_name(Colors.SUCCESS)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border: 2px solid {qcolor_name(Colors.BLACK)};
         border-radius: 4px;
         padding: 6px 10px;
         font-family: "Rubik UI";
@@ -723,7 +737,7 @@ CONFIRMATION_MESSAGE_BOX_STYLE = f"""
     QMessageBox QPushButton {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border: 2px solid {qcolor_name(Colors.BLACK)};
         border-radius: 4px;
         min-width: 80px;
         min-height: 28px;
@@ -748,7 +762,7 @@ TOOLTIP_STYLE = f"""
     QLabel {{
         background-color: {qcolor_name(Colors.TOOLTIP_BG)};
         color: {qcolor_name(Colors.WHITE)};
-        border: 1px solid {qcolor_name(Colors.TOOLTIP_BORDER)};
+        border: 2px solid {qcolor_name(Colors.TOOLTIP_BORDER)};
         padding: 6px;
         border-radius: 6px;
         font-family: "Rubik";
