@@ -135,7 +135,7 @@ class EXEBuilderApp(QWidget):
         self.last_build_seconds = 45
         self.last_build_counter = 0
         
-        self.setFixedSize(1050, 820)
+        self.setFixedSize(1050, 840)
         self.setWindowTitle(" ")
         self.setContentsMargins(0,0,0,0)
         
