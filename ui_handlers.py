@@ -1,5 +1,6 @@
 
 import os,webbrowser
+from datetime_build_options import MASS_DATETIME_BUILD_SENTINEL
 from ui_highlights import flash_delete_highlight
 
 class UIHandlers:
@@ -143,32 +144,6 @@ class UIHandlers:
         app.exe_name_input.setText(derived)
         app.state_ctrl.save_state()
         
-    def on_dependency_toggle(self, state):
-        app = self.app
-        app.dependency_notice_enabled = bool(state)
-
-        script = app.entry_script
-
-        # 🔒 TURN OFF → close popup immediately
-        if not app.dependency_notice_enabled:
-            popup_ctrl = getattr(app, "ui_dependency_popup", None)
-
-            if popup_ctrl and popup_ctrl.popup:
-                popup_ctrl.popup.close()
-                popup_ctrl.popup = None
-
-            app._dependency_popup_shown = True  # block further triggers
-            app.state_ctrl.save_state()
-            return
-
-        # 🔑 TURN ON → re-run advisory
-        if script and os.path.isfile(script):
-            app._dependency_popup_shown = False  # allow popup again
-            app._dep_last_requested = None   # 🔑 REQUIRED RESET
-            app.validation_controller.run_dependency_advisory_async(script)
-
-        app.state_ctrl.save_state()
-    
     def on_tooltips_toggle(self, state):
         app = self.app
         app.tooltips_enabled = bool(state)
@@ -189,6 +164,12 @@ class UIHandlers:
     def on_open_output_dir_toggle(self, state):
         app = self.app
         app.open_output_dir_after_build_enabled = bool(state)
+        app.state_ctrl.save_state()
+        app.validator.update_ui_state()
+
+    def on_suppress_exit_dialogue_toggle(self, state):
+        app = self.app
+        app.suppress_exit_dialogue_enabled = bool(state)
         app.state_ctrl.save_state()
         app.validator.update_ui_state()
 
@@ -250,6 +231,24 @@ class UIHandlers:
 
         data = app.date_time_dropdown.currentData()
 
+        if data == MASS_DATETIME_BUILD_SENTINEL:
+            app.mass_datetime_build_selected = True
+            if not hasattr(app, "_mass_datetime_restore_state"):
+                app._mass_datetime_restore_state = {
+                    "append_datetime": getattr(app, "append_datetime", False),
+                    "datetime_format": getattr(app, "datetime_format", None),
+                }
+            if hasattr(app, "state_ctrl"):
+                app.state_ctrl.save_state()
+            if hasattr(app, "validator"):
+                app.validator.validation_status_message()
+                self.app.validator.update_ui_state()
+            return
+
+        app.mass_datetime_build_selected = False
+        if hasattr(app, "_mass_datetime_restore_state"):
+            delattr(app, "_mass_datetime_restore_state")
+
         if data is None:
             # 🔴 OFF (None selected)
             app.append_datetime = False
@@ -284,6 +283,18 @@ class UIHandlers:
         if hasattr(app, "validator"):
             app.validator.validation_status_message()
             self.app.validator.update_ui_state()
+
+    def on_env_sync_scan(self):
+        app = self.app
+        app.set_env_sync_status("Scanning Python profiles...")
+        if not app.environment_sync_controller.start_scan_async():
+            app.set_env_sync_status("Environment sync is already running.")
+
+    def on_env_sync_match(self):
+        app = self.app
+        app.set_env_sync_status("Syncing dependencies...")
+        if not app.environment_sync_controller.start_sync_async():
+            app.set_env_sync_status("Environment sync is already running.")
     
     def _on_exe_name_user_edit(self, text):
         app = self.app

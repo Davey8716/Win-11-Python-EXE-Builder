@@ -1,4 +1,6 @@
+import ctypes
 import sys
+from ctypes import wintypes
 from pathlib import Path
 
 from PySide6.QtGui import QColor
@@ -46,6 +48,44 @@ def qcolor_name(color: QColor) -> str:
     return color.name(QColor.HexRgb)
 
 
+def _windows_colorref(color: QColor) -> int:
+    return color.red() | (color.green() << 8) | (color.blue() << 16)
+
+
+def apply_native_title_bar_style(
+    window,
+    caption: QColor = Colors.WINDOW,
+    text: QColor = Colors.WHITE,
+    border: QColor = Colors.WINDOW,
+) -> None:
+    if sys.platform != "win32":
+        return
+
+    try:
+        hwnd = int(window.winId())
+        dark_mode = ctypes.c_int(1)
+        caption_color = ctypes.c_uint(_windows_colorref(caption))
+        text_color = ctypes.c_uint(_windows_colorref(text))
+        border_color = ctypes.c_uint(_windows_colorref(border))
+
+        attributes = [
+            (20, dark_mode),
+            (35, caption_color),
+            (36, text_color),
+            (34, border_color),
+        ]
+
+        for attribute, value in attributes:
+            ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                wintypes.HWND(hwnd),
+                ctypes.c_uint(attribute),
+                ctypes.byref(value),
+                ctypes.sizeof(value),
+            )
+    except (AttributeError, OSError, TypeError, ValueError):
+        return
+
+
 def _resource_path(relative_path: str) -> Path:
     base_dir = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
     return base_dir / relative_path
@@ -59,6 +99,17 @@ SCROLLBAR_UP_ARROW_ICON = ":/icons/Icons/scroll_up_white.svg"
 SCROLLBAR_DOWN_ARROW_ICON = ":/icons/Icons/scroll_down_white.svg"
 CHECKBOX_CHECK_BLACK_ICON = _stylesheet_url("Icons/check_black.svg")
 CHECKBOX_CHECK_DISABLED_ICON = _stylesheet_url("Icons/check_disabled.svg")
+
+UTILITY_ICON_BUTTON_SIZE = (35, 35)
+DELETE_BUTTON_TEXT = ""
+DELETE_BUTTON_ICON = _resource_path("Icons/White Cross.svg")
+DELETE_BUTTON_ICON_SIZE = (18, 18)
+DELETE_ALL_BUTTON_TEXT = ""
+DELETE_ALL_BUTTON_ICON = _resource_path("Icons/Double Cross.svg")
+DELETE_ALL_BUTTON_ICON_SIZE = (18, 18)
+REFRESH_BUTTON_TEXT = ""
+REFRESH_BUTTON_ICON = _resource_path("Icons/Refresh.svg")
+REFRESH_BUTTON_ICON_SIZE = (18, 18)
 
 
 def combo_box_scrollbar_style() -> str:
@@ -145,12 +196,46 @@ def vertical_scrollbar_style(owner_selector: str) -> str:
 """
 
 
+def disabled_scrollbar_style(owner_selector: str) -> str:
+    return f"""
+    {owner_selector} QScrollBar:disabled,
+    {owner_selector} QScrollBar:vertical:disabled,
+    {owner_selector} QScrollBar:horizontal:disabled {{
+        background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
+    }}
+
+    {owner_selector} QScrollBar::handle:disabled {{
+        background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
+        border-radius: 4px;
+    }}
+
+    {owner_selector} QScrollBar::sub-line:disabled,
+    {owner_selector} QScrollBar::add-line:disabled {{
+        background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
+    }}
+
+    {owner_selector} QScrollBar::up-arrow:disabled,
+    {owner_selector} QScrollBar::down-arrow:disabled,
+    {owner_selector} QScrollBar::left-arrow:disabled,
+    {owner_selector} QScrollBar::right-arrow:disabled {{
+        background-color: transparent;
+        image: none;
+        color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+    }}
+
+    {owner_selector} QScrollBar::add-page:disabled,
+    {owner_selector} QScrollBar::sub-page:disabled {{
+        background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
+    }}
+"""
+
+
 def button_base(border_width: int = 3) -> str:
     return f"""
         QPushButton {{
             background-color: {qcolor_name(Colors.TITLE_BG)};
             color: {qcolor_name(Colors.TEXT_LIGHT)};
-            border: none;
+            border: 1px solid {qcolor_name(Colors.BLACK)};
             border-radius: 4px;
         }}
         QPushButton:hover {{
@@ -164,7 +249,7 @@ def button_with_border(border_color: QColor, border_width: int = 4) -> str:
         QPushButton {{
             background-color: {qcolor_name(Colors.TITLE_BG)};
             color: {qcolor_name(Colors.TEXT_LIGHT)};
-            border: none;
+            border: 1px solid {qcolor_name(Colors.BLACK)};
             border-radius: 4px;
         }}
         QPushButton:hover {{
@@ -181,7 +266,7 @@ def filled_button(background_color: QColor, border_width: int = 4, radius: int =
         QPushButton {{
             background-color: {qcolor_name(background_color)};
             color: {qcolor_name(Colors.TEXT_LIGHT)};
-            border: none;
+            border: 1px solid {qcolor_name(Colors.BLACK)};
             border-radius: {radius}px;
         }}
         QPushButton:hover {{
@@ -195,13 +280,46 @@ def build_disabled_button(radius: int = 4) -> str:
         QPushButton {{
             background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
             color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
-            border: none;
+            border: 1px solid {qcolor_name(Colors.BLACK)};
             border-radius: {radius}px;
         }}
         QPushButton:hover {{
             background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
         }}
     """
+
+
+def utility_icon_button_style() -> str:
+    return button_base(border_width=4)
+
+
+def utility_icon_button_disabled_style(building: bool) -> str:
+    return build_disabled_button() if building else utility_icon_button_style()
+
+
+ENV_SYNC_BUTTON_STYLE = f"""
+    QPushButton {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border-radius: 4px;
+    }}
+    QPushButton:hover {{
+        background-color: {qcolor_name(Colors.SURFACE_SELECTED_HOVER)};
+    }}
+    QPushButton:pressed {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+    }}
+    QPushButton:disabled {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+        border: 1px solid {qcolor_name(Colors.BLACK)};
+    }}
+    QPushButton:disabled:hover {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+    }}
+"""
 
 
 def build_disabled_checkbox() -> str:
@@ -227,17 +345,47 @@ def build_disabled_checkbox() -> str:
     """
 
 
+def build_disabled_checkbox_without_checkmark() -> str:
+    return f"""
+        QCheckBox {{
+            color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+        }}
+        QCheckBox::indicator {{
+            width: 14px;
+            height: 14px;
+            background-color: {qcolor_name(Colors.DISABLED_BG)};
+            border: 1px solid {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+            border-radius: 3px;
+        }}
+        QCheckBox::indicator:checked {{
+            background-color: {qcolor_name(Colors.DISABLED_BG)};
+            border: 1px solid {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+            image: none;
+        }}
+        QCheckBox::indicator:checked:disabled {{
+            background-color: {qcolor_name(Colors.DISABLED_BG)};
+            border: 1px solid {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+            image: none;
+        }}
+        QCheckBox:disabled {{
+            color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+        }}
+    """
+
+
 APPEND_PY_VERSION_STYLE = f"""
     QPushButton {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: none;
+        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border-radius: 4px;
     }}
 
     QPushButton:checked {{
         background-color: {qcolor_name(Colors.SUCCESS)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: none;
+        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border-radius: 4px;
     }}
 
     QPushButton:pressed {{
@@ -247,6 +395,8 @@ APPEND_PY_VERSION_STYLE = f"""
     QPushButton:disabled {{
         color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
         background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
+        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border-radius: 4px;
     }}
 """
 
@@ -256,7 +406,7 @@ COMBO_BOX_STYLE = f"""
     QComboBox {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: none;
+        border: 1px solid {qcolor_name(Colors.BLACK)};
         padding: 3px;
         font-weight:bold;
         font-size: 15px;
@@ -264,8 +414,18 @@ COMBO_BOX_STYLE = f"""
 
     QComboBox::drop-down {{
         border: none;
-        background: {qcolor_name(Colors.WINDOW)};
+        background: {qcolor_name(Colors.WHITE)};
         padding: 10px;
+    }}
+
+    QComboBox::down-arrow {{
+        background-color: {qcolor_name(Colors.WHITE)};
+    }}
+
+    QComboBox::drop-down:disabled,
+    QComboBox::down-arrow:disabled {{
+        background-color: {qcolor_name(Colors.COMBO_DISABLED_BG)};
+        color: {qcolor_name(Colors.COMBO_DISABLED_TEXT)};
     }}
 
     {combo_box_popup_style("QComboBox QAbstractItemView")}
@@ -277,11 +437,102 @@ COMBO_BOX_STYLE = f"""
     }}
 """
 
+COMBO_BOX_LINE_EDIT_STYLE = f"""
+    QLineEdit {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+        border: none;
+        padding-left: 18px;
+        padding-right: 8px;
+        font-family: "Rubik UI";
+        font-size: 15px;
+        font-weight: bold;
+    }}
+
+    QLineEdit:disabled {{
+        background-color: {qcolor_name(Colors.COMBO_DISABLED_BG)};
+        color: {qcolor_name(Colors.COMBO_DISABLED_TEXT)};
+    }}
+"""
+
+ENV_SYNC_STATUS_LINE_STYLE = f"""
+    QLineEdit {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border-radius: 4px;
+        padding: 3px 8px;
+        font-weight: bold;
+    }}
+
+    QLineEdit:read-only,
+    QLineEdit:disabled {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+        border: 1px solid {qcolor_name(Colors.BLACK)};
+    }}
+"""
+
+ENV_SYNC_SCROLL_AREA_STYLE = f"""
+    QScrollArea {{
+        background-color: {qcolor_name(Colors.PANEL_BG)};
+        border: none;
+    }}
+
+    QScrollArea QWidget {{
+        background-color: {qcolor_name(Colors.PANEL_BG)};
+    }}
+
+    {vertical_scrollbar_style("QScrollArea")}
+"""
+
+ENV_SYNC_SCROLL_AREA_DISABLED_STYLE = f"""
+    QScrollArea {{
+        background-color: {qcolor_name(Colors.PANEL_BG)};
+        border: none;
+    }}
+
+    QScrollArea QWidget {{
+        background-color: {qcolor_name(Colors.PANEL_BG)};
+    }}
+
+    {vertical_scrollbar_style("QScrollArea")}
+    {disabled_scrollbar_style("QScrollArea")}
+"""
+
 MAIN_FRAME_STYLE = f"""
+    QFrame#configurationFrame,
+    QWidget#configurationFrame {{
+        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border-radius: 6px;
+        background-color: {qcolor_name(Colors.PANEL_BG)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+    }}
+    QLabel {{
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+    }}
+    QCheckBox {{
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+    }}
+    QCheckBox::indicator {{
+        width: 14px;
+        height: 14px;
+        background-color: {qcolor_name(Colors.WHITE)};
+        border: 1px solid {qcolor_name(Colors.BLACK)};
+        border-radius: 3px;
+    }}
+    QCheckBox::indicator:checked {{
+        background-color: {qcolor_name(Colors.WHITE)};
+        border: 1px solid {qcolor_name(Colors.BLACK)};
+        image: url({CHECKBOX_CHECK_BLACK_ICON});
+    }}
+"""
+
+BUILD_OPTIONS_FRAME_STYLE = f"""
     QFrame {{
         border: none;
         border-radius: 6px;
-        background-color: {qcolor_name(Colors.PANEL_BG)};
+        background-color: {qcolor_name(Colors.WINDOW)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
     }}
     QLabel {{
@@ -308,7 +559,7 @@ TITLE_FRAME_STYLE = f"""
     QFrame {{
         border: none;
         border-radius: 4px;
-        background-color: {qcolor_name(Colors.TITLE_BG)};
+        background-color: {qcolor_name(Colors.WINDOW)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
     }}
     QLabel {{
@@ -316,11 +567,34 @@ TITLE_FRAME_STYLE = f"""
     }}
 """
 
+APP_TITLE_CONTAINER_STYLE = f"""
+    QFrame#appTitleFrame {{
+        border: none;
+        border-radius: 0px;
+        background-color: {qcolor_name(Colors.WINDOW)};
+    }}
+"""
+
+APP_TITLE_LABEL_STYLE = f"""
+    QLabel#appTitleLabel {{
+        border: none;
+        background-color: transparent;
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+    }}
+"""
+
+CENTER_DIVIDER_STYLE = f"""
+    QFrame#centerDivider {{
+        background-color: {qcolor_name(Colors.WHITE)};
+        border: none;
+    }}
+"""
+
 BUILD_DISABLED_TITLE_FRAME_STYLE = f"""
     QFrame {{
         border: none;
         border-radius: 4px;
-        background-color: {qcolor_name(Colors.BUILD_DISABLED_BG)};
+        background-color: {qcolor_name(Colors.WINDOW)};
         color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
     }}
     QLabel {{
@@ -344,7 +618,7 @@ def line_edit_style(text_color: QColor, border_color: QColor = Colors.WINDOW) ->
         QLineEdit {{
             background-color: {qcolor_name(Colors.PANEL_BG)};
             color: {qcolor_name(text_color)};
-            border: none;
+            border: 1px solid {qcolor_name(Colors.BLACK)};
         }}
     """
 
@@ -354,7 +628,7 @@ def build_disabled_line_edit_style() -> str:
         QLineEdit {{
             background-color: {qcolor_name(Colors.PANEL_BG)};
             color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
-            border: none;
+            border: 1px solid {qcolor_name(Colors.BLACK)};
         }}
     """
 
@@ -381,7 +655,7 @@ SCRIPT_PICKER_DROPDOWN_STYLE = f"""
     QComboBox {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: none;
+        border: 1px solid {qcolor_name(Colors.BLACK)};
         border-radius: 4px;
         padding: 4px 8px;
         font-family: "Rubik UI";
@@ -414,7 +688,7 @@ SCRIPT_PICKER_CONFIRM_STYLE = f"""
     QPushButton {{
         background-color: {qcolor_name(Colors.SUCCESS)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: none;
+        border: 1px solid {qcolor_name(Colors.BLACK)};
         border-radius: 4px;
         padding: 6px 10px;
         font-family: "Rubik UI";
@@ -431,9 +705,11 @@ SCRIPT_PICKER_CONFIRM_STYLE = f"""
     }}
 """
 
-RECENT_DELETE_MESSAGE_BOX_STYLE = f"""
+CONFIRMATION_MESSAGE_BOX_STYLE = f"""
     QMessageBox {{
         background-color: {qcolor_name(Colors.POPUP_BG)};
+        border: none;
+        border-radius: 6px;
     }}
 
     QMessageBox QLabel {{
@@ -442,79 +718,30 @@ RECENT_DELETE_MESSAGE_BOX_STYLE = f"""
         font-size: 13px;
         font-weight: bold;
     }}
-"""
 
-DEPENDENCY_POPUP_FRAME_STYLE = f"""
-    QFrame {{
-        border: none;
-        border-radius: 4px;
-        background-color: {qcolor_name(Colors.PANEL_BG)};
-    }}
-"""
-
-DEPENDENCY_SCROLL_AREA_STYLE = f"""
-    QScrollArea {{
-        border: none;
-        background-color: {qcolor_name(Colors.PANEL_BG)};
-    }}
-
-    QScrollArea QWidget {{
-        background-color: {qcolor_name(Colors.PANEL_BG)};
-    }}
-
-    {vertical_scrollbar_style("QScrollArea")}
-"""
-
-DEPENDENCY_INNER_FRAME_STYLE = f"""
-    QFrame {{
-        border: none;
+    QMessageBox QPushButton {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
+        color: {qcolor_name(Colors.TEXT_LIGHT)};
+        border: 1px solid {qcolor_name(Colors.BLACK)};
         border-radius: 4px;
-        color: {qcolor_name(Colors.TEXT_LIGHT)};
+        min-width: 80px;
+        min-height: 28px;
+        padding: 4px 12px;
+        font-family: "Rubik UI";
+        font-size: 13px;
+        font-weight: bold;
     }}
-    QLabel {{
-        color: {qcolor_name(Colors.TEXT_LIGHT)};
+
+    QMessageBox QPushButton:hover {{
+        background-color: {qcolor_name(Colors.SURFACE_SELECTED_HOVER)};
+    }}
+
+    QMessageBox QPushButton:pressed {{
+        background-color: {qcolor_name(Colors.TITLE_BG)};
     }}
 """
 
-DEPENDENCY_LABEL_BOX_STYLE = f"""
-    QLabel {{
-        border: none;
-        border-radius: 4px;
-        background-color: {qcolor_name(Colors.PANEL_BG)};
-        color: {qcolor_name(Colors.TEXT_LIGHT)};
-    }}
-"""
-
-
-def label_color_style(text_color: QColor) -> str:
-    return f"color: {qcolor_name(text_color)};"
-
-
-def dependency_text_box_style(text_color: QColor) -> str:
-    return f"""
-    QTextEdit {{
-        color: {qcolor_name(text_color)};
-        background-color: {qcolor_name(Colors.PANEL_BG)};
-        border: none;
-    }}
-
-    {vertical_scrollbar_style("QTextEdit")}
-    """
-
-
-DEPENDENCY_OK_BUTTON_STYLE = f"""
-    QPushButton {{
-        background-color: {qcolor_name(Colors.INFO)};
-        color: {qcolor_name(Colors.TEXT_LIGHT)};
-        border: none;
-        border-radius: 4px;
-    }}
-    QPushButton:disabled {{
-        background-color: {qcolor_name(Colors.MUTED_BORDER)};
-        color: {qcolor_name(Colors.DISABLED_TEXT)};
-    }}
-"""
+RECENT_DELETE_MESSAGE_BOX_STYLE = CONFIRMATION_MESSAGE_BOX_STYLE
 
 TOOLTIP_STYLE = f"""
     QLabel {{

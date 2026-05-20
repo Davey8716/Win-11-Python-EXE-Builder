@@ -1,40 +1,38 @@
 import os
-import sys
-import ast
-from PySide6.QtCore import QTimer,Qt
-from PySide6.QtCore import QThread
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QSize, Qt
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QCheckBox
 from styles import (
     APPEND_PY_VERSION_STYLE,
     BUILD_DISABLED_TITLE_FRAME_STYLE,
     Colors,
+    DELETE_ALL_BUTTON_ICON,
+    DELETE_ALL_BUTTON_ICON_SIZE,
+    DELETE_ALL_BUTTON_TEXT,
+    DELETE_BUTTON_ICON,
+    DELETE_BUTTON_ICON_SIZE,
+    DELETE_BUTTON_TEXT,
+    ENV_SYNC_BUTTON_STYLE,
+    ENV_SYNC_SCROLL_AREA_DISABLED_STYLE,
+    ENV_SYNC_SCROLL_AREA_STYLE,
+    ENV_SYNC_STATUS_LINE_STYLE,
+    REFRESH_BUTTON_ICON,
+    REFRESH_BUTTON_ICON_SIZE,
+    REFRESH_BUTTON_TEXT,
     build_disabled_button,
     build_disabled_checkbox,
+    build_disabled_checkbox_without_checkmark,
     build_disabled_line_edit_style,
     button_base,
     button_with_border,
     filled_button,
     line_edit_style,
+    qcolor_name,
     status_text_style,
     TITLE_FRAME_STYLE,
+    utility_icon_button_disabled_style,
+    utility_icon_button_style,
 )
-
-class DependencyWorker(QObject):
-    finished = Signal(dict)  # returns packages dict
-
-    def __init__(self, controller, entry_file):
-        super().__init__()
-        self.controller = controller
-        self.entry_file = entry_file
-
-    def run(self):
-        try:
-            result = self.controller.run_dependency_advisory(self.entry_file)
-        except Exception:
-            result = {"external": [], "maybe": [], "uncertain": []}
-
-        self.finished.emit(result)
 
 class ValidationController:
     def __init__(self, app):
@@ -42,91 +40,6 @@ class ValidationController:
         app = EXEBuilderApp instance
         """
         self.app = app
-
-    def extract_imports_from_file(self, py_file: str) -> set[str]:
-        imports = set()
-
-        try:
-            with open(py_file, "r", encoding="utf-8") as f:
-                tree = ast.parse(f.read(), filename=py_file)
-        except Exception:
-            return imports  # advisory only
-
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Import):
-                for alias in node.names:
-                    imports.add(alias.name.split(".")[0])
-            elif isinstance(node, ast.ImportFrom):
-                if node.module:
-                    imports.add(node.module.split(".")[0])
-
-        return imports
-
-    def filter_external_imports(self, imports: set[str]) -> list[str]:
-        stdlib = set(sys.stdlib_module_names)
-        return sorted(i for i in imports if i not in stdlib)
-
-    def run_dependency_advisory(self, entry_file: str) -> list[str]:
-        root = os.path.dirname(os.path.normpath(entry_file))
-
-        all_imports = set()
-        local_modules = set()
-
-        # -----------------------------
-        # 1. collect local module names (recursive)
-        # -----------------------------
-        for root_dir, _, files in os.walk(root):
-            for file in files:
-                if file.endswith(".py"):
-                    name = os.path.splitext(file)[0]
-                    local_modules.add(name)
-
-        # -----------------------------
-        # 2. collect all imports (recursive)
-        # -----------------------------
-        for root_dir, _, files in os.walk(root):
-            for file in files:
-                if not file.endswith(".py"):
-                    continue
-
-                full_path = os.path.join(root_dir, file)
-
-                if not os.path.isfile(full_path):
-                    continue
-
-                all_imports |= self.extract_imports_from_file(full_path)
-
-        # -----------------------------
-        # 3. classify imports
-        # -----------------------------
-        stdlib = set(sys.stdlib_module_names)
-
-        external = []
-        maybe = []
-        uncertain = []
-
-        for i in all_imports:
-            if i in stdlib or i in local_modules:
-                continue
-
-            # simple heuristics
-            if i.startswith("_"):
-                uncertain.append(i)
-
-            elif len(i) <= 3:
-                uncertain.append(i)
-
-            elif i in {"utils", "helpers", "common", "core"}:
-                maybe.append(i)
-
-            else:
-                external.append(i)
-
-        return {
-            "external": sorted(external),
-            "maybe": sorted(maybe),
-            "uncertain": sorted(uncertain),
-        }
             
     def set_build_error(self, message: str):
         self.app.build_error = message
@@ -200,39 +113,10 @@ class ValidationController:
 
         state["is_ready"] = is_ready
 
-        # Reset popup eligibility when leaving READY state
-        if not is_ready:
-            self.app._dependency_popup_shown = False
-
         if not is_ready:
             self.app.status_label.setFixedSize(250,60)
         else:
             self.app.status_label.setFixedSize(250,60)
-
-        # ==========================================================
-        # Dependency advisory — fire ONCE when NOT READY → READY
-        # ==========================================================
-        if is_ready:
-            current_script = script
-            script_changed = current_script != self.app._last_advisory_script
-
-            if script_changed:
-                self.app._last_advisory_script = current_script
-
-                if getattr(self.app, "dependency_notice_enabled", True):
-
-                    # 🔑 HARD GUARD (prevents spam / freezing)
-                    if current_script != getattr(self.app, "_dep_last_requested", None):
-                        self.app._dep_last_requested = current_script
-
-                        # 🔑 ASYNC ONLY (no blocking UI)
-                        self.run_dependency_advisory_async(current_script)
-
-                state["external_packages"] = []
-            else:
-                state["external_packages"] = []
-        else:
-            self.app._last_advisory_script = None
 
         # Track previous state
         self.app._was_build_ready = is_ready
@@ -302,6 +186,7 @@ class ValidationController:
         outdir = os.path.normpath(outdir) if outdir else ""
 
         desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+        is_desktop = outdir and os.path.normpath(outdir) == os.path.normpath(desktop)
 
         python_path = getattr(app, "python_interpreter_path", "").strip()
         python_ok = bool(python_path and os.path.isfile(python_path))
@@ -321,12 +206,96 @@ class ValidationController:
         # -------------------------------
         # BUTTON HELPER
         # -------------------------------
+        def is_utility_icon_button(btn):
+            return btn in (
+                getattr(app, "delete_recent_icons", None),
+                getattr(app, "delete_recent_folder", None),
+                getattr(app, "delete_all_icons", None),
+                getattr(app, "delete_all_folders", None),
+                getattr(app, "python_delete_all_interpreter", None),
+                getattr(app, "python_delete_interpreter", None),
+                getattr(app, "refresh_btn", None),
+                getattr(app, "output_refresh_btn", None),
+                getattr(app, "icon_clear_btn", None),
+                getattr(app, "script_clear_btn", None),
+                getattr(app, "interpreter_refresh_btn", None),
+            )
+
+        def is_delete_button(btn):
+            return btn in (
+                getattr(app, "delete_recent_icons", None),
+                getattr(app, "delete_recent_folder", None),
+                getattr(app, "python_delete_interpreter", None),
+            )
+
+        def is_delete_all_button(btn):
+            return btn in (
+                getattr(app, "delete_all_icons", None),
+                getattr(app, "delete_all_folders", None),
+                getattr(app, "python_delete_all_interpreter", None),
+            )
+
+        def is_refresh_button(btn):
+            return btn in (
+                getattr(app, "refresh_btn", None),
+                getattr(app, "output_refresh_btn", None),
+                getattr(app, "icon_clear_btn", None),
+                getattr(app, "script_clear_btn", None),
+                getattr(app, "interpreter_refresh_btn", None),
+            )
+
+        def set_button_icon(btn, visible, icon_path, icon_size, text):
+            if visible:
+                if hasattr(btn, "setIcon"):
+                    btn.setIcon(QIcon(str(icon_path)))
+                if hasattr(btn, "setIconSize"):
+                    btn.setIconSize(QSize(*icon_size))
+                btn.setText(text)
+            else:
+                if hasattr(btn, "setIcon"):
+                    btn.setIcon(QIcon())
+                btn.setText("")
+
+        def set_delete_button_icon(btn, visible):
+            set_button_icon(
+                btn,
+                visible,
+                DELETE_BUTTON_ICON,
+                DELETE_BUTTON_ICON_SIZE,
+                DELETE_BUTTON_TEXT,
+            )
+
+        def set_delete_all_button_icon(btn, visible):
+            set_button_icon(
+                btn,
+                visible,
+                DELETE_ALL_BUTTON_ICON,
+                DELETE_ALL_BUTTON_ICON_SIZE,
+                DELETE_ALL_BUTTON_TEXT,
+            )
+
+        def set_refresh_button_icon(btn, visible):
+            set_button_icon(
+                btn,
+                visible,
+                REFRESH_BUTTON_ICON,
+                REFRESH_BUTTON_ICON_SIZE,
+                REFRESH_BUTTON_TEXT,
+            )
+
         def set_btn(btn, enabled, color=None):
             btn.setEnabled(enabled)
 
             if not enabled:
                 if isinstance(btn, QCheckBox):
                     btn.setStyleSheet(build_disabled_checkbox())
+                elif btn in (
+                    getattr(app, "refresh_btn", None),
+                    getattr(app, "output_refresh_btn", None),
+                ):
+                    btn.setStyleSheet(build_disabled_button())
+                elif is_utility_icon_button(btn):
+                    btn.setStyleSheet(utility_icon_button_disabled_style(building))
                 elif building:
                     btn.setStyleSheet(build_disabled_button())
                 else:
@@ -337,7 +306,10 @@ class ValidationController:
                 if isinstance(btn, QCheckBox):
                     btn.setStyleSheet("")
                     return
-                btn.setStyleSheet(button_base(border_width=4))
+                if is_utility_icon_button(btn):
+                    btn.setStyleSheet(utility_icon_button_style())
+                else:
+                    btn.setStyleSheet(button_base(border_width=4))
 
         # -------------------------------
         # VALUE STATE (TEXT-BASED)
@@ -364,27 +336,44 @@ class ValidationController:
         # ICON
         icon_enabled = not building and icon_has_value
         set_btn(app.delete_recent_icons, icon_enabled)
-        app.delete_recent_icons.setText("❌" if icon_enabled else "")
+        set_delete_button_icon(app.delete_recent_icons, icon_enabled)
 
         # SCRIPT
         script_enabled = not building and script_has_value
         set_btn(app.delete_recent_folder, script_enabled)
-        app.delete_recent_folder.setText("❌" if script_enabled else "")
+        set_delete_button_icon(app.delete_recent_folder, script_enabled)
 
         # INTERPRETER
         interpreter_enabled = not building and interpreter_has_value
 
         set_btn(app.python_delete_interpreter, interpreter_enabled)
-        app.python_delete_interpreter.setText("❌" if interpreter_enabled else "")
+        set_delete_button_icon(app.python_delete_interpreter, interpreter_enabled)
 
-        set_btn(app.delete_all_icons, not building and has_recent_icons)
-        set_btn(app.delete_all_folders, not building and has_recent_scripts)
-        set_btn(app.python_delete_all_interpreter, not building and has_recent_interpreters)
+        delete_all_icons_enabled = not building and has_recent_icons
+        delete_all_folders_enabled = not building and has_recent_scripts
+        delete_all_interpreters_enabled = not building and has_recent_interpreters
+
+        set_btn(app.delete_all_icons, delete_all_icons_enabled)
+        set_delete_all_button_icon(app.delete_all_icons, delete_all_icons_enabled)
+
+        set_btn(app.delete_all_folders, delete_all_folders_enabled)
+        set_delete_all_button_icon(app.delete_all_folders, delete_all_folders_enabled)
+
+        set_btn(app.python_delete_all_interpreter, delete_all_interpreters_enabled)
+        set_delete_all_button_icon(
+            app.python_delete_all_interpreter,
+            delete_all_interpreters_enabled,
+        )
                         
         # Tooltips
         set_btn(app.tooltips_checkbox, not building)
-        set_btn(app.dependency_notice, not building)
-        set_btn(app.open_output_dir_after_build, not building)
+        if hasattr(app, "suppress_exit_dialogue"):
+            set_btn(app.suppress_exit_dialogue, not building)
+        set_btn(app.open_output_dir_after_build, not building and not is_desktop)
+        if not building and is_desktop:
+            app.open_output_dir_after_build.setStyleSheet(
+                build_disabled_checkbox_without_checkmark()
+            )
         # 🔑 mutual exclusion + build lock
         min_checked = app.minimize_after_build.isChecked()
         close_checked = app.close_after_build.isChecked()
@@ -400,6 +389,24 @@ class ValidationController:
         )
 
         # Apps
+        env_sync_controller = getattr(app, "environment_sync_controller", None)
+        env_sync_running = bool(getattr(env_sync_controller, "is_running", False))
+
+        if hasattr(app, "env_sync_scan_btn"):
+            app.env_sync_scan_btn.setEnabled(not building and not env_sync_running)
+
+        if hasattr(app, "env_sync_match_btn"):
+            sync_plan = getattr(
+                env_sync_controller,
+                "last_plan",
+                None,
+            )
+            app.env_sync_match_btn.setEnabled(
+                not building
+                and not env_sync_running
+                and bool(sync_plan and sync_plan.total_actions > 0),
+            )
+
         set_btn(app.open_python_site_btn, not building)
         set_btn(app.interpreter_btn, not building)
         set_btn(app.interpreter_refresh_btn, not building and python_ok)
@@ -427,7 +434,6 @@ class ValidationController:
         set_btn(app.output_btn, not building)
         app.date_time_dropdown.setEnabled(not building)
 
-        is_desktop = outdir and os.path.normpath(outdir) == os.path.normpath(desktop)
         set_btn(app.output_refresh_btn, not building and not is_desktop)
 
         # -------------------------------
@@ -521,6 +527,8 @@ class ValidationController:
 
         section_title_frames = [
             getattr(app, "title_frame", None),
+            getattr(app, "build_options_title_frame", None),
+            getattr(app, "env_sync_title_frame", None),
             getattr(app, "apps_title_frame", None),
             getattr(app, "icons_title_frame", None),
             getattr(app, "python_title_frame", None),
@@ -532,6 +540,61 @@ class ValidationController:
                 frame.setStyleSheet(
                     BUILD_DISABLED_TITLE_FRAME_STYLE if building else TITLE_FRAME_STYLE
                 )
+
+        # -------------------------------
+        # ENVIRONMENT SYNC GREY STATE
+        # -------------------------------
+        for btn in [
+            getattr(app, "env_sync_scan_btn", None),
+            getattr(app, "env_sync_match_btn", None),
+        ]:
+            if btn:
+                btn.setStyleSheet(
+                    build_disabled_button() if building else ENV_SYNC_BUTTON_STYLE
+                )
+
+        if hasattr(app, "env_sync_log_input"):
+            app.env_sync_log_input.setStyleSheet(
+                build_disabled_line_edit_style()
+                if building
+                else ENV_SYNC_STATUS_LINE_STYLE
+            )
+
+        if hasattr(app, "env_sync_rows_scroll_area"):
+            app.env_sync_rows_scroll_area.setStyleSheet(
+                ENV_SYNC_SCROLL_AREA_DISABLED_STYLE
+                if building
+                else ENV_SYNC_SCROLL_AREA_STYLE
+            )
+            for scrollbar in (
+                app.env_sync_rows_scroll_area.verticalScrollBar(),
+                app.env_sync_rows_scroll_area.horizontalScrollBar(),
+            ):
+                scrollbar.setEnabled(not building)
+
+        env_sync_label_color = (
+            Colors.BUILD_DISABLED_TEXT if building else Colors.TEXT_LIGHT
+        )
+        env_sync_label_style = (
+            f"QLabel {{ color: {qcolor_name(env_sync_label_color)}; }}"
+        )
+
+        env_sync_labels = []
+        for attr in [
+            "env_sync_status_labels",
+            "env_sync_row_labels",
+        ]:
+            widgets = getattr(app, attr, None)
+            if widgets is None:
+                continue
+            if isinstance(widgets, list):
+                env_sync_labels.extend(widgets)
+            else:
+                env_sync_labels.append(widgets)
+
+        for label in env_sync_labels:
+            if label:
+                label.setStyleSheet(env_sync_label_style)
 
         # -------------------------------
         # ICON BUTTON TEXT (match grey state)
@@ -552,34 +615,41 @@ class ValidationController:
 
         for btn in icon_buttons:
             if building:
-                btn.setText("")
+                if is_delete_button(btn):
+                    set_delete_button_icon(btn, False)
+                elif is_delete_all_button(btn):
+                    set_delete_all_button_icon(btn, False)
+                elif is_refresh_button(btn):
+                    set_refresh_button_icon(btn, False)
+                else:
+                    btn.setText("")
             else:
                 # DELETE BUTTONS → respect actual state
                 if btn == app.delete_recent_icons:
-                    btn.setText("❌" if icon_has_value else "")
+                    set_delete_button_icon(btn, icon_has_value)
                 elif btn == app.delete_recent_folder:
-                    btn.setText("❌" if script_has_value else "")
+                    set_delete_button_icon(btn, script_has_value)
                 elif btn == app.python_delete_interpreter:
-                    btn.setText("❌" if interpreter_has_value else "")
+                    set_delete_button_icon(btn, interpreter_has_value)
 
                 elif btn == app.delete_all_icons:
-                    btn.setText("💥" if has_recent_icons else "")
+                    set_delete_all_button_icon(btn, has_recent_icons)
                 elif btn == app.delete_all_folders:
-                    btn.setText("💥" if has_recent_scripts else "")
+                    set_delete_all_button_icon(btn, has_recent_scripts)
                 elif btn == app.python_delete_all_interpreter:
-                    btn.setText("💥" if has_recent_interpreters else "")
+                    set_delete_all_button_icon(btn, has_recent_interpreters)
 
                 # REFRESH / CLEAR (state-driven)
                 elif btn == app.interpreter_refresh_btn:
-                    btn.setText("🔃" if interpreter_has_value else "")
+                    set_refresh_button_icon(btn, interpreter_has_value)
                 elif btn == app.script_clear_btn:
-                    btn.setText("🔃" if script_has_value else "")
+                    set_refresh_button_icon(btn, script_has_value)
                 elif btn == app.icon_clear_btn:
-                    btn.setText("🔃" if icon_has_value else "")
+                    set_refresh_button_icon(btn, icon_has_value)
                 elif btn == app.output_refresh_btn:
-                    btn.setText("🔃" if not is_desktop else "")
+                    set_refresh_button_icon(btn, not is_desktop)
                 elif btn == app.refresh_btn:
-                    btn.setText("🔃" if can_revert_name else "")
+                    set_refresh_button_icon(btn, can_revert_name)
                             
         # -------------------------------
         # LOCK + GREY INPUTS DURING BUILD
@@ -683,44 +753,3 @@ class ValidationController:
         # 🔑 restore toggle styling (it gets wiped during validation cycles)
         app.appened_py_version.setStyleSheet(APPEND_PY_VERSION_STYLE)
 
-    def run_dependency_advisory_async(self, entry_file: str):
-        app = self.app
-
-        # stop duplicate runs
-        if getattr(app, "_dep_thread_running", False):
-            return
-
-        app._dep_thread_running = True
-
-        self.dep_thread = QThread()
-        self.dep_worker = DependencyWorker(self, entry_file)
-
-        self.dep_worker.moveToThread(self.dep_thread)
-
-        self.dep_thread.started.connect(self.dep_worker.run)
-
-        self.dep_worker.finished.connect(self._on_dependency_result)
-
-        # cleanup
-        self.dep_worker.finished.connect(self.dep_thread.quit)
-        self.dep_worker.finished.connect(self.dep_worker.deleteLater)
-        self.dep_thread.finished.connect(self.dep_thread.deleteLater)
-
-        self.dep_thread.start()
-
-    def _on_dependency_result(self, packages: dict):
-        app = self.app
-
-        app._dep_thread_running = False
-
-        if (
-            packages
-            and getattr(app, "dependency_notice_enabled", True)
-            and not getattr(app, "_dependency_popup_shown", False)
-        ):
-            QTimer.singleShot(
-                0,
-                self.app,
-                lambda: self.app.ui_dependency_popup.show_dependency_warning_popup(packages)
-            )
-            app._dependency_popup_shown = True

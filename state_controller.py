@@ -1,8 +1,13 @@
 import os
 import json
 
+from datetime_build_options import (
+    MASS_DATETIME_BUILD_SENTINEL,
+    NO_DATETIME_LABEL as DATETIME_NO_DATETIME_LABEL,
+)
+
 class StateController:
-    NO_DATETIME_LABEL = "No Date Time Appended"
+    NO_DATETIME_LABEL = DATETIME_NO_DATETIME_LABEL
 
     def __init__(self, app):
         self.app = app
@@ -74,7 +79,7 @@ class StateController:
             # -------------------------
             for name in (
                 "tooltips_checkbox",
-                "dependency_notice",
+                "suppress_exit_dialogue",
                 "script_path_input",
                 "icon_path_input",
                 "output_path_input",
@@ -90,10 +95,10 @@ class StateController:
             # Load JSON app state
             # -------------------------
             self.app.tooltips_enabled = data.get("tooltips_enabled", True)
-            self.app.dependency_notice_enabled = data.get("dependency_notice_enabled", True)
             self.app.close_after_build_enabled = data.get("close_after_build_enabled", True)
             self.app.minimize_after_build_enabled = data.get("minimize_after_build_enabled", True)
             self.app.open_output_dir_after_build_enabled = data.get("open_output_dir_after_build_enabled", False)
+            self.app.suppress_exit_dialogue_enabled = data.get("suppress_exit_dialogue_enabled", False)
 
             self.app.script_path = _norm(data.get("last_script_path", ""))
             self.app.icon_path = _norm(data.get("last_icon_path", ""))
@@ -151,8 +156,10 @@ class StateController:
             if hasattr(self.app, "tooltips_checkbox"):
                 self.app.tooltips_checkbox.setChecked(self.app.tooltips_enabled)
 
-            if hasattr(self.app, "dependency_notice"):
-                self.app.dependency_notice.setChecked(self.app.dependency_notice_enabled)
+            if hasattr(self.app, "suppress_exit_dialogue"):
+                self.app.suppress_exit_dialogue.setChecked(
+                    getattr(self.app, "suppress_exit_dialogue_enabled", False)
+                )
 
             if hasattr(self.app, "script_path_input"):
                 self.app.script_path_input.set_display_path(self.app.script_path)
@@ -199,6 +206,14 @@ class StateController:
                 if hasattr(self.app, "select_interpreter"):
                     self.app.select_interpreter.setCurrentIndex(0)
 
+            env_sync_controller = getattr(self.app, "environment_sync_controller", None)
+            if env_sync_controller is not None:
+                env_sync_profiles = data.get("env_sync_profiles", [])
+                if env_sync_profiles:
+                    env_sync_controller.load_serialized_profiles(
+                        env_sync_profiles,
+                        update_ui=True,
+                    )
                 
             self.app.validator.update_ui_state()
 
@@ -241,6 +256,21 @@ class StateController:
             existing_data.get("recent_interpreters", [])
         )
 
+        env_sync_controller = getattr(self.app, "environment_sync_controller", None)
+        if env_sync_controller is not None:
+            env_sync_profiles = env_sync_controller.serialize_profiles()
+        else:
+            env_sync_profiles = getattr(self.app, "state_data", {}).get(
+                "env_sync_profiles",
+                existing_data.get("env_sync_profiles", [])
+            )
+
+        append_datetime = getattr(self.app, "append_datetime", False)
+        datetime_format = getattr(self.app, "datetime_format", None)
+        if datetime_format == MASS_DATETIME_BUILD_SENTINEL:
+            append_datetime = False
+            datetime_format = None
+
         data = {
             # --- Paths / core selections ---
             "last_script_path": _norm(self.app.script_path),
@@ -255,16 +285,17 @@ class StateController:
             "recent_scripts": recent_scripts,
             "recent_icons": recent_icons,
             "recent_interpreters": recent_interpreters,
+            "env_sync_profiles": env_sync_profiles,
 
             # --- Build info ---
             "last_build_seconds": self.app.last_build_seconds,
 
             # --- Toggles / settings ---
             "tooltips_enabled": getattr(self.app, "tooltips_enabled", True),
-            "dependency_notice_enabled": getattr(self.app, "dependency_notice_enabled", True),
             "close_after_build_enabled": getattr(self.app, "close_after_build_enabled", True),
             "minimize_after_build_enabled": getattr(self.app, "minimize_after_build_enabled", True),
             "open_output_dir_after_build_enabled": getattr(self.app, "open_output_dir_after_build_enabled", False),
+            "suppress_exit_dialogue_enabled": getattr(self.app, "suppress_exit_dialogue_enabled", False),
 
             # --- User flags ---
             "icon_user_cleared": getattr(self.app, "icon_user_cleared", False),
@@ -272,8 +303,8 @@ class StateController:
             "interpreter_user_cleared": getattr(self.app, "interpreter_user_cleared", False),
 
             # --- Datetime ---
-            "append_datetime": getattr(self.app, "append_datetime", False),
-            "datetime_format": getattr(self.app, "datetime_format", None),
+            "append_datetime": append_datetime,
+            "datetime_format": datetime_format,
             "append_py_version": getattr(self.app, "append_py_version", False),
         }
 

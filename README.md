@@ -24,39 +24,6 @@
 	* Quick access to Windows Installed Apps
 	* Direct links to Python.org for environment setup
 
----
-
-## Dependency Notice
-
-	Scans your project for imported modules and highlights external packages that may need to be installed.
-
-**How it works:**
-
-	* Recursively scans all Python files in the project folder
-	* Filters out standard library and local modules
-	* Classifies results into:
-	
-	  * ✔ External — likely required packages
-	  * ⚠ Maybe — common/internal names to verify
-	  * ? Uncertain — ambiguous or optional imports
-
-**Behavior:**
-
-	* Displays results in a categorized, color-coded popup
-	* Runs asynchronously (does not block UI)
-	* Triggers when the selected script changes (if enabled)
-	* Includes safeguards to prevent repeated scans
-
-**Limitations:**
-
-	* May include false positives
-	* Does not resolve exact package names or versions
-	* Does not detect dynamic imports or runtime dependencies
-
-	This is a lightweight advisory tool, not a full dependency resolver.
-
----
-
 ## Protected Folders
 
 	Avoid building in protected folders (e.g. Pictures, Music).

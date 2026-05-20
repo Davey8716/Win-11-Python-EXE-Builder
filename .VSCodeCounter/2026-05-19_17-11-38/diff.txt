@@ -1,0 +1,39 @@
+Date : 2026-05-19 17:11:38
+Directory : c:\Users\davey\Desktop\Projects\Win-11-Python-EXE-Builder
+Total : 13 files,  304 codes, 18 comments, 52 blanks, all 374 lines
+
+Languages
++----------+------------+------------+------------+------------+------------+
+| language | files      | code       | comment    | blank      | total      |
++----------+------------+------------+------------+------------+------------+
+| Python   |         13 |        304 |         18 |         52 |        374 |
++----------+------------+------------+------------+------------+------------+
+
+Directories
++-----------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                          | files      | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                             |         13 |        304 |         18 |         52 |        374 |
+| . (Files)                                                                                     |         10 |        254 |         18 |         31 |        303 |
+| Tests                                                                                         |          3 |         50 |          0 |         21 |         71 |
++-----------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-----------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| filename                                                                                      | language | code       | comment    | blank      | total      |
++-----------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+
+| c:\Users\davey\Desktop\Projects\Win-11-Python-EXE-Builder\Tests\test_build_controller.py      | Python   |         25 |          0 |          8 |         33 |
+| c:\Users\davey\Desktop\Projects\Win-11-Python-EXE-Builder\Tests\test_path_hover.py            | Python   |         18 |          0 |         13 |         31 |
+| c:\Users\davey\Desktop\Projects\Win-11-Python-EXE-Builder\Tests\test_validation_controller.py | Python   |          7 |          0 |          0 |          7 |
+| c:\Users\davey\Desktop\Projects\Win-11-Python-EXE-Builder\build_controller.py                 | Python   |         11 |          0 |          1 |         12 |
+| c:\Users\davey\Desktop\Projects\Win-11-Python-EXE-Builder\environment_sync_controller.py      | Python   |          2 |          0 |          0 |          2 |
+| c:\Users\davey\Desktop\Projects\Win-11-Python-EXE-Builder\main.py                             | Python   |         92 |          0 |         13 |        105 |
+| c:\Users\davey\Desktop\Projects\Win-11-Python-EXE-Builder\path_hover.py                       | Python   |         32 |          0 |          1 |         33 |
+| c:\Users\davey\Desktop\Projects\Win-11-Python-EXE-Builder\path_hover_text.py                  | Python   |          9 |          0 |          5 |         14 |
+| c:\Users\davey\Desktop\Projects\Win-11-Python-EXE-Builder\state_controller.py                 | Python   |          7 |          0 |          1 |          8 |
+| c:\Users\davey\Desktop\Projects\Win-11-Python-EXE-Builder\styles.py                           | Python   |         90 |         18 |         11 |        119 |
+| c:\Users\davey\Desktop\Projects\Win-11-Python-EXE-Builder\tooltips.py                         | Python   |        -14 |          0 |         -3 |        -17 |
+| c:\Users\davey\Desktop\Projects\Win-11-Python-EXE-Builder\ui_handlers.py                      | Python   |          5 |          0 |          1 |          6 |
+| c:\Users\davey\Desktop\Projects\Win-11-Python-EXE-Builder\validation_controller.py            | Python   |         20 |          0 |          1 |         21 |
+| Total                                                                                         |          |        304 |         18 |         52 |        374 |
++-----------------------------------------------------------------------------------------------+----------+------------+------------+------------+------------+

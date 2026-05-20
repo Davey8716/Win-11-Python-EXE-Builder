@@ -2,7 +2,29 @@ import os
 from types import SimpleNamespace
 
 import validation_controller
+from styles import (
+    Colors,
+    COMBO_BOX_STYLE,
+    ENV_SYNC_BUTTON_STYLE,
+    ENV_SYNC_STATUS_LINE_STYLE,
+    REFRESH_BUTTON_TEXT,
+    build_disabled_button,
+    build_disabled_checkbox,
+    build_disabled_checkbox_without_checkmark,
+    build_disabled_line_edit_style,
+    qcolor_name,
+)
 from validation_controller import ValidationController
+
+
+def test_combo_box_disabled_style_greys_drop_down_and_arrow():
+    disabled_bg = qcolor_name(Colors.COMBO_DISABLED_BG)
+    disabled_text = qcolor_name(Colors.COMBO_DISABLED_TEXT)
+
+    assert "QComboBox::drop-down:disabled" in COMBO_BOX_STYLE
+    assert "QComboBox::down-arrow:disabled" in COMBO_BOX_STYLE
+    assert f"background-color: {disabled_bg};" in COMBO_BOX_STYLE
+    assert f"color: {disabled_text};" in COMBO_BOX_STYLE
 
 
 class DummyCheckbox:
@@ -114,10 +136,6 @@ def make_app(tmp_path, exe_name="", script_name="main.py", entry_script=None):
     return SimpleNamespace(
         building=False,
         build_error=None,
-        dependency_notice_enabled=False,
-        _dependency_popup_shown=False,
-        _last_advisory_script=None,
-        _dep_last_requested=None,
         _was_build_ready=False,
         _status_lock=False,
         state_data={
@@ -130,10 +148,18 @@ def make_app(tmp_path, exe_name="", script_name="main.py", entry_script=None):
         python_interpreter_path=str(python),
         icon_path="",
         tooltips_checkbox=DummyCheckbox(),
-        dependency_notice=DummyCheckbox(),
         open_output_dir_after_build=DummyCheckbox(),
         minimize_after_build=DummyCheckbox(),
         close_after_build=DummyCheckbox(),
+        env_sync_scan_btn=DummyButton(),
+        env_sync_match_btn=DummyButton(),
+        env_sync_log_input=DummyInput("Environment sync ready."),
+        env_sync_status_labels=[DummyLabel(), DummyLabel(), DummyLabel()],
+        env_sync_row_labels=[DummyLabel(), DummyLabel(), DummyLabel()],
+        environment_sync_controller=SimpleNamespace(
+            is_running=False,
+            last_plan=SimpleNamespace(total_actions=1),
+        ),
         open_python_site_btn=DummyButton(),
         interpreter_btn=DummyButton(),
         interpreter_refresh_btn=DummyButton(),
@@ -163,6 +189,7 @@ def make_app(tmp_path, exe_name="", script_name="main.py", entry_script=None):
         exe_name_input=DummyInput(exe_name),
         status_label=DummyLabel(),
         title_frame=DummyFrame(),
+        env_sync_title_frame=DummyFrame(),
         apps_title_frame=DummyFrame(),
         icons_title_frame=DummyFrame(),
         python_title_frame=DummyFrame(),
@@ -178,7 +205,7 @@ def test_exe_refresh_enabled_when_name_empty(monkeypatch, tmp_path):
     controller.update_ui_state()
 
     assert app.refresh_btn.enabled is True
-    assert app.refresh_btn.text == "🔃"
+    assert app.refresh_btn.text == REFRESH_BUTTON_TEXT
 
 
 def test_exe_refresh_disabled_when_name_matches_script_default(monkeypatch, tmp_path):
@@ -190,6 +217,109 @@ def test_exe_refresh_disabled_when_name_matches_script_default(monkeypatch, tmp_
 
     assert app.refresh_btn.enabled is False
     assert app.refresh_btn.text == ""
+    assert app.refresh_btn.stylesheet == build_disabled_button()
+
+
+def test_environment_sync_uses_disabled_build_styling(monkeypatch, tmp_path):
+    monkeypatch.setattr(validation_controller, "QCheckBox", DummyCheckbox)
+    app = make_app(tmp_path, exe_name="main")
+    app.building = True
+
+    controller = ValidationController(app)
+    controller.update_ui_state()
+
+    assert app.env_sync_scan_btn.enabled is False
+    assert app.env_sync_match_btn.enabled is False
+    assert app.env_sync_scan_btn.stylesheet == build_disabled_button()
+    assert app.env_sync_match_btn.stylesheet == build_disabled_button()
+    assert app.env_sync_log_input.stylesheet == build_disabled_line_edit_style()
+
+    disabled_text = qcolor_name(Colors.BUILD_DISABLED_TEXT)
+    for label in [
+        *app.env_sync_status_labels,
+        *app.env_sync_row_labels,
+    ]:
+        assert disabled_text in label.stylesheet
+
+
+def test_environment_sync_restores_normal_styling_when_not_building(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setattr(validation_controller, "QCheckBox", DummyCheckbox)
+    app = make_app(tmp_path, exe_name="main")
+
+    controller = ValidationController(app)
+    controller.update_ui_state()
+
+    assert app.env_sync_scan_btn.enabled is True
+    assert app.env_sync_match_btn.enabled is True
+    assert app.env_sync_scan_btn.stylesheet == ENV_SYNC_BUTTON_STYLE
+    assert app.env_sync_match_btn.stylesheet == ENV_SYNC_BUTTON_STYLE
+    assert app.env_sync_log_input.stylesheet == ENV_SYNC_STATUS_LINE_STYLE
+
+    normal_text = qcolor_name(Colors.TEXT_LIGHT)
+    for label in [
+        *app.env_sync_status_labels,
+        *app.env_sync_row_labels,
+    ]:
+        assert normal_text in label.stylesheet
+
+
+def test_open_output_directory_disabled_for_desktop_output(monkeypatch, tmp_path):
+    monkeypatch.setattr(validation_controller, "QCheckBox", DummyCheckbox)
+    app = make_app(tmp_path, exe_name="main")
+    desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+    app.output_path_input.setText(desktop)
+    app.open_output_dir_after_build.setChecked(True)
+
+    controller = ValidationController(app)
+    controller.update_ui_state()
+
+    assert app.open_output_dir_after_build.enabled is False
+    assert app.open_output_dir_after_build.isChecked() is True
+    assert (
+        app.open_output_dir_after_build.stylesheet
+        == build_disabled_checkbox_without_checkmark()
+    )
+    assert "image: none;" in app.open_output_dir_after_build.stylesheet
+
+
+def test_open_output_directory_enabled_for_non_desktop_output(monkeypatch, tmp_path):
+    monkeypatch.setattr(validation_controller, "QCheckBox", DummyCheckbox)
+    app = make_app(tmp_path, exe_name="main")
+
+    controller = ValidationController(app)
+    controller.update_ui_state()
+
+    assert app.open_output_dir_after_build.enabled is True
+    assert app.open_output_dir_after_build.stylesheet == ""
+
+
+def test_output_refresh_disabled_for_desktop_output_uses_build_style(
+    monkeypatch, tmp_path
+):
+    monkeypatch.setattr(validation_controller, "QCheckBox", DummyCheckbox)
+    app = make_app(tmp_path, exe_name="main")
+    desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+    app.output_path_input.setText(desktop)
+
+    controller = ValidationController(app)
+    controller.update_ui_state()
+
+    assert app.output_refresh_btn.enabled is False
+    assert app.output_refresh_btn.text == ""
+    assert app.output_refresh_btn.stylesheet == build_disabled_button()
+
+
+def test_output_refresh_enabled_for_non_desktop_output(monkeypatch, tmp_path):
+    monkeypatch.setattr(validation_controller, "QCheckBox", DummyCheckbox)
+    app = make_app(tmp_path, exe_name="main")
+
+    controller = ValidationController(app)
+    controller.update_ui_state()
+
+    assert app.output_refresh_btn.enabled is True
+    assert app.output_refresh_btn.text == REFRESH_BUTTON_TEXT
 
 
 def test_exe_refresh_enabled_when_name_differs_from_script_default(monkeypatch, tmp_path):
@@ -200,7 +330,7 @@ def test_exe_refresh_enabled_when_name_differs_from_script_default(monkeypatch, 
     controller.update_ui_state()
 
     assert app.refresh_btn.enabled is True
-    assert app.refresh_btn.text == "🔃"
+    assert app.refresh_btn.text == REFRESH_BUTTON_TEXT
 
 
 def test_exe_refresh_disabled_without_valid_script(monkeypatch, tmp_path):
@@ -214,3 +344,4 @@ def test_exe_refresh_disabled_without_valid_script(monkeypatch, tmp_path):
 
     assert app.refresh_btn.enabled is False
     assert app.refresh_btn.text == ""
+    assert app.refresh_btn.stylesheet == build_disabled_button()

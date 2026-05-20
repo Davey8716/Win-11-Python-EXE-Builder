@@ -5,26 +5,52 @@ import threading
 
 from ctypes import wintypes
 from build_controller import BuildController
+from datetime_build_options import (
+    DATETIME_FORMAT_OPTIONS,
+    MASS_DATETIME_BUILD_LABEL,
+    MASS_DATETIME_BUILD_SENTINEL,
+    NO_DATETIME_LABEL,
+)
+from environment_sync_controller import EnvironmentSyncController
 from path_hover import attach_path_hovers
 from tooltips import attach_tooltips
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit,QHBoxLayout, QComboBox,QTextEdit,QListView
+from PySide6.QtCore import QPoint, QSize, Qt
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit,QHBoxLayout, QComboBox,QTextEdit,QListView,QScrollArea,QMessageBox,QDialogButtonBox
 from validation_controller import ValidationController
 from activation_controller import ActivationController
-from PySide6.QtGui import QFont, QPalette
+from PySide6.QtGui import QFont, QIcon, QPalette
 from PySide6.QtWidgets import QSizePolicy
 from file_pickers import FilePickerController
 from path_display_line_edit import PathDisplayLineEdit
 from state_controller import StateController
 from recent_controller import RecentController
 from ui_handlers import UIHandlers
-from ui_dependency_popup import DependencyPopup
 from json_import_controller import JsonImportController
 from PySide6.QtGui import QFontMetrics
 from PySide6.QtGui import QTextCursor, QTextBlockFormat
 from styles import (
     APPEND_PY_VERSION_INITIAL_STYLE,
+    APP_TITLE_CONTAINER_STYLE,
+    APP_TITLE_LABEL_STYLE,
+    CENTER_DIVIDER_STYLE,
     COMBO_BOX_STYLE,
+    COMBO_BOX_LINE_EDIT_STYLE,
+    CONFIRMATION_MESSAGE_BOX_STYLE,
+    DELETE_ALL_BUTTON_ICON,
+    DELETE_ALL_BUTTON_ICON_SIZE,
+    DELETE_ALL_BUTTON_TEXT,
+    DELETE_BUTTON_ICON,
+    DELETE_BUTTON_ICON_SIZE,
+    DELETE_BUTTON_TEXT,
+    ENV_SYNC_BUTTON_STYLE,
+    ENV_SYNC_SCROLL_AREA_STYLE,
+    ENV_SYNC_STATUS_LINE_STYLE,
+    BUILD_OPTIONS_FRAME_STYLE,
+    REFRESH_BUTTON_ICON,
+    REFRESH_BUTTON_ICON_SIZE,
+    REFRESH_BUTTON_TEXT,
+    UTILITY_ICON_BUTTON_SIZE,
+    apply_native_title_bar_style,
     combo_box_popup_style,
     MAIN_FRAME_STYLE,
     TITLE_FRAME_STYLE,
@@ -62,10 +88,8 @@ def resource_path(relative_path):
 class EXEBuilderApp(QWidget):
     def __init__(self):
         super().__init__()
-        self._dep_last_requested = None
         self._is_closing = False
 
-        self._last_advisory_script = None
         self._eta_running = False
         self._loading_state = True
         self.building = False
@@ -75,9 +99,9 @@ class EXEBuilderApp(QWidget):
         self.exe_name_user_modified = False
         
         self.json_import_controller =JsonImportController(self)
-        self.ui_dependency_popup = DependencyPopup(self)
         self.recent_controller = RecentController(self)
         self.ui_handlers = UIHandlers(self)
+        self.environment_sync_controller = EnvironmentSyncController(self)
         self.build_controller = BuildController(self)
         self.validation_controller = ValidationController(self)
         self.state_ctrl = StateController(self)
@@ -111,15 +135,15 @@ class EXEBuilderApp(QWidget):
         self.last_build_seconds = 45
         self.last_build_counter = 0
         
-        self.setFixedSize(525, 1000)
-        self.setWindowTitle(" Win 11 → Python → EXE Builder")
-        self.setContentsMargins(5,5,5,5)
+        self.setFixedSize(1050, 820)
+        self.setWindowTitle(" ")
+        self.setContentsMargins(0,0,0,0)
         
         self.close_after_build_enabled = getattr(self, "close_after_build_enabled", True)
         self.minimize_after_build_enabled = getattr(self, "minimize_after_build_enabled", True)
         self.open_output_dir_after_build_enabled = getattr(self, "open_output_dir_after_build_enabled", False)
+        self.suppress_exit_dialogue_enabled = getattr(self, "suppress_exit_dialogue_enabled", False)
         self.tooltips_enabled = getattr(self, "tooltips_enabled", True)
-        self.dependency_notice_enabled = getattr(self, "dependency_notice_enabled", True)
         self.script_path = getattr(self, "script_path", "")
         self.icon_path = getattr(self, "icon_path", "")
         self.output_path = getattr(self, "output_path", "")
@@ -130,39 +154,60 @@ class EXEBuilderApp(QWidget):
         # Title + Tooltip Toggle
         # =============================================================
         self.title_frame = QFrame()
-        self.title_frame.setFrameShape(QFrame.StyledPanel)
-        self.title_frame.setFrameShadow(QFrame.Raised)
+        self.title_frame.setObjectName("appTitleFrame")
+        self.title_frame.setFrameShape(QFrame.NoFrame)
         self.title_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        self.title_frame.setFixedSize(350,40)
+        self.title_frame.setFixedSize(430,44)
+        self.title_frame.setStyleSheet(APP_TITLE_CONTAINER_STYLE)
 
         title_layout = QHBoxLayout(self.title_frame)
         title_layout.setContentsMargins(5,5,5,5)
+        title_layout.setSpacing(0)
 
-        title_label = QLabel(" Win 11 → Python → EXE Builder")
-        title_label.setFont(QFont("Rubik UI", 15, QFont.Bold))
-        title_label.setFixedSize(350,30)
+        self.title_label = QLabel(" Win 11 → Python → EXE Builder")
+        self.title_label.setObjectName("appTitleLabel")
+        self.title_label.setFont(QFont("Rubik UI", 18, QFont.Bold))
+        self.title_label.setFixedHeight(34)
+        self.title_label.setAlignment(Qt.AlignCenter)
+        self.title_label.setStyleSheet(APP_TITLE_LABEL_STYLE)
 
         title_layout.addStretch()
-        title_layout.addWidget(title_label)
+        title_layout.addWidget(self.title_label)
         title_layout.addStretch()
 
         # -------------------------------
         # TOGGLES FRAME
         # -------------------------------
 
+        self.build_options_title_frame = QFrame()
+        self.build_options_title_frame.setFrameShape(QFrame.StyledPanel)
+        self.build_options_title_frame.setFrameShadow(QFrame.Raised)
+
+        build_options_title_layout = QHBoxLayout(self.build_options_title_frame)
+        build_options_title_layout.setContentsMargins(3,3,3,3)
+        build_options_title_layout.setSpacing(3)
+
+        self.build_options_title = QLabel("Build Options")
+        self.build_options_title.setFixedHeight(30)
+        self.build_options_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
+
+        build_options_title_layout.addStretch()
+        build_options_title_layout.addWidget(self.build_options_title)
+        build_options_title_layout.addStretch()
+
         toggles_frame = QFrame()
-        toggles_frame.setFixedSize(420, 85)
+        toggles_frame.setFixedSize(450, 88)
         toggles_frame.setFrameShape(QFrame.StyledPanel)
         toggles_frame.setFrameShadow(QFrame.Raised)
         toggles_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         toggles_layout = QVBoxLayout(toggles_frame)
-        toggles_layout.setContentsMargins(5,5,5,5)
+        toggles_layout.setContentsMargins(8, 8, 8, 8)
         toggles_layout.setSpacing(2)
 
         self.tooltips_checkbox = QCheckBox("Tooltips")
-        self.dependency_notice = QCheckBox("Dependency Notice")
         self.minimize_after_build = QCheckBox("Minimize After Build")
+        self.suppress_exit_dialogue = QCheckBox("Surpress Exit Dialogue")
         self.open_output_dir_after_build = QCheckBox("Open Output Directory")
         self.close_after_build = QCheckBox("Close After Build")
 
@@ -180,10 +225,10 @@ class EXEBuilderApp(QWidget):
 
         left_toggle_column.addWidget(self.tooltips_checkbox, alignment=Qt.AlignLeft | Qt.AlignTop)
         left_toggle_column.addWidget(self.minimize_after_build, alignment=Qt.AlignLeft | Qt.AlignTop)
-        left_toggle_column.addWidget(self.open_output_dir_after_build, alignment=Qt.AlignLeft | Qt.AlignTop)
+        left_toggle_column.addWidget(self.suppress_exit_dialogue, alignment=Qt.AlignLeft | Qt.AlignTop)
         left_toggle_column.addStretch()
 
-        right_toggle_column.addWidget(self.dependency_notice, alignment=Qt.AlignLeft | Qt.AlignTop)
+        right_toggle_column.addWidget(self.open_output_dir_after_build, alignment=Qt.AlignLeft | Qt.AlignTop)
         right_toggle_column.addWidget(self.close_after_build, alignment=Qt.AlignLeft | Qt.AlignTop)
         right_toggle_column.addStretch()
 
@@ -197,29 +242,183 @@ class EXEBuilderApp(QWidget):
         toggles_layout.addLayout(toggle_columns)
 
         # -------------------------------
-        # WRAPPER (forces vertical alignment)
-        # -------------------------------
-
-        toggles_wrapper = QWidget()
-        toggles_wrapper_layout = QVBoxLayout(toggles_wrapper)
-        toggles_wrapper_layout.setContentsMargins(0,0,0,0)
-        toggles_wrapper_layout.setSpacing(0)
-
-        toggles_wrapper_layout.addStretch()  # 🔑 pushes toggles DOWN
-        toggles_wrapper_layout.addWidget(toggles_frame, alignment=Qt.AlignLeft)
-
-        # -------------------------------
         # MAIN LAYOUT
         # -------------------------------
 
-        self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(1, 1, 1, 1)
-        self.main_layout.setSpacing(2)
-        self.main_layout.addWidget(self.title_frame, alignment= Qt.AlignCenter)
+        root_layout = QVBoxLayout(self)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+        root_layout.setSpacing(0)
+        root_layout.setAlignment(Qt.AlignTop)
+
+        title_row = QWidget()
+        title_row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        title_row.setFixedHeight(44)
+        title_row_layout = QHBoxLayout(title_row)
+        title_row_layout.setContentsMargins(0, 0, 0, 0)
+        title_row_layout.setSpacing(20)
+        title_row_layout.addWidget(self.title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+
+        toggles_title_row = QWidget()
+        toggles_title_row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        toggles_title_row_layout = QHBoxLayout(toggles_title_row)
+        toggles_title_row_layout.setContentsMargins(0, 0, 0, 0)
+        toggles_title_row_layout.setSpacing(0)
+        toggles_title_row_layout.addWidget(self.build_options_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+
+        toggles_row = QWidget()
+        toggles_row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        toggles_row_layout = QHBoxLayout(toggles_row)
+        toggles_row_layout.setContentsMargins(0, 0, 0, 0)
+        toggles_row_layout.setSpacing(0)
+        toggles_row_layout.addWidget(toggles_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+
+        self.content_row = QWidget()
+        self.content_row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        content_row_layout = QHBoxLayout(self.content_row)
+        content_row_layout.setContentsMargins(0, 0, 0, 0)
+        content_row_layout.setSpacing(0)
+
+        build_title_row = QWidget()
+        build_title_row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        build_title_row_layout = QHBoxLayout(build_title_row)
+        build_title_row_layout.setContentsMargins(0, 0, 0, 0)
+        build_title_row_layout.setSpacing(0)
+
+        build_frame_row = QWidget()
+        build_frame_row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        build_frame_row_layout = QHBoxLayout(build_frame_row)
+        build_frame_row_layout.setContentsMargins(0, 0, 0, 0)
+        build_frame_row_layout.setSpacing(0)
+
+        self.left_content, self.left_layout = self._create_content_column()
+        self.right_content, self.right_layout = self._create_content_column()
+        self.main_layout = self.right_layout
+        self.center_divider = QFrame()
+        self.center_divider.setObjectName("centerDivider")
+        self.center_divider.setFrameShape(QFrame.NoFrame)
+        self.center_divider.setFixedWidth(2)
+        self.center_divider.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        self.center_divider.setStyleSheet(CENTER_DIVIDER_STYLE)
+
+        content_row_layout.addWidget(self.left_content, alignment=Qt.AlignTop)
+        content_row_layout.addWidget(self.center_divider, alignment=Qt.AlignBottom)
+        content_row_layout.addWidget(self.right_content, alignment=Qt.AlignTop)
+
+        root_layout.addWidget(title_row)
+        root_layout.addWidget(toggles_title_row)
+        root_layout.addWidget(toggles_row)
+        root_layout.addWidget(self.content_row)
+        root_layout.addWidget(build_title_row)
+        root_layout.addWidget(build_frame_row)
 
         # =============================================================
         # Script / Buttons Section
         # =============================================================
+
+        # =============================================================
+        # Environment Sync Section
+        # =============================================================
+
+        self.env_sync_title_frame = QFrame()
+        self.env_sync_title_frame.setFrameShape(QFrame.StyledPanel)
+        self.env_sync_title_frame.setFrameShadow(QFrame.Raised)
+
+        env_sync_title_layout = QHBoxLayout(self.env_sync_title_frame)
+        env_sync_title_layout.setContentsMargins(2,2,2,2)
+
+        self.env_sync_title = QLabel("Environment Sync")
+        self.env_sync_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
+
+        env_sync_title_layout.addStretch()
+        env_sync_title_layout.addWidget(self.env_sync_title)
+        env_sync_title_layout.addStretch()
+
+        self.env_sync_frame = QFrame()
+        self.env_sync_frame.setFrameShape(QFrame.StyledPanel)
+        self.env_sync_frame.setFrameShadow(QFrame.Raised)
+
+        env_sync_layout = QVBoxLayout(self.env_sync_frame)
+        env_sync_layout.setContentsMargins(6,6,6,6)
+        env_sync_layout.setSpacing(4)
+        
+        self.env_sync_log_input = QLineEdit()
+        self.env_sync_log_input.setReadOnly(True)
+        self.env_sync_log_input.setFocusPolicy(Qt.NoFocus)
+        self.env_sync_log_input.setFixedWidth(485)
+        self.env_sync_log_input.setPlaceholderText("Environment sync ready.")
+        self.env_sync_log_input.setText("Environment sync ready.")
+        self.env_sync_log_input.setFont(QFont("Rubik UI", 11, QFont.Bold))
+        self.env_sync_log_input.setStyleSheet(ENV_SYNC_STATUS_LINE_STYLE)
+
+        self.env_sync_action_row = QWidget()
+        env_sync_action_layout = QHBoxLayout(self.env_sync_action_row)
+        env_sync_action_layout.setContentsMargins(0,0,0,0)
+        env_sync_action_layout.setSpacing(4)
+
+        self.env_sync_scan_btn = QPushButton("Scan Profiles")
+        self.env_sync_match_btn = QPushButton("Sync Dependencies")
+        self.env_sync_scan_btn.setFixedSize(145,35)
+        self.env_sync_match_btn.setFixedSize(175,35)
+        self.env_sync_match_btn.setEnabled(False)
+        self.env_sync_scan_btn.setStyleSheet(ENV_SYNC_BUTTON_STYLE)
+        self.env_sync_match_btn.setStyleSheet(ENV_SYNC_BUTTON_STYLE)
+
+        env_sync_action_layout.addWidget(self.env_sync_scan_btn)
+        env_sync_action_layout.addWidget(self.env_sync_match_btn)
+        env_sync_action_layout.addStretch()
+
+        self.env_sync_status_header = QWidget()
+        env_sync_status_header_layout = QHBoxLayout(self.env_sync_status_header)
+        env_sync_status_header_layout.setContentsMargins(0,0,0,0)
+        env_sync_status_header_layout.setSpacing(4)
+
+        self.env_sync_status_labels = []
+        self.env_sync_row_labels = []
+
+        for text, width in [
+            ("Python Version", 125),
+            ("Packages", 80),
+            ("State", 275),
+        ]:
+            label = QLabel(text)
+            label.setFixedWidth(width)
+            label.setFont(QFont("Rubik UI", 10, QFont.Bold))
+            self.env_sync_status_labels.append(label)
+            env_sync_status_header_layout.addWidget(label)
+
+        env_sync_status_header_layout.addStretch()
+
+        self.env_sync_rows_container = QWidget()
+        self.env_sync_rows_layout = QVBoxLayout(self.env_sync_rows_container)
+        self.env_sync_rows_layout.setContentsMargins(0,0,0,0)
+        self.env_sync_rows_layout.setSpacing(2)
+
+        env_sync_visible_rows = 5
+        env_sync_row_height = 22
+        env_sync_row_spacing = self.env_sync_rows_layout.spacing()
+        env_sync_scroll_height = (
+            env_sync_visible_rows * env_sync_row_height
+            + (env_sync_visible_rows - 1) * env_sync_row_spacing
+        )
+        self._env_sync_rows_scroll_base_height = env_sync_scroll_height
+
+        self.env_sync_rows_scroll_area = QScrollArea()
+        self.env_sync_rows_scroll_area.setWidgetResizable(True)
+        self.env_sync_rows_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.env_sync_rows_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.env_sync_rows_scroll_area.setFixedHeight(env_sync_scroll_height)
+        self.env_sync_rows_scroll_area.setFrameShape(QFrame.NoFrame)
+        self.env_sync_rows_scroll_area.setStyleSheet(ENV_SYNC_SCROLL_AREA_STYLE)
+        self.env_sync_rows_scroll_area.setWidget(self.env_sync_rows_container)
+
+        env_sync_layout.addWidget(self.env_sync_action_row)
+        env_sync_layout.addWidget(self.env_sync_status_header)
+        env_sync_layout.addWidget(self.env_sync_rows_scroll_area)
+        env_sync_layout.addWidget(self.env_sync_log_input)
+        self.add_env_sync_status_row("-", "-", "Press Scan Profiles")
+
+        self.left_layout.addWidget(self.env_sync_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        self.left_layout.addWidget(self.env_sync_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
 
         row2 = QWidget(self)
         row2_layout = QVBoxLayout(row2)
@@ -245,24 +444,12 @@ class EXEBuilderApp(QWidget):
         apps_title_layout = QHBoxLayout(self.apps_title_frame)
         apps_title_layout.setContentsMargins(2,2,2,2)
 
-        self.apps_title = QLabel("Interpreter Section")
+        self.apps_title = QLabel("Interpreter Select")
         self.apps_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
 
         apps_title_layout.addStretch()
         apps_title_layout.addWidget(self.apps_title)
         apps_title_layout.addStretch()
-
-        # =================================================
-        # INLINE ROW (Apps title + toggles)
-        # =================================================
-
-        apps_toggles_row = QWidget()
-        apps_toggles_layout = QHBoxLayout(apps_toggles_row)
-        apps_toggles_layout.setContentsMargins(5,5,5,5)
-        apps_toggles_layout.setSpacing(1)
-
-        apps_toggles_layout.addWidget(self.apps_title_frame,alignment=Qt.AlignCenter | Qt.AlignBottom)
-        apps_toggles_layout.addWidget(toggles_wrapper,alignment=Qt.AlignCenter | Qt.AlignBottom)
 
         # =================================================
         # Apps ROW (buttons)
@@ -276,16 +463,6 @@ class EXEBuilderApp(QWidget):
         self.open_python_site_btn = QPushButton("Python.org")
         apps_layout.addWidget(self.open_python_site_btn)
         apps_layout.addStretch()
-
-        # =================================================
-        # FINAL ATTACH
-        # =================================================
-
-        self.main_layout.addWidget(apps_toggles_row)   # ✅ inline row
-        combined_layout.addWidget(apps_row)
-
-        row2_layout.addWidget(combined_frame)
-        self.main_layout.addWidget(row2)
 
         # =================================================
         # Interpreter (VERTICAL stack)
@@ -323,8 +500,12 @@ class EXEBuilderApp(QWidget):
         self.select_interpreter.lineEdit().setReadOnly(True)
         self.select_interpreter.setEnabled(True)
 
-        self.python_delete_interpreter = QPushButton("❌")
-        self.python_delete_all_interpreter = QPushButton("💥")
+        self.python_delete_interpreter = QPushButton(DELETE_BUTTON_TEXT)
+        self.python_delete_interpreter.setIcon(QIcon(str(DELETE_BUTTON_ICON)))
+        self.python_delete_interpreter.setIconSize(QSize(*DELETE_BUTTON_ICON_SIZE))
+        self.python_delete_all_interpreter = QPushButton(DELETE_ALL_BUTTON_TEXT)
+        self.python_delete_all_interpreter.setIcon(QIcon(str(DELETE_ALL_BUTTON_ICON)))
+        self.python_delete_all_interpreter.setIconSize(QSize(*DELETE_ALL_BUTTON_ICON_SIZE))
 
         interpreter_btn_layout.addWidget(self.interpreter_btn)
         interpreter_btn_layout.addWidget(self.select_interpreter)
@@ -343,20 +524,20 @@ class EXEBuilderApp(QWidget):
         self.python_entry_input = PathDisplayLineEdit()
         self.python_entry_input.setPlaceholderText("No python entry is selected.")
 
-        self.interpreter_refresh_btn = QPushButton("🔃")
-        self.interpreter_refresh_btn.setFixedSize(35,35)
+        self.interpreter_refresh_btn = QPushButton(REFRESH_BUTTON_TEXT)
+        self.interpreter_refresh_btn.setFixedSize(*UTILITY_ICON_BUTTON_SIZE)
 
         interpreter_entry_layout.addWidget(self.python_entry_input)
         interpreter_entry_layout.addWidget(self.interpreter_refresh_btn)
         interpreter_layout.addWidget(interpreter_entry_row)
 
         # --- Final attach ---
-        self.main_layout.addWidget(self.apps_title_frame,alignment=Qt.AlignCenter)
+        self.left_layout.addWidget(self.apps_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
         combined_layout.addWidget(apps_row)
         combined_layout.addWidget(interpreter_container)
 
-        row2_layout.addWidget(combined_frame,alignment=Qt.AlignCenter)
-        self.main_layout.addWidget(row2)
+        row2_layout.addWidget(combined_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        self.left_layout.addWidget(row2, alignment=Qt.AlignHCenter | Qt.AlignTop)
  
         # =============================================================
         # Icon Picker
@@ -370,7 +551,7 @@ class EXEBuilderApp(QWidget):
         icons_title_layout.setContentsMargins(3,3,3,3)
         icons_title_layout.setSpacing(3)
 
-        self.icons_title = QLabel("Icons Section")
+        self.icons_title = QLabel("Icons Select")
         self.icons_title.setFixedHeight(30)
         self.icons_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
 
@@ -414,8 +595,12 @@ class EXEBuilderApp(QWidget):
         self.select_recent_icons.lineEdit().setReadOnly(True)
         self.select_recent_icons.setEnabled(True)
 
-        self.delete_recent_icons = QPushButton("❌")
-        self.delete_all_icons = QPushButton("💥")
+        self.delete_recent_icons = QPushButton(DELETE_BUTTON_TEXT)
+        self.delete_recent_icons.setIcon(QIcon(str(DELETE_BUTTON_ICON)))
+        self.delete_recent_icons.setIconSize(QSize(*DELETE_BUTTON_ICON_SIZE))
+        self.delete_all_icons = QPushButton(DELETE_ALL_BUTTON_TEXT)
+        self.delete_all_icons.setIcon(QIcon(str(DELETE_ALL_BUTTON_ICON)))
+        self.delete_all_icons.setIconSize(QSize(*DELETE_ALL_BUTTON_ICON_SIZE))
 
         # -------- Row 2: ICO Converter (below) --------
 
@@ -452,8 +637,8 @@ class EXEBuilderApp(QWidget):
         icon_block_layout.addWidget(icon_entry_row)
         
         icon_frame_layout.addWidget(icon_block)
-        self.main_layout.addWidget(self.icons_title_frame,alignment=Qt.AlignCenter)
-        self.main_layout.addWidget(icon_frame, alignment= Qt.AlignCenter)
+        self.main_layout.addWidget(self.icons_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        self.main_layout.addWidget(icon_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
 
         # =================================================
         # PYTHON FILE TITLE FRAME
@@ -467,7 +652,7 @@ class EXEBuilderApp(QWidget):
         python_title_layout.setContentsMargins(3,3,3,3)
         python_title_layout.setSpacing(3)
 
-        self.python_title = QLabel("File Section")
+        self.python_title = QLabel("File Select")
         self.python_title.setFixedHeight(30)
         self.python_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
 
@@ -503,8 +688,12 @@ class EXEBuilderApp(QWidget):
         self.recent_folder_dropdown.lineEdit().setReadOnly(True)
         self.recent_folder_dropdown.setEnabled(True)
         
-        self.delete_recent_folder = QPushButton("❌")
-        self.delete_all_folders = QPushButton("💥")
+        self.delete_recent_folder = QPushButton(DELETE_BUTTON_TEXT)
+        self.delete_recent_folder.setIcon(QIcon(str(DELETE_BUTTON_ICON)))
+        self.delete_recent_folder.setIconSize(QSize(*DELETE_BUTTON_ICON_SIZE))
+        self.delete_all_folders = QPushButton(DELETE_ALL_BUTTON_TEXT)
+        self.delete_all_folders.setIcon(QIcon(str(DELETE_ALL_BUTTON_ICON)))
+        self.delete_all_folders.setIconSize(QSize(*DELETE_ALL_BUTTON_ICON_SIZE))
    
         folder_row = QHBoxLayout()
         folder_row.setContentsMargins(0, 0, 0, 0)
@@ -531,8 +720,8 @@ class EXEBuilderApp(QWidget):
 
         script_layout.setContentsMargins(1,1,1,1)
         python_layout.addWidget(script_row)
-        self.main_layout.addWidget(self.python_title_frame,alignment=Qt.AlignCenter)
-        self.main_layout.addWidget(python_frame,alignment = Qt.AlignCenter)
+        self.main_layout.addWidget(self.python_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        self.main_layout.addWidget(python_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
 
         # =============================================================
         # Output Folder
@@ -555,7 +744,7 @@ class EXEBuilderApp(QWidget):
         output_title_layout.setContentsMargins(3,3,3,3)
         output_title_layout.setSpacing(3)
 
-        self.output_title = QLabel("Output Section")
+        self.output_title = QLabel("Output Select")
         self.output_title.setFixedHeight(30)
         self.output_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
 
@@ -589,14 +778,6 @@ class EXEBuilderApp(QWidget):
         self.appened_py_version.setStyleSheet(APPEND_PY_VERSION_INITIAL_STYLE)
                 
         self.date_time_dropdown.clear()
-        date_format_prefixes = {
-            "%Y-%m-%d": "ISO",
-            "%Y-%m-%d_%H-%M": "ISO",
-            "%d-%m-%Y": "UK",
-            "%d-%m-%Y_%H-%M": "UK",
-            "%m-%d-%Y": "USA",
-            "%m-%d-%Y_%H-%M": "USA",
-        }
 
         def _add(label, data=None, enabled=True):
             self.date_time_dropdown.addItem(label, data)
@@ -604,38 +785,37 @@ class EXEBuilderApp(QWidget):
             if not enabled:
                 item.setFlags(item.flags() & ~Qt.ItemIsEnabled)
 
-        def _add_format(label, data):
-            prefix = date_format_prefixes[data]
-            _add(f"{prefix} | {label}", data)
-
         # Header
         _add("Append Date/Time", None, enabled=False)
 
         _add("──────────", enabled=False)
         # Top option
-        _add("No Date Time Appended", None)
+        _add(NO_DATETIME_LABEL, None)
+
+        _add("──────────", enabled=False)
+        _add(MASS_DATETIME_BUILD_LABEL, MASS_DATETIME_BUILD_SENTINEL)
 
         # ISO
         _add("──────────", enabled=False)
         _add("ISO", enabled=False)
-        _add_format("YYYY-MM-DD", "%Y-%m-%d")
-        _add_format("YYYY-MM-DD_HH-MM", "%Y-%m-%d_%H-%M")
+        for label, data in DATETIME_FORMAT_OPTIONS[0:2]:
+            _add(label, data)
 
         # UK
         _add("──────────", enabled=False)
         _add("UK", enabled=False)
-        _add_format("DD-MM-YYYY", "%d-%m-%Y")
-        _add_format("DD-MM-YYYY_HH-MM", "%d-%m-%Y_%H-%M")
+        for label, data in DATETIME_FORMAT_OPTIONS[2:4]:
+            _add(label, data)
 
         # USA
         _add("──────────", enabled=False)
         _add("USA", enabled=False)
-        _add_format("MM-DD-YYYY", "%m-%d-%Y")
-        _add_format("MM-DD-YYYY_HH-MM", "%m-%d-%Y_%H-%M")
+        for label, data in DATETIME_FORMAT_OPTIONS[4:6]:
+            _add(label, data)
 
         date_dropdown_metrics = QFontMetrics(self.date_time_dropdown.font())
-        longest_date_label = "USA | MM-DD-YYYY_HH-MM"
-        date_dropdown_width = max(245, date_dropdown_metrics.horizontalAdvance(longest_date_label) + 64)
+        longest_date_label = MASS_DATETIME_BUILD_LABEL
+        date_dropdown_width = max(270, date_dropdown_metrics.horizontalAdvance(longest_date_label) + 64)
         self.date_time_dropdown.setFixedSize(date_dropdown_width, 35)
 
         model = self.date_time_dropdown.model()
@@ -644,10 +824,6 @@ class EXEBuilderApp(QWidget):
         
         self.date_time_dropdown.setEditable(True)
         self.date_time_dropdown.lineEdit().setReadOnly(True)
-        self.date_time_dropdown.lineEdit().setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-        self.date_time_dropdown.lineEdit().setStyleSheet(
-            "padding-left: 18px; padding-right: 8px;"
-        )
         self.date_time_dropdown.setCurrentIndex(0)
         self.date_time_dropdown.setEnabled(True)
             
@@ -702,8 +878,8 @@ class EXEBuilderApp(QWidget):
         exe_layout.addWidget(self.refresh_btn)
 
         output_layout.addWidget(exe_row)
-        self.main_layout.addWidget(self.output_title_frame, alignment=Qt.AlignCenter)
-        self.main_layout.addWidget(output_frame,alignment=Qt.AlignCenter)
+        self.main_layout.addWidget(self.output_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        self.main_layout.addWidget(output_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
         
         # =============================================================
         # Build FRAME
@@ -760,6 +936,7 @@ class EXEBuilderApp(QWidget):
         build_layout.addWidget(self.build_btn, alignment=Qt.AlignCenter)
 
         for frame in [
+            self.env_sync_frame,
             combined_frame,
             interpreter_container,
             icon_frame,
@@ -779,27 +956,30 @@ class EXEBuilderApp(QWidget):
         ]:
             dropdowns.setStyleSheet(COMBO_BOX_STYLE)
             if dropdowns.isEditable() and dropdowns.lineEdit():
-                alignment = Qt.AlignLeft | Qt.AlignVCenter if dropdowns is self.date_time_dropdown else Qt.AlignCenter
-                dropdowns.lineEdit().setAlignment(alignment)
+                dropdowns.lineEdit().setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+                dropdowns.lineEdit().setStyleSheet(COMBO_BOX_LINE_EDIT_STYLE)
 
         frames = [
+            self.env_sync_frame,
             combined_frame,
-            interpreter_container,
             icon_frame,
             python_frame,
             output_frame,
             build_frame,
-            toggles_frame,
         ]
 
         build_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
 
         for frame in frames:
             if frame:
+                frame.setObjectName("configurationFrame")
                 frame.setStyleSheet(MAIN_FRAME_STYLE)
+
+        toggles_frame.setStyleSheet(BUILD_OPTIONS_FRAME_STYLE)
                 
         frames = [
-            self.title_frame,
+            self.build_options_title_frame,
+            self.env_sync_title_frame,
             self.apps_title_frame,
             self.icons_title_frame,
             self.python_title_frame,
@@ -810,16 +990,14 @@ class EXEBuilderApp(QWidget):
         for frame in frames:
             if frame:
                 frame.setStyleSheet(TITLE_FRAME_STYLE)
-        
-            if frame == self.title_frame:
-            # ignore or custom logic
-                continue
 
             frame.setFixedSize(100, 35)
             frame.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
             
                 
         for label in [
+            self.build_options_title,
+            self.env_sync_title,
             self.apps_title,
             self.icons_title,
             self.python_title,
@@ -834,6 +1012,8 @@ class EXEBuilderApp(QWidget):
         # -------------------------------
 
         title_pairs = [
+            (self.build_options_title_frame, self.build_options_title),
+            (self.env_sync_title_frame, self.env_sync_title),
             (self.apps_title_frame, self.apps_title),
             (self.icons_title_frame, self.icons_title),
             (self.python_title_frame, self.python_title),
@@ -858,6 +1038,7 @@ class EXEBuilderApp(QWidget):
 
         inputs = [
             (self.exe_name_input, "Exe has not been named."),
+            (self.env_sync_log_input, "Environment sync ready."),
             (self.python_entry_input, "No Python interpreter selected."),
             (self.icon_path_input, "No icon selected."),
             (self.output_path_input, "No output folder selected."),
@@ -874,13 +1055,15 @@ class EXEBuilderApp(QWidget):
 
         for cb in [
             self.tooltips_checkbox,
-            self.dependency_notice,
             self.minimize_after_build,
+            self.suppress_exit_dialogue,
             self.close_after_build,
         ]:
-            cb.setFixedSize(200, 24)
+            cb.setFixedSize(225, 24)
             cb.setChecked(True)
             cb.setFont(QFont("Rubik UI", 13, QFont.Bold))
+
+        self.suppress_exit_dialogue.setChecked(False)
 
         self.open_output_dir_after_build.setFixedSize(215, 24)
         self.open_output_dir_after_build.setChecked(True)
@@ -908,7 +1091,7 @@ class EXEBuilderApp(QWidget):
             
         ]:
 
-            delete_btns.setFixedSize(35,35)
+            delete_btns.setFixedSize(*UTILITY_ICON_BUTTON_SIZE)
             delete_btns.setEnabled(True)
         
         for refresh_btns in [
@@ -918,10 +1101,13 @@ class EXEBuilderApp(QWidget):
             self.script_clear_btn,
             self.interpreter_refresh_btn,
         ]:
-            refresh_btns.setText("🔃")
-            refresh_btns.setFixedSize(35,35)
+            refresh_btns.setText(REFRESH_BUTTON_TEXT)
+            refresh_btns.setIcon(QIcon(str(REFRESH_BUTTON_ICON)))
+            refresh_btns.setIconSize(QSize(*REFRESH_BUTTON_ICON_SIZE))
+            refresh_btns.setFixedSize(*UTILITY_ICON_BUTTON_SIZE)
 
         for output_paths in [
+            self.env_sync_log_input,
             self.python_entry_input,
             self.script_path_input,
             self.icon_path_input,
@@ -933,6 +1119,8 @@ class EXEBuilderApp(QWidget):
         self.exe_name_input.setReadOnly(False)
 
         buttons = [
+            self.env_sync_scan_btn,
+            self.env_sync_match_btn,
             self.open_python_site_btn,
             self.appened_py_version,
             self.icon_btn,
@@ -943,7 +1131,8 @@ class EXEBuilderApp(QWidget):
         ]
 
         for btn in buttons:
-            btn.setFixedSize(160, 35)
+            if btn not in (self.env_sync_scan_btn, self.env_sync_match_btn):
+                btn.setFixedSize(160, 35)
             btn.setFont(QFont("Rubik UI", 11, QFont.Bold))
         
         self.recent_folder_dropdown.setFixedSize(245,35)
@@ -969,8 +1158,8 @@ class EXEBuilderApp(QWidget):
             widget.installEventFilter(self)
         
         
-        self.main_layout.addWidget(build_title_frame, alignment= Qt.AlignCenter)
-        self.main_layout.addWidget(build_frame,alignment=Qt.AlignCenter)
+        build_title_row_layout.addWidget(build_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        build_frame_row_layout.addWidget(build_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
 
         attach_tooltips(self)
         attach_path_hovers(self)
@@ -979,6 +1168,8 @@ class EXEBuilderApp(QWidget):
         self.recent_controller.populate_recent_dropdown()
         self.validator.validation_status_message()
         self.json_import_controller.attach()
+        self.env_sync_scan_btn.clicked.connect(self.ui_handlers.on_env_sync_scan)
+        self.env_sync_match_btn.clicked.connect(self.ui_handlers.on_env_sync_match)
         self.interpreter_btn.clicked.connect(self.file_pickers.select_python_interpreter)
         self.python_delete_interpreter.clicked.connect(self.recent_controller.interpreter_delete)
         self.select_interpreter.currentIndexChanged.connect(self.recent_controller.on_recent_interpreter_selected)
@@ -1008,20 +1199,157 @@ class EXEBuilderApp(QWidget):
         self.output_btn.clicked.connect(self.file_pickers.select_output_folder)
         self.output_refresh_btn.clicked.connect(self.ui_handlers.reset_output_to_desktop)
         self.refresh_btn.clicked.connect(self.ui_handlers.reset_exe_name_from_script)
-        self.dependency_notice.stateChanged.connect(self.ui_handlers.on_dependency_toggle)
         self.tooltips_checkbox.stateChanged.connect(self.ui_handlers.on_tooltips_toggle)
         self.exe_name_input.textChanged.connect(self.ui_handlers._on_exe_name_user_edit)
         self.exe_name_input.textChanged.connect(self.ui_handlers.on_exe_name_change)
         self.script_path_input.textChanged.connect(self.ui_handlers.on_script_path_change)
         self.minimize_after_build.stateChanged.connect(self.ui_handlers.on_minimize_toggle)
         self.open_output_dir_after_build.stateChanged.connect(self.ui_handlers.on_open_output_dir_toggle)
+        self.suppress_exit_dialogue.stateChanged.connect(self.ui_handlers.on_suppress_exit_dialogue_toggle)
         self.close_after_build.stateChanged.connect(self.ui_handlers.on_close_toggle)
 
         self.validator.update_ui_state()
         self.validation_controller.update_build_button()
+        self._align_interpreter_title_to_output_select()
+        self._sync_center_divider_height()
+
+    def add_env_sync_status_row(self, version, package_count, status):
+        if not hasattr(self, "env_sync_rows_layout"):
+            return
+
+        row = QWidget()
+        row.setFixedHeight(22)
+        row_layout = QHBoxLayout(row)
+        row_layout.setContentsMargins(0,0,0,0)
+        row_layout.setSpacing(4)
+
+        column_data = [
+            (version, 125),
+            (package_count, 80),
+            (status, max(275, QFontMetrics(QFont("Rubik UI", 10, QFont.Bold)).horizontalAdvance(str(status)) + 12)),
+        ]
+        row_width = sum(width for _, width in column_data) + row_layout.spacing() * (len(column_data) - 1)
+
+        for text, width in column_data:
+            label = QLabel(text)
+            label.setFixedWidth(width)
+            label.setFont(QFont("Rubik UI", 10, QFont.Bold))
+            if not hasattr(self, "env_sync_row_labels"):
+                self.env_sync_row_labels = []
+            self.env_sync_row_labels.append(label)
+            row_layout.addWidget(label)
+
+        row_layout.addStretch()
+        row.setMinimumWidth(row_width)
+        self.env_sync_rows_container.setMinimumWidth(
+            max(self.env_sync_rows_container.minimumWidth(), row_width)
+        )
+        self.env_sync_rows_layout.addWidget(row)
+        self._sync_center_divider_height()
+
+    def _align_interpreter_title_to_output_select(self):
+        if not all(
+            hasattr(self, attr)
+            for attr in (
+                "apps_title_frame",
+                "output_title_frame",
+                "content_row",
+                "env_sync_rows_scroll_area",
+            )
+        ):
+            return
+
+        base_height = getattr(
+            self,
+            "_env_sync_rows_scroll_base_height",
+            self.env_sync_rows_scroll_area.height(),
+        )
+        self.env_sync_rows_scroll_area.setFixedHeight(base_height)
+
+        for widget in (self, self.content_row, self.left_content, self.right_content):
+            layout = widget.layout()
+            if layout is not None:
+                layout.activate()
+
+        interpreter_top = self.apps_title_frame.mapTo(self.content_row, QPoint(0, 0)).y()
+        output_top = self.output_title_frame.mapTo(self.content_row, QPoint(0, 0)).y()
+        alignment_delta = max(0, output_top - interpreter_top)
+
+        if alignment_delta:
+            self.env_sync_rows_scroll_area.setFixedHeight(base_height + alignment_delta)
+
+    def _sync_center_divider_height(self):
+        if not all(
+            hasattr(self, attr)
+            for attr in ("left_content", "right_content", "content_row", "center_divider")
+        ):
+            return
+
+        content_height = max(
+            self.left_content.sizeHint().height(),
+            self.right_content.sizeHint().height(),
+        )
+        if content_height <= 0:
+            return
+
+        divider_top_offset = self._center_divider_top_offset()
+        self.content_row.setFixedHeight(content_height)
+        self.center_divider.setFixedHeight(max(1, content_height - divider_top_offset))
+
+    def _center_divider_top_offset(self):
+        if not hasattr(self, "icons_title"):
+            return 0
+
+        text_bounds = QFontMetrics(self.icons_title.font()).boundingRect(
+            self.icons_title.text()
+        )
+        label_height = self.icons_title.height() or self.icons_title.sizeHint().height()
+        text_top_offset = max(0, (label_height - text_bounds.height()) // 2)
+        title_position = self.icons_title.mapTo(self.content_row, QPoint(0, 0))
+        return max(0, title_position.y() + text_top_offset)
+
+    def _create_content_column(self):
+        content = QWidget()
+        content.setFixedWidth(524)
+        content.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(1, 1, 1, 1)
+        layout.setSpacing(2)
+        layout.setAlignment(Qt.AlignTop)
+
+        return content, layout
 
     def close_app(self):
+        self._is_closing = True
         QApplication.instance().quit()
+
+    def _confirm_manual_close(self):
+        dialog = QMessageBox(self)
+        dialog.setWindowTitle(" ")
+        dialog.setText("Are you sure you want to close?")
+        dialog.setIcon(QMessageBox.NoIcon)
+        close_button = dialog.addButton("Close", QMessageBox.AcceptRole)
+        cancel_button = dialog.addButton("Cancel", QMessageBox.RejectRole)
+        dialog.setDefaultButton(cancel_button)
+        dialog.setEscapeButton(cancel_button)
+        dialog.setStyleSheet(CONFIRMATION_MESSAGE_BOX_STYLE)
+        dialog.setWindowFlags(
+            (dialog.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+            | Qt.MSWindowsFixedSizeDialogHint
+        )
+
+        button_box = dialog.findChild(QDialogButtonBox)
+        if button_box is not None:
+            button_box.setCenterButtons(True)
+
+        apply_native_title_bar_style(
+            dialog,
+            caption=Colors.PANEL_BG,
+            border=Colors.PANEL_BG,
+        )
+        dialog.exec()
+        return dialog.clickedButton() == close_button
 
     def set_status(self, text):
         self.status_label.setPlainText(text)
@@ -1038,9 +1366,27 @@ class EXEBuilderApp(QWidget):
         cursor.clearSelection()
         self.status_label.setTextCursor(cursor)
 
+    def set_env_sync_status(self, text):
+        if not hasattr(self, "env_sync_log_input"):
+            return
+
+        single_line = " ".join(str(text).splitlines()).strip()
+        self.env_sync_log_input.setText(single_line)
+        self.env_sync_log_input.deselect()
+        self.env_sync_log_input.setCursorPosition(0)
+
     def closeEvent(self, event):
+        should_confirm_close = (
+            not self._is_closing
+            and not getattr(self, "suppress_exit_dialogue_enabled", False)
+        )
+        if should_confirm_close and not self._confirm_manual_close():
+            event.ignore()
+            return
+
         self._is_closing = True
         self.state_ctrl.save_state()
+        event.accept()
 
 # -------------------------------------------------------------
 # Launch
@@ -1065,4 +1411,5 @@ if __name__ == "__main__":
 
     window = EXEBuilderApp()
     window.show()
+    apply_native_title_bar_style(window)
     sys.exit(app.exec())
