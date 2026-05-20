@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 from PySide6.QtCore import Qt
 
-from recent_controller import RecentController
+from recent_controller import RecentController, _wrap_delete_confirmation_path
 
 
 class DummyDropdownItem:
@@ -124,4 +124,68 @@ def test_recent_dropdown_items_are_title_case_display_only(tmp_path):
         "1. Icon Assets\\App_Icon.ico",
         icon_path,
     )
+
+
+def test_delete_confirmation_path_keeps_short_path_unchanged():
+    path = r"C:\Users\davey\Desktop"
+
+    assert _wrap_delete_confirmation_path(path) == os.path.normpath(path)
+
+
+def test_delete_confirmation_path_does_not_isolate_drive_letter():
+    path = (
+        r"C:\Users\davey\AppData\Local\Programs\Python"
+        r"\Python314\python.exe"
+    )
+
+    wrapped = _wrap_delete_confirmation_path(path, max_line_length=16)
+    lines = wrapped.splitlines()
+
+    assert "C:" not in lines
+    assert lines[0].startswith(r"C:\Users")
+
+
+def test_delete_confirmation_path_hard_wraps_long_segment():
+    path = r"C:\folder\this_filename_is_too_long_for_one_line.py"
+
+    wrapped = _wrap_delete_confirmation_path(path, max_line_length=12)
+    lines = wrapped.splitlines()
+
+    assert len(lines) > 1
+    assert all(len(line) <= 12 for line in lines)
+    assert "C:" not in lines
+
+
+def test_singular_delete_methods_use_shared_confirmation(monkeypatch, tmp_path):
+    calls = []
+    interpreter = r"C:\Python314\python.exe"
+    script = r"C:\Projects\App\main.py"
+    icon = r"C:\Projects\App\app.ico"
+
+    app = make_app(tmp_path, {})
+    app.python_interpreter_path = interpreter
+    app.entry_script = script
+    app.script_path = script
+    app.icon_path = icon
+
+    def record_confirmation(self, title, path):
+        calls.append((title, path))
+        return False
+
+    monkeypatch.setattr(
+        RecentController,
+        "_confirm_delete_recent_item",
+        record_confirmation,
+    )
+
+    controller = RecentController(app)
+    controller.interpreter_delete()
+    controller.confirm_delete_recent()
+    controller.confirm_delete_recent_icon()
+
+    assert calls == [
+        ("Delete Interpreter", interpreter),
+        ("Delete Recent File", script),
+        ("Delete Recent Icon", icon),
+    ]
 

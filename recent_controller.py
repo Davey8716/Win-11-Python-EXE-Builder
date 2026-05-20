@@ -6,6 +6,7 @@ from styles import RECENT_DELETE_MESSAGE_BOX_STYLE
 from ui_highlights import flash_add_highlight, flash_delete_highlight
 
 MAX_RECENTS = 50
+DELETE_CONFIRMATION_PATH_WRAP_WIDTH = 58
 
 def _title_case_recent_part(value, preserve_extension=False):
     if not value:
@@ -27,6 +28,63 @@ def _recent_display_label(index, parent, name):
         return f"{index}. {display_parent}\\{display_name}"
 
     return f"{index}. {display_name}"
+
+
+def _split_path_for_delete_confirmation(path):
+    path = os.path.normpath(path)
+    drive, remainder = os.path.splitdrive(path)
+    root = ""
+
+    while remainder.startswith(("\\", "/")):
+        root += remainder[0]
+        remainder = remainder[1:]
+
+    parts = [part for part in remainder.replace("/", "\\").split("\\") if part]
+    prefix = f"{drive}{root}"
+
+    if prefix and parts:
+        parts[0] = f"{prefix}{parts[0]}"
+    elif prefix:
+        parts = [prefix]
+
+    return parts
+
+
+def _wrap_delete_confirmation_path(path, max_line_length=DELETE_CONFIRMATION_PATH_WRAP_WIDTH):
+    if not path:
+        return ""
+
+    parts = _split_path_for_delete_confirmation(path)
+    if not parts:
+        return os.path.normpath(path)
+
+    lines = []
+    current = parts[0]
+
+    for part in parts[1:]:
+        candidate = f"{current}\\{part}"
+        if len(candidate) <= max_line_length:
+            current = candidate
+            continue
+
+        lines.append(current)
+        current = part
+
+    lines.append(current)
+
+    wrapped_lines = []
+    for line in lines:
+        if len(line) <= max_line_length:
+            wrapped_lines.append(line)
+            continue
+
+        while len(line) > max_line_length:
+            wrapped_lines.append(line[:max_line_length])
+            line = line[max_line_length:]
+        if line:
+            wrapped_lines.append(line)
+
+    return "\n".join(wrapped_lines)
 
 
 class RecentController:
@@ -51,6 +109,13 @@ class RecentController:
             button_box.setCenterButtons(True)
 
         return dialog.exec() == QMessageBox.Yes
+
+    def _confirm_delete_recent_item(self, title, path):
+        formatted_path = _wrap_delete_confirmation_path(path)
+        return self._show_recent_delete_confirmation(
+            title,
+            f"Are you sure you want to remove:\n\n{formatted_path}",
+        )
 
     def on_recent_interpreter_selected(self, index):
         app = self.app
@@ -225,10 +290,7 @@ class RecentController:
         if not full_path:
             return
 
-        if not self._show_recent_delete_confirmation(
-            "Delete Interpreter",
-            f"Are you sure you want to remove:\n\n{full_path}",
-        ):
+        if not self._confirm_delete_recent_item("Delete Interpreter", full_path):
             return
 
         flash_delete_highlight(
@@ -484,10 +546,7 @@ class RecentController:
         if not full_path:
             return
 
-        if not self._show_recent_delete_confirmation(
-            "Delete Recent File",
-            f"Are you sure you want to remove:\n\n{full_path}",
-        ):
+        if not self._confirm_delete_recent_item("Delete Recent File", full_path):
             return
 
         flash_delete_highlight(
@@ -740,10 +799,7 @@ class RecentController:
         if not full_path:
             return
 
-        if not self._show_recent_delete_confirmation(
-            "Delete Recent Icon",
-            f"Are you sure you want to remove:\n\n{full_path}",
-        ):
+        if not self._confirm_delete_recent_item("Delete Recent Icon", full_path):
             return
 
         flash_delete_highlight(
