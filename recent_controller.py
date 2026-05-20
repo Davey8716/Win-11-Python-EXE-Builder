@@ -99,7 +99,7 @@ class RecentController:
         self,
         title,
         message,
-        style_native_title_bar=False,
+        style_native_title_bar=True,
     ):
         dialog = QMessageBox(self.app)
         dialog.setWindowTitle(title)
@@ -131,7 +131,6 @@ class RecentController:
         return self._show_recent_delete_confirmation(
             title,
             f"Are you sure you want to remove:\n\n{formatted_path}",
-            style_native_title_bar=True,
         )
 
     def on_recent_interpreter_selected(self, index):

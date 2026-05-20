@@ -249,7 +249,7 @@ def test_singular_delete_methods_use_shared_confirmation(monkeypatch, tmp_path):
     ]
 
 
-def test_singular_delete_confirmation_styles_native_title_bar(monkeypatch, tmp_path):
+def test_recent_delete_confirmation_styles_native_title_bar(monkeypatch, tmp_path):
     style_calls = []
     app = make_app(tmp_path, {})
     controller = RecentController(app)
@@ -276,6 +276,46 @@ def test_singular_delete_confirmation_styles_native_title_bar(monkeypatch, tmp_p
     assert controller._confirm_delete_recent_item(
         "Delete Interpreter",
         r"C:\Python314\python.exe",
+    )
+
+    assert len(FakeMessageBox.instances) == 1
+    assert style_calls == [
+        {
+            "dialog": FakeMessageBox.instances[0],
+            "caption": Colors.PANEL_BG,
+            "text": None,
+            "border": Colors.PANEL_BG,
+        }
+    ]
+
+
+def test_delete_all_confirmation_styles_native_title_bar(monkeypatch, tmp_path):
+    style_calls = []
+    app = make_app(tmp_path, {})
+    controller = RecentController(app)
+
+    FakeMessageBox.instances = []
+
+    def record_native_title_style(dialog, caption=None, text=None, border=None):
+        style_calls.append(
+            {
+                "dialog": dialog,
+                "caption": caption,
+                "text": text,
+                "border": border,
+            }
+        )
+
+    monkeypatch.setattr(recent_controller, "QMessageBox", FakeMessageBox)
+    monkeypatch.setattr(
+        recent_controller,
+        "apply_native_title_bar_style",
+        record_native_title_style,
+    )
+
+    assert controller._show_recent_delete_confirmation(
+        "Delete All Recent Files",
+        "Are you sure you want to delete ALL recent files?",
     )
 
     assert len(FakeMessageBox.instances) == 1
