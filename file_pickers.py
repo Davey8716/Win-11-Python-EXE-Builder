@@ -3,10 +3,12 @@ import subprocess
 from PySide6.QtWidgets import QFileDialog, QDialog, QVBoxLayout, QPushButton, QLabel, QComboBox, QVBoxLayout, QPushButton,QFrame
 from PySide6.QtCore import Qt
 from styles import (
+    Colors,
     SCRIPT_PICKER_CONFIRM_STYLE,
     SCRIPT_PICKER_DROPDOWN_STYLE,
     SCRIPT_PICKER_FRAME_STYLE,
     SCRIPT_PICKER_LABEL_STYLE,
+    apply_native_title_bar_style,
 )
 from ui_highlights import flash_add_highlight
 
@@ -379,6 +381,17 @@ class ScriptPickerPopup(QDialog):
 
         self.setWindowTitle("Select Entry Script")
         self.setFixedSize(300, 200)
+        self.setWindowFlags(
+            (self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
+            | Qt.MSWindowsFixedSizeDialogHint
+            | Qt.WindowMinimizeButtonHint
+            | Qt.WindowCloseButtonHint
+        )
+        apply_native_title_bar_style(
+            self,
+            caption=Colors.PANEL_BG,
+            border=Colors.PANEL_BG,
+        )
 
         # 🔑 NORMALIZE
         self.folder_path = os.path.normpath(folder_path)
