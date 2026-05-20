@@ -2,6 +2,8 @@ import datetime,os,sys,subprocess,time,warnings
 from PySide6.QtGui import QFont
 from bundle_validation import validate_bundle_inputs
 from datetime_build_options import (
+    ISO_MASS_DATETIME_BUILD_SENTINEL,
+    ISO_MASS_DATETIME_BUILD_SEQUENCE,
     MASS_DATETIME_BUILD_SENTINEL,
     MASS_DATETIME_BUILD_SEQUENCE,
     NO_DATETIME_LABEL,
@@ -29,6 +31,8 @@ class BuildController(QObject):
         self._mass_datetime_current_label = ""
         self._mass_datetime_restore_state = None
         self._mass_datetime_debug_log_path = ""
+        self._mass_datetime_debug_log_prefix = "EXE_BUILDER_BUILD_ALL_DEBUG"
+        self._mass_datetime_log_title = "DATE/TIME"
         self.build_thread = None
         self.worker = None
 
@@ -91,19 +95,36 @@ class BuildController(QObject):
             f"Mass build {self._mass_datetime_index}/{self._mass_datetime_total}: {label}"
         )
 
-    def _start_mass_datetime_build(self):
+    def _mass_datetime_build_config(self, sentinel):
+        if sentinel == ISO_MASS_DATETIME_BUILD_SENTINEL:
+            return (
+                ISO_MASS_DATETIME_BUILD_SEQUENCE,
+                "EXE_BUILDER_BUILD_ALL_ISO_DEBUG",
+                "ISO DATE/TIME",
+            )
+
+        return (
+            MASS_DATETIME_BUILD_SEQUENCE,
+            "EXE_BUILDER_BUILD_ALL_DEBUG",
+            "DATE/TIME",
+        )
+
+    def _start_mass_datetime_build(self, sentinel=MASS_DATETIME_BUILD_SENTINEL):
         app = self.app
         restore_state = getattr(app, "_mass_datetime_restore_state", None) or {
             "append_datetime": getattr(app, "append_datetime", False),
             "datetime_format": getattr(app, "datetime_format", None),
         }
+        sequence, debug_log_prefix, log_title = self._mass_datetime_build_config(sentinel)
 
         self._mass_datetime_restore_state = restore_state
-        self._mass_datetime_queue = list(MASS_DATETIME_BUILD_SEQUENCE)
+        self._mass_datetime_queue = list(sequence)
         self._mass_datetime_total = len(self._mass_datetime_queue)
         self._mass_datetime_index = 0
         self._mass_datetime_current_label = ""
         self._mass_datetime_debug_log_path = ""
+        self._mass_datetime_debug_log_prefix = debug_log_prefix
+        self._mass_datetime_log_title = log_title
         self._mass_datetime_active = True
         app.mass_datetime_build_selected = True
 
@@ -143,6 +164,8 @@ class BuildController(QObject):
         self._mass_datetime_current_label = ""
         self._mass_datetime_active = False
         self._mass_datetime_debug_log_path = ""
+        self._mass_datetime_debug_log_prefix = "EXE_BUILDER_BUILD_ALL_DEBUG"
+        self._mass_datetime_log_title = "DATE/TIME"
         self._restore_mass_datetime_state()
 
     def _cancel_mass_datetime_build(self):
@@ -282,7 +305,7 @@ class BuildController(QObject):
         script_name = os.path.splitext(os.path.basename(script))[0].lower() if script else ""
         parent_name = os.path.basename(os.path.dirname(script)) if script else ""
 
-        parts = ["EXE_BUILDER_BUILD_ALL_DEBUG"]
+        parts = [self._mass_datetime_debug_log_prefix]
 
         if script:
             parts.append(self.app.exe_name_input.text().strip() or "exe")
@@ -376,11 +399,11 @@ class BuildController(QObject):
 
             with open(app.debug_log_path, mode, encoding="utf-8") as f:
                 if is_first_mass_log_write:
-                    f.write("BUILD ALL DATE/TIME OUTPUTS STARTED\n")
+                    f.write(f"BUILD ALL {self._mass_datetime_log_title} OUTPUTS STARTED\n")
 
                 f.write("\n")
                 f.write(
-                    "BUILD ALL DATE/TIME OUTPUT "
+                    f"BUILD ALL {self._mass_datetime_log_title} OUTPUT "
                     f"{self._mass_datetime_index}/{self._mass_datetime_total}: "
                     f"{self._mass_datetime_current_label}\n"
                 )
@@ -400,11 +423,14 @@ class BuildController(QObject):
     def build_exe(self, app=None):
         app = self.app
 
+        datetime_dropdown_data = self._datetime_dropdown_data()
+
         if (
             not self._mass_datetime_active
-            and self._datetime_dropdown_data() == MASS_DATETIME_BUILD_SENTINEL
+            and datetime_dropdown_data
+            in {MASS_DATETIME_BUILD_SENTINEL, ISO_MASS_DATETIME_BUILD_SENTINEL}
         ):
-            self._start_mass_datetime_build()
+            self._start_mass_datetime_build(datetime_dropdown_data)
             return
 
         app.building = True

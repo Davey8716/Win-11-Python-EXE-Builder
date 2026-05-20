@@ -2,7 +2,10 @@ import json
 import os
 from types import SimpleNamespace
 
-from datetime_build_options import MASS_DATETIME_BUILD_SENTINEL
+from datetime_build_options import (
+    ISO_MASS_DATETIME_BUILD_SENTINEL,
+    MASS_DATETIME_BUILD_SENTINEL,
+)
 from state_controller import StateController
 
 
@@ -195,6 +198,23 @@ def test_save_state_does_not_persist_mass_datetime_sentinel(monkeypatch, tmp_pat
     app = make_app(
         append_datetime=True,
         datetime_format=MASS_DATETIME_BUILD_SENTINEL,
+    )
+
+    controller = StateController(app)
+    controller.save_state()
+
+    with open(controller._state_file_path(), "r", encoding="utf-8") as state_file:
+        data = json.load(state_file)
+
+    assert data["append_datetime"] is False
+    assert data["datetime_format"] is None
+
+
+def test_save_state_does_not_persist_iso_mass_datetime_sentinel(monkeypatch, tmp_path):
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    app = make_app(
+        append_datetime=True,
+        datetime_format=ISO_MASS_DATETIME_BUILD_SENTINEL,
     )
 
     controller = StateController(app)

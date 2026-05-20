@@ -1,7 +1,15 @@
 
 import os,subprocess,time,webbrowser
-from datetime_build_options import MASS_DATETIME_BUILD_SENTINEL
+from datetime_build_options import (
+    ISO_MASS_DATETIME_BUILD_SENTINEL,
+    MASS_DATETIME_BUILD_SENTINEL,
+)
 from ui_highlights import flash_delete_highlight
+
+MASS_DATETIME_BUILD_SENTINELS = {
+    MASS_DATETIME_BUILD_SENTINEL,
+    ISO_MASS_DATETIME_BUILD_SENTINEL,
+}
 
 class UIHandlers:
     def __init__(self, app):
@@ -338,7 +346,7 @@ class UIHandlers:
 
         data = app.date_time_dropdown.currentData()
 
-        if data == MASS_DATETIME_BUILD_SENTINEL:
+        if data in MASS_DATETIME_BUILD_SENTINELS:
             app.mass_datetime_build_selected = True
             if not hasattr(app, "_mass_datetime_restore_state"):
                 app._mass_datetime_restore_state = {

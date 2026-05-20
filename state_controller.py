@@ -2,6 +2,7 @@ import os
 import json
 
 from datetime_build_options import (
+    ISO_MASS_DATETIME_BUILD_SENTINEL,
     MASS_DATETIME_BUILD_SENTINEL,
     NO_DATETIME_LABEL as DATETIME_NO_DATETIME_LABEL,
 )
@@ -267,7 +268,10 @@ class StateController:
 
         append_datetime = getattr(self.app, "append_datetime", False)
         datetime_format = getattr(self.app, "datetime_format", None)
-        if datetime_format == MASS_DATETIME_BUILD_SENTINEL:
+        if datetime_format in {
+            MASS_DATETIME_BUILD_SENTINEL,
+            ISO_MASS_DATETIME_BUILD_SENTINEL,
+        }:
             append_datetime = False
             datetime_format = None
 

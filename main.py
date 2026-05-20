@@ -7,6 +7,8 @@ from ctypes import wintypes
 from build_controller import BuildController
 from datetime_build_options import (
     DATETIME_FORMAT_OPTIONS,
+    ISO_MASS_DATETIME_BUILD_LABEL,
+    ISO_MASS_DATETIME_BUILD_SENTINEL,
     MASS_DATETIME_BUILD_LABEL,
     MASS_DATETIME_BUILD_SENTINEL,
     NO_DATETIME_LABEL,
@@ -800,6 +802,7 @@ class EXEBuilderApp(QWidget):
         # ISO
         _add("──────────", enabled=False)
         _add("ISO", enabled=False)
+        _add(ISO_MASS_DATETIME_BUILD_LABEL, ISO_MASS_DATETIME_BUILD_SENTINEL)
         for label, data in DATETIME_FORMAT_OPTIONS[0:2]:
             _add(label, data)
 
@@ -816,7 +819,11 @@ class EXEBuilderApp(QWidget):
             _add(label, data)
 
         date_dropdown_metrics = QFontMetrics(self.date_time_dropdown.font())
-        longest_date_label = MASS_DATETIME_BUILD_LABEL
+        longest_date_label = max(
+            MASS_DATETIME_BUILD_LABEL,
+            ISO_MASS_DATETIME_BUILD_LABEL,
+            key=len,
+        )
         date_dropdown_width = max(270, date_dropdown_metrics.horizontalAdvance(longest_date_label) + 64)
         self.date_time_dropdown.setFixedSize(date_dropdown_width, 35)
 
