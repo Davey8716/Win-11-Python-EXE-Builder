@@ -160,6 +160,7 @@ def make_app(tmp_path, exe_name="", script_name="main.py", entry_script=None):
         python_interpreter_path=str(python),
         icon_path="",
         tooltips_checkbox=DummyCheckbox(),
+        open_app_data_btn=DummyButton(),
         open_output_dir_after_build=DummyCheckbox(),
         minimize_after_build=DummyCheckbox(),
         close_after_build=DummyCheckbox(),
@@ -275,6 +276,28 @@ def test_environment_sync_restores_normal_styling_when_not_building(
         *app.env_sync_row_labels,
     ]:
         assert normal_text in label.stylesheet
+
+
+def test_open_app_data_enabled_when_not_building(monkeypatch, tmp_path):
+    monkeypatch.setattr(validation_controller, "QCheckBox", DummyCheckbox)
+    app = make_app(tmp_path, exe_name="main")
+
+    controller = ValidationController(app)
+    controller.update_ui_state()
+
+    assert app.open_app_data_btn.enabled is True
+
+
+def test_open_app_data_disabled_while_building(monkeypatch, tmp_path):
+    monkeypatch.setattr(validation_controller, "QCheckBox", DummyCheckbox)
+    app = make_app(tmp_path, exe_name="main")
+    app.building = True
+
+    controller = ValidationController(app)
+    controller.update_ui_state()
+
+    assert app.open_app_data_btn.enabled is False
+    assert app.open_app_data_btn.stylesheet == build_disabled_button()
 
 
 def test_open_output_directory_disabled_for_desktop_output(monkeypatch, tmp_path):

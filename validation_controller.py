@@ -370,6 +370,8 @@ class ValidationController:
         set_btn(app.tooltips_checkbox, not building)
         if hasattr(app, "suppress_exit_dialogue"):
             set_btn(app.suppress_exit_dialogue, not building)
+        if hasattr(app, "open_app_data_btn"):
+            set_btn(app.open_app_data_btn, not building)
         set_btn(app.open_output_dir_after_build, not building and not is_desktop)
         if is_desktop:
             app.open_output_dir_after_build.setStyleSheet(

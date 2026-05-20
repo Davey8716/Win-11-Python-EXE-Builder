@@ -201,6 +201,11 @@ def attach_tooltips(app):
         "Mutually excluse to the minimize after build toggle."
     )
 
+    QtTooltip(
+        app.open_app_data_btn,
+        "Open the folder containing the app state file and saved settings."
+    )
+
     # -----------------------------
     # Script picker
     # -----------------------------

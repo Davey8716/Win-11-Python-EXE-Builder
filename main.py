@@ -135,7 +135,7 @@ class EXEBuilderApp(QWidget):
         self.last_build_seconds = 45
         self.last_build_counter = 0
         
-        self.setFixedSize(1050, 840)
+        self.setFixedSize(1050, 860)
         self.setWindowTitle(" ")
         self.setContentsMargins(0,0,0,0)
         
@@ -196,7 +196,7 @@ class EXEBuilderApp(QWidget):
         build_options_title_layout.addStretch()
 
         toggles_frame = QFrame()
-        toggles_frame.setFixedSize(500, 100)
+        toggles_frame.setFixedSize(500, 128)
         toggles_frame.setFrameShape(QFrame.StyledPanel)
         toggles_frame.setFrameShadow(QFrame.Raised)
         toggles_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -210,6 +210,7 @@ class EXEBuilderApp(QWidget):
         self.suppress_exit_dialogue = QCheckBox("Surpress Exit Dialogue")
         self.open_output_dir_after_build = QCheckBox("Open Output Directory")
         self.close_after_build = QCheckBox("Close After Build")
+        self.open_app_data_btn = QPushButton("Open App Data")
 
         toggle_columns = QHBoxLayout()
         toggle_columns.setContentsMargins(0, 0, 0, 0)
@@ -230,6 +231,7 @@ class EXEBuilderApp(QWidget):
 
         right_toggle_column.addWidget(self.open_output_dir_after_build, alignment=Qt.AlignLeft | Qt.AlignTop)
         right_toggle_column.addWidget(self.close_after_build, alignment=Qt.AlignLeft | Qt.AlignTop)
+        right_toggle_column.addWidget(self.open_app_data_btn, alignment=Qt.AlignLeft | Qt.AlignTop)
         right_toggle_column.addStretch()
 
         toggle_columns.addLayout(left_toggle_column, 1)
@@ -1080,6 +1082,8 @@ class EXEBuilderApp(QWidget):
         self.open_output_dir_after_build.setFont(QFont("Rubik UI", 13, QFont.Bold))
 
         self.open_output_dir_after_build.setChecked(False)
+        self.open_app_data_btn.setFixedSize(225, 28)
+        self.open_app_data_btn.setFont(QFont("Rubik UI", 13, QFont.Bold))
 
         for widget in [
             self.folder_btn,
@@ -1137,7 +1141,7 @@ class EXEBuilderApp(QWidget):
             self.ico_convert_btn,
             self.interpreter_btn,
             self.folder_btn,
-            self.output_btn
+            self.output_btn,
         ]
 
         for btn in buttons:
@@ -1155,6 +1159,7 @@ class EXEBuilderApp(QWidget):
             self.ico_convert_btn,
             self.interpreter_btn,
             self.open_python_site_btn,
+            self.open_app_data_btn,
         ]
 
         for btn in buttons:
@@ -1208,6 +1213,7 @@ class EXEBuilderApp(QWidget):
         self.script_clear_btn.clicked.connect(self.ui_handlers.clear_script_path)
         self.output_btn.clicked.connect(self.file_pickers.select_output_folder)
         self.output_refresh_btn.clicked.connect(self.ui_handlers.reset_output_to_desktop)
+        self.open_app_data_btn.clicked.connect(self.ui_handlers.open_app_data)
         self.refresh_btn.clicked.connect(self.ui_handlers.reset_exe_name_from_script)
         self.tooltips_checkbox.stateChanged.connect(self.ui_handlers.on_tooltips_toggle)
         self.exe_name_input.textChanged.connect(self.ui_handlers._on_exe_name_user_edit)

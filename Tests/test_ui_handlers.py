@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+import sys
 
 from datetime_build_options import MASS_DATETIME_BUILD_SENTINEL
 from ui_handlers import UIHandlers
@@ -10,11 +11,15 @@ class DummyDropdown:
 
 
 class DummyStateController:
-    def __init__(self):
+    def __init__(self, state_file=None):
         self.saved = False
+        self.state_file = state_file
 
     def save_state(self):
         self.saved = True
+
+    def _state_file_path(self):
+        return str(self.state_file)
 
 
 class DummyValidator:
@@ -52,3 +57,88 @@ def test_mass_datetime_selection_is_transient_and_keeps_saved_format():
     assert state_ctrl.saved is True
     assert validator.status_updated is True
     assert validator.ui_updated is True
+
+
+def test_open_app_data_selects_existing_state_file(tmp_path):
+    state_file = tmp_path / "EXEBuilder" / "exe_builder_state.json"
+    state_file.parent.mkdir()
+    state_file.write_text("{}", encoding="utf-8")
+    app = SimpleNamespace(state_ctrl=DummyStateController(state_file))
+    handler = UIHandlers(app)
+    opened = []
+    focused = []
+
+    handler._select_file_in_explorer = lambda path: opened.append(("select", path))
+    handler._open_folder = lambda path: opened.append(("folder", path))
+    handler._force_app_data_folder_on_top = lambda path: focused.append(path)
+
+    handler.open_app_data()
+
+    assert opened == [("select", str(state_file))]
+    assert focused == [str(state_file.parent)]
+
+
+def test_open_app_data_opens_state_folder_when_file_missing(tmp_path):
+    state_file = tmp_path / "EXEBuilder" / "exe_builder_state.json"
+    app = SimpleNamespace(state_ctrl=DummyStateController(state_file))
+    handler = UIHandlers(app)
+    opened = []
+    focused = []
+
+    handler._select_file_in_explorer = lambda path: opened.append(("select", path))
+    handler._open_folder = lambda path: opened.append(("folder", path))
+    handler._force_app_data_folder_on_top = lambda path: focused.append(path)
+
+    handler.open_app_data()
+
+    assert opened == [("folder", str(state_file.parent))]
+    assert focused == [str(state_file.parent)]
+    assert state_file.parent.is_dir()
+
+
+def test_force_app_data_folder_on_top_activates_matching_window(monkeypatch, tmp_path):
+    events = []
+
+    class FakeWindow:
+        title = "EXEBuilder"
+        _hWnd = 123
+        isMinimized = True
+
+        def restore(self):
+            events.append("restore")
+            self.isMinimized = False
+
+        def activate(self):
+            events.append("activate")
+
+    fake_window = FakeWindow()
+    fake_pygetwindow = SimpleNamespace(
+        getWindowsWithTitle=lambda title: [fake_window]
+    )
+    fake_win32con = SimpleNamespace(
+        SW_RESTORE=9,
+        SWP_NOMOVE=1,
+        SWP_NOSIZE=2,
+        SWP_SHOWWINDOW=4,
+        HWND_TOPMOST=-1,
+        HWND_NOTOPMOST=-2,
+    )
+    fake_win32gui = SimpleNamespace(
+        ShowWindow=lambda hwnd, command: events.append(("show", hwnd, command)),
+        SetForegroundWindow=lambda hwnd: events.append(("foreground", hwnd)),
+        SetWindowPos=lambda hwnd, after, x, y, cx, cy, flags: events.append(
+            ("position", hwnd, after, flags)
+        ),
+    )
+
+    monkeypatch.setitem(sys.modules, "pygetwindow", fake_pygetwindow)
+    monkeypatch.setitem(sys.modules, "win32con", fake_win32con)
+    monkeypatch.setitem(sys.modules, "win32gui", fake_win32gui)
+
+    handler = UIHandlers(SimpleNamespace())
+
+    assert handler._force_app_data_folder_on_top(str(tmp_path / "EXEBuilder")) is True
+    assert "restore" in events
+    assert "activate" in events
+    assert ("position", 123, fake_win32con.HWND_TOPMOST, 7) in events
+    assert ("position", 123, fake_win32con.HWND_NOTOPMOST, 7) in events

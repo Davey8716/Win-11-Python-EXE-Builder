@@ -1,5 +1,5 @@
 
-import os,webbrowser
+import os,subprocess,time,webbrowser
 from datetime_build_options import MASS_DATETIME_BUILD_SENTINEL
 from ui_highlights import flash_delete_highlight
 
@@ -128,6 +128,113 @@ class UIHandlers:
         app.output_path = desktop
         app.state_ctrl.save_state()
         app.validation_controller.update_ui_state()
+
+    def _open_folder(self, folder_path):
+        os.startfile(folder_path)
+
+    def _select_file_in_explorer(self, file_path):
+        subprocess.Popen(["explorer.exe", f"/select,{file_path}"])
+
+    def _pulse_window_topmost(self, hwnd):
+        try:
+            import win32con
+            import win32gui
+        except Exception:
+            return False
+
+        try:
+            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+        except Exception:
+            pass
+
+        flags = win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW
+
+        try:
+            win32gui.SetWindowPos(
+                hwnd,
+                win32con.HWND_TOPMOST,
+                0,
+                0,
+                0,
+                0,
+                flags,
+            )
+            win32gui.SetForegroundWindow(hwnd)
+            win32gui.SetWindowPos(
+                hwnd,
+                win32con.HWND_NOTOPMOST,
+                0,
+                0,
+                0,
+                0,
+                flags,
+            )
+            return True
+        except Exception:
+            try:
+                win32gui.SetForegroundWindow(hwnd)
+            except Exception:
+                pass
+            return False
+
+    def _force_app_data_folder_on_top(self, state_dir):
+        folder_title = os.path.basename(os.path.normpath(state_dir))
+        if not folder_title:
+            return False
+
+        deadline = time.time() + 1.5
+        while time.time() < deadline:
+            try:
+                import pygetwindow
+
+                windows = pygetwindow.getWindowsWithTitle(folder_title)
+            except Exception:
+                windows = []
+
+            for window in windows:
+                title = getattr(window, "title", "")
+                if folder_title.lower() not in title.lower():
+                    continue
+
+                try:
+                    if getattr(window, "isMinimized", False):
+                        window.restore()
+                except Exception:
+                    pass
+
+                try:
+                    window.activate()
+                except Exception:
+                    pass
+
+                hwnd = getattr(window, "_hWnd", None) or getattr(window, "hWnd", None)
+                if hwnd:
+                    self._pulse_window_topmost(hwnd)
+
+                return True
+
+            time.sleep(0.1)
+
+        return False
+
+    def open_app_data(self):
+        app = self.app
+        state_file = app.state_ctrl._state_file_path()
+        state_dir = os.path.dirname(state_file)
+        os.makedirs(state_dir, exist_ok=True)
+
+        try:
+            if os.path.isfile(state_file):
+                self._select_file_in_explorer(state_file)
+            else:
+                self._open_folder(state_dir)
+            self._force_app_data_folder_on_top(state_dir)
+        except Exception:
+            try:
+                self._open_folder(state_dir)
+                self._force_app_data_folder_on_top(state_dir)
+            except Exception:
+                pass
     
     def reset_exe_name_from_script(self):
         app = self.app
