@@ -80,6 +80,8 @@ class EnvironmentSyncController(QObject):
         self.last_plan = None
         self._thread = None
         self._worker = None
+        self._current_process = None
+        self._shutting_down = False
         self.is_running = False
 
     def start_scan_async(self):
@@ -89,7 +91,7 @@ class EnvironmentSyncController(QObject):
         return self._start_async("sync")
 
     def _start_async(self, action):
-        if self.is_running:
+        if self.is_running or self._shutting_down:
             return False
 
         self.is_running = True
@@ -112,6 +114,38 @@ class EnvironmentSyncController(QObject):
 
         self._thread.start()
         return True
+
+    def shutdown(self, timeout_ms=5000):
+        self._shutting_down = True
+
+        process = getattr(self, "_current_process", None)
+        if process is not None and process.poll() is None:
+            try:
+                process.terminate()
+                process.wait(timeout=2)
+            except Exception:
+                try:
+                    process.kill()
+                except Exception:
+                    pass
+
+        thread = self._thread
+        if thread is not None:
+            try:
+                is_running = thread.isRunning() if hasattr(thread, "isRunning") else True
+                if is_running:
+                    thread.quit()
+                    if hasattr(thread, "wait"):
+                        thread.wait(timeout_ms)
+            except RuntimeError:
+                pass
+
+        self._thread = None
+        self._worker = None
+        self._current_process = None
+        self.is_running = False
+        if not self._app_is_closing():
+            self._set_busy_ui(False)
 
     def default_python_root(self):
         return Path.home() / "AppData" / "Local" / "Programs" / "Python"
@@ -399,10 +433,15 @@ class EnvironmentSyncController(QObject):
         app.env_sync_match_btn.setEnabled(plan.total_actions > 0)
 
     def _on_worker_progress(self, message):
+        if self._app_is_closing():
+            return
         if self.app is not None:
             self.app.set_env_sync_status(message)
 
     def _on_worker_finished(self, action, payload):
+        if self._app_is_closing():
+            return
+
         if action == "scan":
             plan = payload
             self.last_plan = plan
@@ -431,13 +470,19 @@ class EnvironmentSyncController(QObject):
             )
 
     def _on_worker_failed(self, action, message):
+        if self._app_is_closing():
+            return
         self.app.set_env_sync_status(f"Environment {action} failed.\n{message}")
 
     def _clear_worker_refs(self):
         self._thread = None
         self._worker = None
         self.is_running = False
-        self._set_busy_ui(False)
+        if not self._app_is_closing():
+            self._set_busy_ui(False)
+
+    def _app_is_closing(self):
+        return bool(getattr(self.app, "_is_closing", False))
 
     def _set_busy_ui(self, busy):
         app = self.app
@@ -470,14 +515,7 @@ class EnvironmentSyncController(QObject):
             "--disable-pip-version-check",
             spec,
         ]
-        result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            creationflags=CREATE_NO_WINDOW,
-            timeout=600,
-        )
+        result = self._run_subprocess(command, timeout=600)
 
         if result.returncode == 0:
             return True, "Installed."
@@ -486,12 +524,8 @@ class EnvironmentSyncController(QObject):
         return False, self._short_error(message)
 
     def _read_python_version(self, executable):
-        result = subprocess.run(
+        result = self._run_subprocess(
             [str(executable), "--version"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            creationflags=CREATE_NO_WINDOW,
             timeout=15,
         )
 
@@ -499,12 +533,8 @@ class EnvironmentSyncController(QObject):
         return raw.replace("Python ", "").strip()
 
     def _read_installed_packages(self, executable):
-        result = subprocess.run(
+        result = self._run_subprocess(
             [str(executable), "-m", "pip", "list", "--format=json"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            creationflags=CREATE_NO_WINDOW,
             timeout=90,
         )
 
@@ -524,6 +554,27 @@ class EnvironmentSyncController(QObject):
             }
 
         return packages
+
+    def _run_subprocess(self, command, timeout):
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            creationflags=CREATE_NO_WINDOW,
+        )
+        self._current_process = process
+        try:
+            stdout, stderr = process.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            stdout, stderr = process.communicate()
+            raise
+        finally:
+            if self._current_process is process:
+                self._current_process = None
+
+        return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
 
     def _package_key(self, name):
         return re.sub(r"[-_.]+", "-", name).lower()

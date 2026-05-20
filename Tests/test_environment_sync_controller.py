@@ -2,6 +2,7 @@ from environment_sync_controller import (
     EnvironmentSyncController,
     PythonEnvironmentProfile,
 )
+from types import SimpleNamespace
 
 
 def package(name, version):
@@ -23,6 +24,56 @@ def make_profile(version, packages):
         executable=f"C:/Python{version.replace('.', '')}/python.exe",
         packages=normalized,
     )
+
+
+class DummyThread:
+    def __init__(self, running=True):
+        self.running = running
+        self.quit_called = False
+        self.wait_timeout = None
+
+    def isRunning(self):
+        return self.running
+
+    def quit(self):
+        self.quit_called = True
+
+    def wait(self, timeout):
+        self.wait_timeout = timeout
+        self.running = False
+        return True
+
+
+def test_shutdown_stops_running_thread_and_clears_state():
+    app = SimpleNamespace(_is_closing=True)
+    controller = EnvironmentSyncController(app)
+    thread = DummyThread()
+    controller._thread = thread
+    controller._worker = object()
+    controller.is_running = True
+
+    controller.shutdown(timeout_ms=4321)
+
+    assert thread.quit_called is True
+    assert thread.wait_timeout == 4321
+    assert controller._thread is None
+    assert controller._worker is None
+    assert controller.is_running is False
+
+
+def test_shutdown_restores_busy_ui_when_not_closing():
+    app = SimpleNamespace(_is_closing=False)
+    controller = EnvironmentSyncController(app)
+    thread = DummyThread()
+    controller._thread = thread
+    controller._worker = object()
+    controller.is_running = True
+    calls = []
+    controller._set_busy_ui = lambda busy: calls.append(busy)
+
+    controller.shutdown()
+
+    assert calls == [False]
 
 
 def test_union_plan_uses_largest_environment_as_baseline_and_keeps_unique_packages():

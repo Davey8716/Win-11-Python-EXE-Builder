@@ -28,6 +28,8 @@ class BuildController(QObject):
         self._mass_datetime_index = 0
         self._mass_datetime_current_label = ""
         self._mass_datetime_restore_state = None
+        self.build_thread = None
+        self.worker = None
 
         self.build_complete_signal.connect(self._on_build_complete_ui)
 
@@ -168,6 +170,42 @@ class BuildController(QObject):
                 self.app.build_btn.clicked.disconnect()
             except (RuntimeError, TypeError):
                 pass
+
+    def shutdown(self, timeout_ms=5000):
+        app = self.app
+        self.stop_eta()
+
+        if getattr(app, "build_process", None):
+            try:
+                import build_cancellation
+
+                if not hasattr(app, "build_cancellation"):
+                    app.build_cancellation = build_cancellation.BuildCancellation(
+                        app=app,
+                        ui=app,
+                    )
+                app.build_cancellation.cancel_build()
+            except Exception:
+                pass
+
+        if self._mass_datetime_active:
+            self._finish_mass_datetime_build()
+
+        thread = getattr(self, "build_thread", None)
+        if thread is not None:
+            try:
+                is_running = thread.isRunning() if hasattr(thread, "isRunning") else True
+                if is_running:
+                    thread.quit()
+                    if hasattr(thread, "wait"):
+                        thread.wait(timeout_ms)
+            except RuntimeError:
+                pass
+
+        app.building = False
+        app.build_process = None
+        self.build_thread = None
+        self.worker = None
 
     # ============================================================
     # ETA LOOP
@@ -570,6 +608,12 @@ class BuildController(QObject):
 
     def _on_build_complete_ui(self, ret, out, err):
         app = self.app
+        if getattr(app, "_is_closing", False):
+            self.stop_eta()
+            app.building = False
+            app.build_process = None
+            return
+
         mass_active = self._mass_datetime_active
 
         if ret == 0:

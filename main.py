@@ -1332,7 +1332,7 @@ class EXEBuilderApp(QWidget):
 
     def close_app(self):
         self._is_closing = True
-        QApplication.instance().quit()
+        self.close()
 
     def _confirm_manual_close(self):
         dialog = QMessageBox(self)
@@ -1395,6 +1395,8 @@ class EXEBuilderApp(QWidget):
             return
 
         self._is_closing = True
+        self.build_controller.shutdown()
+        self.environment_sync_controller.shutdown()
         self.state_ctrl.save_state()
         event.accept()
 

@@ -186,6 +186,25 @@ class DummyThread:
         pass
 
 
+class ShutdownThread(DummyThread):
+    def __init__(self, running=True):
+        super().__init__()
+        self.running = running
+        self.quit_called = False
+        self.wait_timeout = None
+
+    def isRunning(self):
+        return self.running
+
+    def quit(self):
+        self.quit_called = True
+
+    def wait(self, timeout):
+        self.wait_timeout = timeout
+        self.running = False
+        return True
+
+
 class FakeWorker:
     def __init__(self, app, cmd):
         app.captured_cmd = cmd
@@ -294,6 +313,55 @@ def build_names(app):
                 names.append(part.removeprefix("--name="))
                 break
     return names
+
+
+def test_shutdown_stops_running_build_thread_and_clears_state():
+    app = make_app(
+        _eta_running=True,
+        building=True,
+        build_process=None,
+    )
+    controller = BuildController(app)
+    thread = ShutdownThread()
+    controller.build_thread = thread
+    controller.worker = object()
+
+    controller.shutdown(timeout_ms=1234)
+
+    assert app._eta_running is False
+    assert app.building is False
+    assert app.build_process is None
+    assert thread.quit_called is True
+    assert thread.wait_timeout == 1234
+    assert controller.build_thread is None
+    assert controller.worker is None
+
+
+def test_shutdown_cancels_active_build_process(monkeypatch):
+    import build_cancellation
+
+    cancelled = []
+    app = make_app(
+        _eta_running=True,
+        building=True,
+        build_process=object(),
+        _is_closing=True,
+    )
+    controller = BuildController(app)
+
+    def fake_cancel(self):
+        cancelled.append(self.app.build_process)
+        self.app.build_process = None
+        self.app.building = False
+
+    monkeypatch.setattr(build_cancellation.BuildCancellation, "cancel_build", fake_cancel)
+
+    controller.shutdown()
+
+    assert cancelled
+    assert app._eta_running is False
+    assert app.building is False
+    assert app.build_process is None
 
 
 def patch_build_runtime(monkeypatch):
