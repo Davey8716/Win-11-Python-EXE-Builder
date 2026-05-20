@@ -6,6 +6,7 @@ from datetime_build_options import (
     MASS_DATETIME_BUILD_SENTINEL,
     NO_DATETIME_LABEL as DATETIME_NO_DATETIME_LABEL,
     UK_MASS_DATETIME_BUILD_SENTINEL,
+    USA_MASS_DATETIME_BUILD_SENTINEL,
 )
 
 class StateController:
@@ -273,6 +274,7 @@ class StateController:
             MASS_DATETIME_BUILD_SENTINEL,
             ISO_MASS_DATETIME_BUILD_SENTINEL,
             UK_MASS_DATETIME_BUILD_SENTINEL,
+            USA_MASS_DATETIME_BUILD_SENTINEL,
         }:
             append_datetime = False
             datetime_format = None
