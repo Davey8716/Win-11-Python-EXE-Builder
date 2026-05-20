@@ -357,6 +357,8 @@ class UIHandlers:
                     "append_datetime": getattr(app, "append_datetime", False),
                     "datetime_format": getattr(app, "datetime_format", None),
                 }
+            app.append_datetime = False
+            app.datetime_format = data
             if hasattr(app, "state_ctrl"):
                 app.state_ctrl.save_state()
             if hasattr(app, "validator"):

@@ -254,72 +254,29 @@ def test_save_state_persists_open_output_directory_toggle(monkeypatch, tmp_path)
     assert data["open_output_dir_after_build_enabled"] is True
 
 
-def test_save_state_does_not_persist_mass_datetime_sentinel(monkeypatch, tmp_path):
+def test_save_state_persists_mass_datetime_sentinels(monkeypatch, tmp_path):
     monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
-    app = make_app(
-        append_datetime=True,
-        datetime_format=MASS_DATETIME_BUILD_SENTINEL,
-    )
+    sentinels = [
+        MASS_DATETIME_BUILD_SENTINEL,
+        ISO_MASS_DATETIME_BUILD_SENTINEL,
+        UK_MASS_DATETIME_BUILD_SENTINEL,
+        USA_MASS_DATETIME_BUILD_SENTINEL,
+    ]
 
-    controller = StateController(app)
-    controller.save_state()
+    for sentinel in sentinels:
+        app = make_app(
+            append_datetime=False,
+            datetime_format=sentinel,
+        )
 
-    with open(controller._state_file_path(), "r", encoding="utf-8") as state_file:
-        data = json.load(state_file)
+        controller = StateController(app)
+        controller.save_state()
 
-    assert data["append_datetime"] is False
-    assert data["datetime_format"] is None
+        with open(controller._state_file_path(), "r", encoding="utf-8") as state_file:
+            data = json.load(state_file)
 
-
-def test_save_state_does_not_persist_iso_mass_datetime_sentinel(monkeypatch, tmp_path):
-    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
-    app = make_app(
-        append_datetime=True,
-        datetime_format=ISO_MASS_DATETIME_BUILD_SENTINEL,
-    )
-
-    controller = StateController(app)
-    controller.save_state()
-
-    with open(controller._state_file_path(), "r", encoding="utf-8") as state_file:
-        data = json.load(state_file)
-
-    assert data["append_datetime"] is False
-    assert data["datetime_format"] is None
-
-
-def test_save_state_does_not_persist_uk_mass_datetime_sentinel(monkeypatch, tmp_path):
-    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
-    app = make_app(
-        append_datetime=True,
-        datetime_format=UK_MASS_DATETIME_BUILD_SENTINEL,
-    )
-
-    controller = StateController(app)
-    controller.save_state()
-
-    with open(controller._state_file_path(), "r", encoding="utf-8") as state_file:
-        data = json.load(state_file)
-
-    assert data["append_datetime"] is False
-    assert data["datetime_format"] is None
-
-
-def test_save_state_does_not_persist_usa_mass_datetime_sentinel(monkeypatch, tmp_path):
-    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
-    app = make_app(
-        append_datetime=True,
-        datetime_format=USA_MASS_DATETIME_BUILD_SENTINEL,
-    )
-
-    controller = StateController(app)
-    controller.save_state()
-
-    with open(controller._state_file_path(), "r", encoding="utf-8") as state_file:
-        data = json.load(state_file)
-
-    assert data["append_datetime"] is False
-    assert data["datetime_format"] is None
+        assert data["append_datetime"] is False
+        assert data["datetime_format"] == sentinel
 
 
 def test_load_state_restores_open_output_directory_toggle(monkeypatch, tmp_path):
@@ -454,3 +411,66 @@ def test_load_state_restores_saved_datetime_format_selection(monkeypatch, tmp_pa
 
     assert app.append_datetime is True
     assert app.date_time_dropdown.currentText() == "ISO | YYYY-MM-DD"
+
+
+def test_load_state_restores_saved_mass_datetime_sentinel_selection(monkeypatch, tmp_path):
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    options = [
+        {"text": "No Date Time Appended", "data": None, "enabled": True},
+        {
+            "text": "Build All Date/Time Outputs",
+            "data": MASS_DATETIME_BUILD_SENTINEL,
+            "enabled": True,
+        },
+        {
+            "text": "Build All ISO Date/Time Outputs",
+            "data": ISO_MASS_DATETIME_BUILD_SENTINEL,
+            "enabled": True,
+        },
+        {
+            "text": "Build All UK Date/Time Outputs",
+            "data": UK_MASS_DATETIME_BUILD_SENTINEL,
+            "enabled": True,
+        },
+        {
+            "text": "Build All USA Date/Time Outputs",
+            "data": USA_MASS_DATETIME_BUILD_SENTINEL,
+            "enabled": True,
+        },
+    ]
+    expected_labels = {
+        MASS_DATETIME_BUILD_SENTINEL: "Build All Date/Time Outputs",
+        ISO_MASS_DATETIME_BUILD_SENTINEL: "Build All ISO Date/Time Outputs",
+        UK_MASS_DATETIME_BUILD_SENTINEL: "Build All UK Date/Time Outputs",
+        USA_MASS_DATETIME_BUILD_SENTINEL: "Build All USA Date/Time Outputs",
+    }
+
+    for sentinel, label in expected_labels.items():
+        app = make_app(
+            tooltips_checkbox=DummyCheckbox(),
+            close_after_build=DummyCheckbox(),
+            minimize_after_build=DummyCheckbox(),
+            open_output_dir_after_build=DummyCheckbox(),
+            script_path_input=DummyInput(),
+            icon_path_input=DummyInput(),
+            output_path_input=DummyInput(),
+            exe_name_input=DummyInput(),
+            python_entry_input=DummyInput(),
+            validator=DummyValidator(),
+            date_time_dropdown=DummyDropdown(options),
+        )
+        controller = StateController(app)
+
+        state_path = controller._state_file_path()
+        os.makedirs(os.path.dirname(state_path), exist_ok=True)
+        with open(state_path, "w", encoding="utf-8") as state_file:
+            json.dump(
+                {"append_datetime": False, "datetime_format": sentinel},
+                state_file,
+            )
+
+        controller.load_state()
+
+        assert app.append_datetime is False
+        assert app.datetime_format == sentinel
+        assert app.date_time_dropdown.currentText() == label

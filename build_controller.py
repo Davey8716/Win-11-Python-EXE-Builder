@@ -131,6 +131,16 @@ class BuildController(QObject):
             "append_datetime": getattr(app, "append_datetime", False),
             "datetime_format": getattr(app, "datetime_format", None),
         }
+        if restore_state.get("datetime_format") in {
+            MASS_DATETIME_BUILD_SENTINEL,
+            ISO_MASS_DATETIME_BUILD_SENTINEL,
+            UK_MASS_DATETIME_BUILD_SENTINEL,
+            USA_MASS_DATETIME_BUILD_SENTINEL,
+        }:
+            restore_state = {
+                "append_datetime": False,
+                "datetime_format": "",
+            }
         sequence, debug_log_prefix, log_title = self._mass_datetime_build_config(sentinel)
 
         self._mass_datetime_restore_state = restore_state
@@ -172,6 +182,8 @@ class BuildController(QObject):
             delattr(app, "_mass_datetime_restore_state")
 
         self._set_datetime_dropdown_for_state(append_datetime, app.datetime_format)
+        if hasattr(app, "state_ctrl"):
+            app.state_ctrl.save_state()
 
     def _finish_mass_datetime_build(self):
         self._mass_datetime_queue = []

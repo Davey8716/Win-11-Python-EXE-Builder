@@ -832,7 +832,7 @@ class EXEBuilderApp(QWidget):
             USA_MASS_DATETIME_BUILD_LABEL,
             key=len,
         )
-        date_dropdown_width = max(270, date_dropdown_metrics.horizontalAdvance(longest_date_label) + 64)
+        date_dropdown_width = max(300, date_dropdown_metrics.horizontalAdvance(longest_date_label) + 64)
         self.date_time_dropdown.setFixedSize(date_dropdown_width, 35)
 
         model = self.date_time_dropdown.model()

@@ -634,6 +634,7 @@ def test_mass_datetime_build_runs_all_outputs_in_sequence(tmp_path, monkeypatch)
     assert app.append_datetime is False
     assert app.datetime_format == ""
     assert app.date_time_dropdown.currentText() == NO_DATETIME_LABEL
+    assert app.saved_state is True
 
 
 def test_mass_datetime_build_waits_for_success_before_next_output(tmp_path, monkeypatch):
@@ -648,6 +649,27 @@ def test_mass_datetime_build_waits_for_success_before_next_output(tmp_path, monk
     controller._on_build_complete_ui(0, "", "")
 
     assert build_names(app) == ["Builder", "Builder_2026-05-19"]
+
+
+def test_saved_mass_datetime_sentinel_restores_to_no_datetime_after_build(tmp_path, monkeypatch):
+    patch_build_runtime(monkeypatch)
+    app = make_buildable_app(
+        tmp_path,
+        date_time_dropdown=mass_datetime_dropdown(),
+        append_datetime=False,
+        datetime_format=MASS_DATETIME_BUILD_SENTINEL,
+    )
+    controller = BuildController(app)
+
+    controller.build_exe(None)
+    for _ in range(7):
+        controller._on_build_complete_ui(0, "", "")
+
+    assert controller._mass_datetime_active is False
+    assert app.append_datetime is False
+    assert app.datetime_format == ""
+    assert app.date_time_dropdown.currentText() == NO_DATETIME_LABEL
+    assert app.saved_state is True
 
 
 def test_iso_mass_datetime_build_runs_iso_outputs_only(tmp_path, monkeypatch):
@@ -674,6 +696,7 @@ def test_iso_mass_datetime_build_runs_iso_outputs_only(tmp_path, monkeypatch):
     assert app.append_datetime is False
     assert app.datetime_format == ""
     assert app.date_time_dropdown.currentText() == NO_DATETIME_LABEL
+    assert app.saved_state is True
 
 
 def test_iso_mass_datetime_build_waits_for_success_before_next_output(tmp_path, monkeypatch):
@@ -793,6 +816,7 @@ def test_mass_datetime_build_stops_on_failure_and_restores_state(tmp_path, monke
     assert app.append_datetime is True
     assert app.datetime_format == "%Y-%m-%d"
     assert app.date_time_dropdown.currentText() == "ISO | YYYY-MM-DD"
+    assert app.saved_state is True
     assert app.status_label.stylesheet == build_controller.status_text_style(
         build_controller.Colors.ERROR,
         border_width=1,
@@ -822,6 +846,7 @@ def test_iso_mass_datetime_build_stops_on_failure_and_restores_state(tmp_path, m
     assert app.append_datetime is True
     assert app.datetime_format == "%Y-%m-%d"
     assert app.date_time_dropdown.currentText() == "ISO | YYYY-MM-DD"
+    assert app.saved_state is True
     assert app.status_label.stylesheet == build_controller.status_text_style(
         build_controller.Colors.ERROR,
         border_width=1,
@@ -851,6 +876,7 @@ def test_uk_mass_datetime_build_stops_on_failure_and_restores_state(tmp_path, mo
     assert app.append_datetime is True
     assert app.datetime_format == "%d-%m-%Y"
     assert app.date_time_dropdown.currentText() == "UK | DD-MM-YYYY"
+    assert app.saved_state is True
     assert app.status_label.stylesheet == build_controller.status_text_style(
         build_controller.Colors.ERROR,
         border_width=1,
@@ -880,6 +906,7 @@ def test_usa_mass_datetime_build_stops_on_failure_and_restores_state(tmp_path, m
     assert app.append_datetime is True
     assert app.datetime_format == "%m-%d-%Y"
     assert app.date_time_dropdown.currentText() == "USA | MM-DD-YYYY"
+    assert app.saved_state is True
     assert app.status_label.stylesheet == build_controller.status_text_style(
         build_controller.Colors.ERROR,
         border_width=1,
@@ -920,6 +947,7 @@ def test_mass_datetime_build_cancel_restores_state(tmp_path, monkeypatch):
     assert app.append_datetime is True
     assert app.datetime_format == "%d-%m-%Y"
     assert app.date_time_dropdown.currentText() == "UK | DD-MM-YYYY"
+    assert app.saved_state is True
 
 
 def test_iso_mass_datetime_build_cancel_restores_state(tmp_path, monkeypatch):
@@ -956,6 +984,7 @@ def test_iso_mass_datetime_build_cancel_restores_state(tmp_path, monkeypatch):
     assert app.append_datetime is True
     assert app.datetime_format == "%Y-%m-%d_%H-%M"
     assert app.date_time_dropdown.currentText() == "ISO | YYYY-MM-DD_HH-MM"
+    assert app.saved_state is True
 
 
 def test_uk_mass_datetime_build_cancel_restores_state(tmp_path, monkeypatch):
@@ -992,6 +1021,7 @@ def test_uk_mass_datetime_build_cancel_restores_state(tmp_path, monkeypatch):
     assert app.append_datetime is True
     assert app.datetime_format == "%d-%m-%Y_%H-%M"
     assert app.date_time_dropdown.currentText() == "UK | DD-MM-YYYY_HH-MM"
+    assert app.saved_state is True
 
 
 def test_usa_mass_datetime_build_cancel_restores_state(tmp_path, monkeypatch):
@@ -1028,6 +1058,7 @@ def test_usa_mass_datetime_build_cancel_restores_state(tmp_path, monkeypatch):
     assert app.append_datetime is True
     assert app.datetime_format == "%m-%d-%Y_%H-%M"
     assert app.date_time_dropdown.currentText() == "USA | MM-DD-YYYY_HH-MM"
+    assert app.saved_state is True
 
 
 def test_build_exe_suppresses_empty_clicked_disconnect_warning(tmp_path, monkeypatch):

@@ -197,7 +197,16 @@ class StateController:
 
             # --- restore datetime dropdown ---
             if hasattr(self.app, "date_time_dropdown"):
-                if self.app.append_datetime and self.app.datetime_format:
+                if self.app.datetime_format in {
+                    MASS_DATETIME_BUILD_SENTINEL,
+                    ISO_MASS_DATETIME_BUILD_SENTINEL,
+                    UK_MASS_DATETIME_BUILD_SENTINEL,
+                    USA_MASS_DATETIME_BUILD_SENTINEL,
+                }:
+                    index = self.app.date_time_dropdown.findData(self.app.datetime_format)
+                    if index != -1:
+                        self.app.date_time_dropdown.setCurrentIndex(index)
+                elif self.app.append_datetime and self.app.datetime_format:
                     index = self.app.date_time_dropdown.findData(self.app.datetime_format)
                     if index != -1:
                         self.app.date_time_dropdown.setCurrentIndex(index)
@@ -290,17 +299,6 @@ class StateController:
                 existing_data.get("env_sync_profiles", [])
             )
 
-        append_datetime = getattr(self.app, "append_datetime", False)
-        datetime_format = getattr(self.app, "datetime_format", None)
-        if datetime_format in {
-            MASS_DATETIME_BUILD_SENTINEL,
-            ISO_MASS_DATETIME_BUILD_SENTINEL,
-            UK_MASS_DATETIME_BUILD_SENTINEL,
-            USA_MASS_DATETIME_BUILD_SENTINEL,
-        }:
-            append_datetime = False
-            datetime_format = None
-
         data = {
             # --- Paths / core selections ---
             "last_script_path": _norm(self.app.script_path),
@@ -340,8 +338,8 @@ class StateController:
             "interpreter_user_cleared": getattr(self.app, "interpreter_user_cleared", False),
 
             # --- Datetime ---
-            "append_datetime": append_datetime,
-            "datetime_format": datetime_format,
+            "append_datetime": getattr(self.app, "append_datetime", False),
+            "datetime_format": getattr(self.app, "datetime_format", None),
             "append_py_version": getattr(self.app, "append_py_version", False),
         }
 

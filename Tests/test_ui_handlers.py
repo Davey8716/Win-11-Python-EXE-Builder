@@ -52,7 +52,7 @@ class DummyPathInput:
         self.value = value
 
 
-def test_mass_datetime_selection_is_transient_and_keeps_saved_format():
+def test_mass_datetime_selection_saves_sentinel_and_keeps_restore_state():
     state_ctrl = DummyStateController()
     validator = DummyValidator()
     app = SimpleNamespace(
@@ -66,8 +66,8 @@ def test_mass_datetime_selection_is_transient_and_keeps_saved_format():
     UIHandlers(app).on_datetime_format_changed(0)
 
     assert app.mass_datetime_build_selected is True
-    assert app.append_datetime is True
-    assert app.datetime_format == "%Y-%m-%d"
+    assert app.append_datetime is False
+    assert app.datetime_format == MASS_DATETIME_BUILD_SENTINEL
     assert app._mass_datetime_restore_state == {
         "append_datetime": True,
         "datetime_format": "%Y-%m-%d",
@@ -77,7 +77,7 @@ def test_mass_datetime_selection_is_transient_and_keeps_saved_format():
     assert validator.ui_updated is True
 
 
-def test_iso_mass_datetime_selection_is_transient_and_keeps_saved_format():
+def test_iso_mass_datetime_selection_saves_sentinel_and_keeps_restore_state():
     state_ctrl = DummyStateController()
     validator = DummyValidator()
     app = SimpleNamespace(
@@ -91,8 +91,8 @@ def test_iso_mass_datetime_selection_is_transient_and_keeps_saved_format():
     UIHandlers(app).on_datetime_format_changed(0)
 
     assert app.mass_datetime_build_selected is True
-    assert app.append_datetime is True
-    assert app.datetime_format == "%Y-%m-%d_%H-%M"
+    assert app.append_datetime is False
+    assert app.datetime_format == ISO_MASS_DATETIME_BUILD_SENTINEL
     assert app._mass_datetime_restore_state == {
         "append_datetime": True,
         "datetime_format": "%Y-%m-%d_%H-%M",
@@ -102,7 +102,7 @@ def test_iso_mass_datetime_selection_is_transient_and_keeps_saved_format():
     assert validator.ui_updated is True
 
 
-def test_uk_mass_datetime_selection_is_transient_and_keeps_saved_format():
+def test_uk_mass_datetime_selection_saves_sentinel_and_keeps_restore_state():
     state_ctrl = DummyStateController()
     validator = DummyValidator()
     app = SimpleNamespace(
@@ -116,8 +116,8 @@ def test_uk_mass_datetime_selection_is_transient_and_keeps_saved_format():
     UIHandlers(app).on_datetime_format_changed(0)
 
     assert app.mass_datetime_build_selected is True
-    assert app.append_datetime is True
-    assert app.datetime_format == "%d-%m-%Y_%H-%M"
+    assert app.append_datetime is False
+    assert app.datetime_format == UK_MASS_DATETIME_BUILD_SENTINEL
     assert app._mass_datetime_restore_state == {
         "append_datetime": True,
         "datetime_format": "%d-%m-%Y_%H-%M",
@@ -127,7 +127,7 @@ def test_uk_mass_datetime_selection_is_transient_and_keeps_saved_format():
     assert validator.ui_updated is True
 
 
-def test_usa_mass_datetime_selection_is_transient_and_keeps_saved_format():
+def test_usa_mass_datetime_selection_saves_sentinel_and_keeps_restore_state():
     state_ctrl = DummyStateController()
     validator = DummyValidator()
     app = SimpleNamespace(
@@ -141,8 +141,8 @@ def test_usa_mass_datetime_selection_is_transient_and_keeps_saved_format():
     UIHandlers(app).on_datetime_format_changed(0)
 
     assert app.mass_datetime_build_selected is True
-    assert app.append_datetime is True
-    assert app.datetime_format == "%m-%d-%Y_%H-%M"
+    assert app.append_datetime is False
+    assert app.datetime_format == USA_MASS_DATETIME_BUILD_SENTINEL
     assert app._mass_datetime_restore_state == {
         "append_datetime": True,
         "datetime_format": "%m-%d-%Y_%H-%M",
