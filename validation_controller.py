@@ -371,7 +371,7 @@ class ValidationController:
         if hasattr(app, "suppress_exit_dialogue"):
             set_btn(app.suppress_exit_dialogue, not building)
         set_btn(app.open_output_dir_after_build, not building and not is_desktop)
-        if not building and is_desktop:
+        if is_desktop:
             app.open_output_dir_after_build.setStyleSheet(
                 build_disabled_checkbox_without_checkmark()
             )
