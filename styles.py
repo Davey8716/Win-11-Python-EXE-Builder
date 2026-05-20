@@ -478,6 +478,7 @@ ENV_SYNC_STATUS_LINE_STYLE = f"""
         background-color: {qcolor_name(Colors.TITLE_BG)};
         color: {qcolor_name(Colors.TEXT_LIGHT)};
         border: 2px solid {qcolor_name(Colors.BLACK)};
+        border-radius: 4px;
     }}
 """
 
@@ -485,6 +486,7 @@ ENV_SYNC_SCROLL_AREA_STYLE = f"""
     QScrollArea {{
         background-color: {qcolor_name(Colors.PANEL_BG)};
         border: 2px solid {qcolor_name(Colors.BLACK)};
+        border-radius: 4px;
     }}
 
     QScrollArea QWidget {{
@@ -505,6 +507,7 @@ ENV_SYNC_SCROLL_AREA_DISABLED_STYLE = f"""
     QScrollArea {{
         background-color: {qcolor_name(Colors.PANEL_BG)};
         border: 2px solid {qcolor_name(Colors.BLACK)};
+        border-radius: 4px;
     }}
 
     QScrollArea QWidget {{
@@ -644,6 +647,17 @@ def build_disabled_line_edit_style() -> str:
             background-color: {qcolor_name(Colors.PANEL_BG)};
             color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
             border: 2px solid {qcolor_name(Colors.BLACK)};
+        }}
+    """
+
+
+def env_sync_disabled_status_line_style() -> str:
+    return f"""
+        QLineEdit {{
+            background-color: {qcolor_name(Colors.PANEL_BG)};
+            color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
+            border: 2px solid {qcolor_name(Colors.BLACK)};
+            border-radius: 4px;
         }}
     """
 

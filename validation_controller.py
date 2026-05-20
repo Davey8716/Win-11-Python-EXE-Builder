@@ -25,6 +25,7 @@ from styles import (
     build_disabled_line_edit_style,
     button_base,
     button_with_border,
+    env_sync_disabled_status_line_style,
     filled_button,
     line_edit_style,
     qcolor_name,
@@ -555,7 +556,7 @@ class ValidationController:
 
         if hasattr(app, "env_sync_log_input"):
             app.env_sync_log_input.setStyleSheet(
-                build_disabled_line_edit_style()
+                env_sync_disabled_status_line_style()
                 if building
                 else ENV_SYNC_STATUS_LINE_STYLE
             )

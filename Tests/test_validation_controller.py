@@ -11,7 +11,7 @@ from styles import (
     build_disabled_button,
     build_disabled_checkbox,
     build_disabled_checkbox_without_checkmark,
-    build_disabled_line_edit_style,
+    env_sync_disabled_status_line_style,
     qcolor_name,
 )
 from validation_controller import ValidationController
@@ -232,7 +232,7 @@ def test_environment_sync_uses_disabled_build_styling(monkeypatch, tmp_path):
     assert app.env_sync_match_btn.enabled is False
     assert app.env_sync_scan_btn.stylesheet == build_disabled_button()
     assert app.env_sync_match_btn.stylesheet == build_disabled_button()
-    assert app.env_sync_log_input.stylesheet == build_disabled_line_edit_style()
+    assert app.env_sync_log_input.stylesheet == env_sync_disabled_status_line_style()
 
     disabled_text = qcolor_name(Colors.BUILD_DISABLED_TEXT)
     for label in [
