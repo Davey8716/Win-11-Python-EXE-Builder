@@ -12,6 +12,8 @@ from datetime_build_options import (
     MASS_DATETIME_BUILD_LABEL,
     MASS_DATETIME_BUILD_SENTINEL,
     NO_DATETIME_LABEL,
+    UK_MASS_DATETIME_BUILD_LABEL,
+    UK_MASS_DATETIME_BUILD_SENTINEL,
 )
 from environment_sync_controller import EnvironmentSyncController
 from path_hover import attach_path_hovers
@@ -809,6 +811,7 @@ class EXEBuilderApp(QWidget):
         # UK
         _add("──────────", enabled=False)
         _add("UK", enabled=False)
+        _add(UK_MASS_DATETIME_BUILD_LABEL, UK_MASS_DATETIME_BUILD_SENTINEL)
         for label, data in DATETIME_FORMAT_OPTIONS[2:4]:
             _add(label, data)
 
@@ -822,6 +825,7 @@ class EXEBuilderApp(QWidget):
         longest_date_label = max(
             MASS_DATETIME_BUILD_LABEL,
             ISO_MASS_DATETIME_BUILD_LABEL,
+            UK_MASS_DATETIME_BUILD_LABEL,
             key=len,
         )
         date_dropdown_width = max(270, date_dropdown_metrics.horizontalAdvance(longest_date_label) + 64)

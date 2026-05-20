@@ -7,6 +7,8 @@ from datetime_build_options import (
     MASS_DATETIME_BUILD_SENTINEL,
     MASS_DATETIME_BUILD_SEQUENCE,
     NO_DATETIME_LABEL,
+    UK_MASS_DATETIME_BUILD_SENTINEL,
+    UK_MASS_DATETIME_BUILD_SEQUENCE,
 )
 from datetime import datetime
 from PySide6.QtCore import QObject, Signal,QTimer
@@ -101,6 +103,12 @@ class BuildController(QObject):
                 ISO_MASS_DATETIME_BUILD_SEQUENCE,
                 "EXE_BUILDER_BUILD_ALL_ISO_DEBUG",
                 "ISO DATE/TIME",
+            )
+        if sentinel == UK_MASS_DATETIME_BUILD_SENTINEL:
+            return (
+                UK_MASS_DATETIME_BUILD_SEQUENCE,
+                "EXE_BUILDER_BUILD_ALL_UK_DEBUG",
+                "UK DATE/TIME",
             )
 
         return (
@@ -428,7 +436,11 @@ class BuildController(QObject):
         if (
             not self._mass_datetime_active
             and datetime_dropdown_data
-            in {MASS_DATETIME_BUILD_SENTINEL, ISO_MASS_DATETIME_BUILD_SENTINEL}
+            in {
+                MASS_DATETIME_BUILD_SENTINEL,
+                ISO_MASS_DATETIME_BUILD_SENTINEL,
+                UK_MASS_DATETIME_BUILD_SENTINEL,
+            }
         ):
             self._start_mass_datetime_build(datetime_dropdown_data)
             return

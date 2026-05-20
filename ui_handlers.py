@@ -3,12 +3,14 @@ import os,subprocess,time,webbrowser
 from datetime_build_options import (
     ISO_MASS_DATETIME_BUILD_SENTINEL,
     MASS_DATETIME_BUILD_SENTINEL,
+    UK_MASS_DATETIME_BUILD_SENTINEL,
 )
 from ui_highlights import flash_delete_highlight
 
 MASS_DATETIME_BUILD_SENTINELS = {
     MASS_DATETIME_BUILD_SENTINEL,
     ISO_MASS_DATETIME_BUILD_SENTINEL,
+    UK_MASS_DATETIME_BUILD_SENTINEL,
 }
 
 class UIHandlers:

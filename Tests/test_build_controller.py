@@ -10,6 +10,7 @@ from datetime_build_options import (
     ISO_MASS_DATETIME_BUILD_SENTINEL,
     MASS_DATETIME_BUILD_SENTINEL,
     NO_DATETIME_LABEL,
+    UK_MASS_DATETIME_BUILD_SENTINEL,
 )
 
 
@@ -155,6 +156,48 @@ def test_iso_mass_datetime_debug_log_reuses_separate_txt_file(tmp_path, monkeypa
     assert contents.count("BUILD ALL ISO DATE/TIME OUTPUTS STARTED") == 1
     assert "BUILD ALL ISO DATE/TIME OUTPUT 1/2: ISO | YYYY-MM-DD" in contents
     assert "BUILD ALL ISO DATE/TIME OUTPUT 2/2: ISO | YYYY-MM-DD_HH-MM" in contents
+    assert contents.count(f"ENTRY_SCRIPT={repr(str(script))}") == 2
+    assert f"OUTPUT_DIR={repr(str(tmp_path))}" in contents
+
+
+def test_uk_mass_datetime_debug_log_reuses_separate_txt_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(build_controller, "datetime", FixedDateTime)
+
+    script = tmp_path / "project" / "main.py"
+    script.parent.mkdir()
+    script.write_text("print('hello')\n", encoding="utf-8")
+
+    app = make_app(
+        entry_script=str(script),
+        project_root=str(script.parent),
+        python_interpreter_path=str(tmp_path / "Python314" / "python.exe"),
+    )
+    controller = BuildController(app)
+    controller._mass_datetime_active = True
+    controller._mass_datetime_total = 2
+    controller._mass_datetime_index = 1
+    controller._mass_datetime_current_label = "UK | DD-MM-YYYY"
+    controller._mass_datetime_debug_log_prefix = "EXE_BUILDER_BUILD_ALL_UK_DEBUG"
+    controller._mass_datetime_log_title = "UK DATE/TIME"
+
+    controller._initialize_debug_log(str(script), str(tmp_path))
+
+    first_log_path = Path(app.debug_log_path)
+    assert first_log_path.parent == tmp_path
+    assert first_log_path.name.startswith("EXE_BUILDER_BUILD_ALL_UK_DEBUG_Builder_project_")
+    assert first_log_path.suffix == ".txt"
+    assert first_log_path.exists()
+
+    controller._mass_datetime_index = 2
+    controller._mass_datetime_current_label = "UK | DD-MM-YYYY_HH-MM"
+    controller._initialize_debug_log(str(script), str(tmp_path))
+
+    assert Path(app.debug_log_path) == first_log_path
+
+    contents = first_log_path.read_text(encoding="utf-8")
+    assert contents.count("BUILD ALL UK DATE/TIME OUTPUTS STARTED") == 1
+    assert "BUILD ALL UK DATE/TIME OUTPUT 1/2: UK | DD-MM-YYYY" in contents
+    assert "BUILD ALL UK DATE/TIME OUTPUT 2/2: UK | DD-MM-YYYY_HH-MM" in contents
     assert contents.count(f"ENTRY_SCRIPT={repr(str(script))}") == 2
     assert f"OUTPUT_DIR={repr(str(tmp_path))}" in contents
 
@@ -409,6 +452,25 @@ def iso_mass_datetime_dropdown():
     )
 
 
+def uk_mass_datetime_dropdown():
+    return DummyDropdown(
+        [
+            {"text": NO_DATETIME_LABEL, "data": None},
+            {
+                "text": "Build All UK Date/Time Outputs",
+                "data": UK_MASS_DATETIME_BUILD_SENTINEL,
+            },
+            {"text": "ISO | YYYY-MM-DD", "data": "%Y-%m-%d"},
+            {"text": "ISO | YYYY-MM-DD_HH-MM", "data": "%Y-%m-%d_%H-%M"},
+            {"text": "UK | DD-MM-YYYY", "data": "%d-%m-%Y"},
+            {"text": "UK | DD-MM-YYYY_HH-MM", "data": "%d-%m-%Y_%H-%M"},
+            {"text": "USA | MM-DD-YYYY", "data": "%m-%d-%Y"},
+            {"text": "USA | MM-DD-YYYY_HH-MM", "data": "%m-%d-%Y_%H-%M"},
+        ],
+        current_index=1,
+    )
+
+
 def build_names(app):
     names = []
     for cmd in app.captured_cmds:
@@ -566,6 +628,46 @@ def test_iso_mass_datetime_build_waits_for_success_before_next_output(tmp_path, 
     assert build_names(app) == ["Builder_2026-05-19", "Builder_2026-05-19_12-34"]
 
 
+def test_uk_mass_datetime_build_runs_uk_outputs_only(tmp_path, monkeypatch):
+    patch_build_runtime(monkeypatch)
+    app = make_buildable_app(tmp_path, date_time_dropdown=uk_mass_datetime_dropdown())
+    controller = BuildController(app)
+
+    controller.build_exe(None)
+
+    assert build_names(app) == ["Builder_19-05-2026"]
+    assert controller._mass_datetime_active is True
+
+    controller._on_build_complete_ui(0, "", "")
+
+    assert build_names(app) == [
+        "Builder_19-05-2026",
+        "Builder_19-05-2026_12-34",
+    ]
+    assert controller._mass_datetime_active is True
+
+    controller._on_build_complete_ui(0, "", "")
+
+    assert controller._mass_datetime_active is False
+    assert app.append_datetime is False
+    assert app.datetime_format == ""
+    assert app.date_time_dropdown.currentText() == NO_DATETIME_LABEL
+
+
+def test_uk_mass_datetime_build_waits_for_success_before_next_output(tmp_path, monkeypatch):
+    patch_build_runtime(monkeypatch)
+    app = make_buildable_app(tmp_path, date_time_dropdown=uk_mass_datetime_dropdown())
+    controller = BuildController(app)
+
+    controller.build_exe(None)
+
+    assert build_names(app) == ["Builder_19-05-2026"]
+
+    controller._on_build_complete_ui(0, "", "")
+
+    assert build_names(app) == ["Builder_19-05-2026", "Builder_19-05-2026_12-34"]
+
+
 def test_mass_datetime_build_stops_on_failure_and_restores_state(tmp_path, monkeypatch):
     patch_build_runtime(monkeypatch)
     dropdown = mass_datetime_dropdown()
@@ -618,6 +720,35 @@ def test_iso_mass_datetime_build_stops_on_failure_and_restores_state(tmp_path, m
     assert app.append_datetime is True
     assert app.datetime_format == "%Y-%m-%d"
     assert app.date_time_dropdown.currentText() == "ISO | YYYY-MM-DD"
+    assert app.status_label.stylesheet == build_controller.status_text_style(
+        build_controller.Colors.ERROR,
+        border_width=1,
+    )
+
+
+def test_uk_mass_datetime_build_stops_on_failure_and_restores_state(tmp_path, monkeypatch):
+    patch_build_runtime(monkeypatch)
+    dropdown = uk_mass_datetime_dropdown()
+    app = make_buildable_app(
+        tmp_path,
+        date_time_dropdown=dropdown,
+        append_datetime=True,
+        datetime_format="%d-%m-%Y",
+        _mass_datetime_restore_state={
+            "append_datetime": True,
+            "datetime_format": "%d-%m-%Y",
+        },
+    )
+    controller = BuildController(app)
+
+    controller.build_exe(None)
+    controller._on_build_complete_ui(1, "", "failed")
+
+    assert build_names(app) == ["Builder_19-05-2026"]
+    assert controller._mass_datetime_active is False
+    assert app.append_datetime is True
+    assert app.datetime_format == "%d-%m-%Y"
+    assert app.date_time_dropdown.currentText() == "UK | DD-MM-YYYY"
     assert app.status_label.stylesheet == build_controller.status_text_style(
         build_controller.Colors.ERROR,
         border_width=1,
@@ -694,6 +825,42 @@ def test_iso_mass_datetime_build_cancel_restores_state(tmp_path, monkeypatch):
     assert app.append_datetime is True
     assert app.datetime_format == "%Y-%m-%d_%H-%M"
     assert app.date_time_dropdown.currentText() == "ISO | YYYY-MM-DD_HH-MM"
+
+
+def test_uk_mass_datetime_build_cancel_restores_state(tmp_path, monkeypatch):
+    patch_build_runtime(monkeypatch)
+    import build_cancellation
+
+    dropdown = uk_mass_datetime_dropdown()
+    app = make_buildable_app(
+        tmp_path,
+        date_time_dropdown=dropdown,
+        append_datetime=True,
+        datetime_format="%d-%m-%Y_%H-%M",
+        _mass_datetime_restore_state={
+            "append_datetime": True,
+            "datetime_format": "%d-%m-%Y_%H-%M",
+        },
+    )
+    controller = BuildController(app)
+
+    controller.build_exe(None)
+    app.build_process = object()
+
+    def fake_cancel(self):
+        self.app.build_process = None
+        self.app.building = False
+        self.app.cancelled = True
+
+    monkeypatch.setattr(build_cancellation.BuildCancellation, "cancel_build", fake_cancel)
+
+    controller.build_exe(None)
+
+    assert app.cancelled is True
+    assert controller._mass_datetime_active is False
+    assert app.append_datetime is True
+    assert app.datetime_format == "%d-%m-%Y_%H-%M"
+    assert app.date_time_dropdown.currentText() == "UK | DD-MM-YYYY_HH-MM"
 
 
 def test_build_exe_suppresses_empty_clicked_disconnect_warning(tmp_path, monkeypatch):
