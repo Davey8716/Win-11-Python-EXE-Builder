@@ -190,6 +190,12 @@ def attach_tooltips(app):
     )
 
     QtTooltip(
+        app.open_output_dir_after_build,
+        "Opens Output Directory after build if it output directory is not Desktop."
+
+    )    
+
+    QtTooltip(
         app.suppress_exit_dialogue,
         "Skip the exit confirmation popup when closing the app.\n"
         "When enabled, the native X close exits immediately."
