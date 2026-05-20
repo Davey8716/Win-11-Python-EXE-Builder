@@ -160,6 +160,7 @@ def vertical_scrollbar_style(owner_selector: str) -> str:
     {owner_selector} QScrollBar::sub-line:vertical,
     {owner_selector} QScrollBar::add-line:vertical {{
         background-color: {qcolor_name(Colors.TITLE_BG)};
+        border-radius: 4px;
         height: 18px;
     }}
 
