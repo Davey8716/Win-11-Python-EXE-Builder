@@ -12,7 +12,9 @@ from styles import (
     build_disabled_button,
     build_disabled_checkbox,
     build_disabled_checkbox_without_checkmark,
+    build_disabled_line_edit_style,
     env_sync_disabled_status_line_style,
+    line_edit_style,
     qcolor_name,
 )
 from validation_controller import ValidationController
@@ -30,6 +32,11 @@ def test_combo_box_disabled_style_greys_drop_down_and_arrow():
     assert f"background-color: {disabled_bg};" in COMBO_BOX_STYLE
     assert f"color: {disabled_text};" in COMBO_BOX_STYLE
     assert "border-radius: 4px;" in COMBO_BOX_LINE_EDIT_STYLE
+
+
+def test_path_line_edit_styles_have_rounded_borders():
+    assert "border-radius: 4px;" in line_edit_style(Colors.SUCCESS)
+    assert "border-radius: 4px;" in build_disabled_line_edit_style()
 
 
 class DummyCheckbox:

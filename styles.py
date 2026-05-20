@@ -641,6 +641,7 @@ def line_edit_style(text_color: QColor, border_color: QColor = Colors.WINDOW) ->
             background-color: {qcolor_name(Colors.PANEL_BG)};
             color: {qcolor_name(text_color)};
             border: 2px solid {qcolor_name(Colors.BLACK)};
+            border-radius: 4px;
         }}
     """
 
@@ -651,6 +652,7 @@ def build_disabled_line_edit_style() -> str:
             background-color: {qcolor_name(Colors.PANEL_BG)};
             color: {qcolor_name(Colors.BUILD_DISABLED_TEXT)};
             border: 2px solid {qcolor_name(Colors.BLACK)};
+            border-radius: 4px;
         }}
     """
 
