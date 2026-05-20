@@ -333,11 +333,32 @@ class FilePickerController:
     # ============================================================
     # Select output folder
     # ============================================================
+    def _desktop_path(self):
+        return os.path.normpath(os.path.join(os.path.expanduser("~"), "Desktop"))
+
+    def _is_desktop_path(self, path):
+        if not path:
+            return False
+        return os.path.normcase(os.path.normpath(path)) == os.path.normcase(self._desktop_path())
+
+    def _valid_non_desktop_output_dir(self, path):
+        return bool(path and os.path.isdir(path) and not self._is_desktop_path(path))
+
+    def _resolve_output_start_dir(self):
+        for attr in ("last_output_dir", "last_non_desktop_output_dir", "output_path"):
+            raw_path = getattr(self.app, attr, "") or ""
+            path = os.path.normpath(raw_path) if raw_path else ""
+            if self._valid_non_desktop_output_dir(path):
+                return path
+
+        return self._desktop_path()
+
     def select_output_folder(self):
+        start_dir = self._resolve_output_start_dir()
         folder = QFileDialog.getExistingDirectory(
             self.app,
             "Select Output Folder",
-            getattr(self.app, "last_output_dir", "")
+            start_dir
         )
 
         if not folder:
@@ -349,8 +370,10 @@ class FilePickerController:
         # optional alias
         self.app.output_path = folder
 
-        # remember last location
-        self.app.last_output_dir = folder
+        # remember last non-Desktop location for the next picker open
+        if not self._is_desktop_path(folder):
+            self.app.last_output_dir = folder
+            self.app.last_non_desktop_output_dir = folder
 
         if hasattr(self.app, "output_path_input"):
             self.app.output_path_input.set_display_path(folder)

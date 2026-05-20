@@ -74,6 +74,12 @@ class StateController:
             def _norm(p):
                 return os.path.normpath(p) if p else ""
 
+            def _desktop_path():
+                return os.path.normpath(os.path.join(os.path.expanduser("~"), "Desktop"))
+
+            def _is_desktop_path(p):
+                return bool(p) and os.path.normcase(_norm(p)) == os.path.normcase(_desktop_path())
+
             # keep full raw state in memory
             self.app.state_data = data
 
@@ -106,6 +112,16 @@ class StateController:
             self.app.script_path = _norm(data.get("last_script_path", ""))
             self.app.icon_path = _norm(data.get("last_icon_path", ""))
             self.app.output_path = _norm(data.get("last_output_folder", ""))
+            self.app.last_non_desktop_output_dir = _norm(
+                data.get("last_non_desktop_output_folder", "")
+            )
+            if not self.app.last_non_desktop_output_dir and not _is_desktop_path(self.app.output_path):
+                self.app.last_non_desktop_output_dir = self.app.output_path
+
+            if self.app.last_non_desktop_output_dir:
+                self.app.last_output_dir = self.app.last_non_desktop_output_dir
+            elif self.app.output_path and not _is_desktop_path(self.app.output_path):
+                self.app.last_output_dir = self.app.output_path
             self.app.python_interpreter_path = _norm(data.get("python_interpreter_path", ""))
             self.app.python_path = self.app.python_interpreter_path
             self.app.exe_name = data.get("last_exe_name", "")
@@ -232,6 +248,12 @@ class StateController:
         def _norm(p):
             return os.path.normpath(p) if p else ""
 
+        def _desktop_path():
+            return os.path.normpath(os.path.join(os.path.expanduser("~"), "Desktop"))
+
+        def _is_desktop_path(p):
+            return bool(p) and os.path.normcase(_norm(p)) == os.path.normcase(_desktop_path())
+
         state_path = self._state_file_path()
 
         # preserve existing recent scripts from memory/file
@@ -284,6 +306,13 @@ class StateController:
             "last_script_path": _norm(self.app.script_path),
             "last_icon_path": _norm(self.app.icon_path),
             "last_output_folder": _norm(self.app.output_path),
+            "last_non_desktop_output_folder": _norm(
+                getattr(self.app, "last_non_desktop_output_dir", "")
+            ) or (
+                _norm(self.app.output_path)
+                if not _is_desktop_path(getattr(self.app, "output_path", ""))
+                else ""
+            ),
             "python_interpreter_path": _norm(
                 getattr(self.app, "python_interpreter_path", "")
             ),

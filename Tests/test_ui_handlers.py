@@ -1,6 +1,8 @@
 from types import SimpleNamespace
+import os
 import sys
 
+import ui_handlers
 from datetime_build_options import (
     ISO_MASS_DATETIME_BUILD_SENTINEL,
     MASS_DATETIME_BUILD_SENTINEL,
@@ -40,6 +42,14 @@ class DummyValidator:
 
     def update_ui_state(self):
         self.ui_updated = True
+
+
+class DummyPathInput:
+    def __init__(self):
+        self.value = ""
+
+    def set_display_path(self, value):
+        self.value = value
 
 
 def test_mass_datetime_selection_is_transient_and_keeps_saved_format():
@@ -177,6 +187,34 @@ def test_open_app_data_opens_state_folder_when_file_missing(tmp_path):
     assert opened == [("folder", str(state_file.parent))]
     assert focused == [str(state_file.parent)]
     assert state_file.parent.is_dir()
+
+
+def test_reset_output_to_desktop_keeps_remembered_non_desktop_output(monkeypatch, tmp_path):
+    remembered_output = os.path.normpath(str(tmp_path / "dist"))
+    state_ctrl = DummyStateController()
+    validation_controller = DummyValidator()
+    app = SimpleNamespace(
+        output_refresh_btn=None,
+        output_path_input=DummyPathInput(),
+        output_path=remembered_output,
+        last_output_dir=remembered_output,
+        last_non_desktop_output_dir=remembered_output,
+        state_ctrl=state_ctrl,
+        validation_controller=validation_controller,
+    )
+
+    monkeypatch.setattr(ui_handlers, "flash_delete_highlight", lambda *args, **kwargs: None)
+
+    handler = UIHandlers(app)
+    desktop = os.path.normpath(handler.get_desktop_path())
+    handler.reset_output_to_desktop()
+
+    assert app.output_path == desktop
+    assert app.output_path_input.value == desktop
+    assert app.last_output_dir == remembered_output
+    assert app.last_non_desktop_output_dir == remembered_output
+    assert state_ctrl.saved is True
+    assert validation_controller.ui_updated is True
 
 
 def test_force_app_data_folder_on_top_activates_matching_window(monkeypatch, tmp_path):
