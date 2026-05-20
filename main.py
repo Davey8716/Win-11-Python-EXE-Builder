@@ -196,7 +196,7 @@ class EXEBuilderApp(QWidget):
         build_options_title_layout.addStretch()
 
         toggles_frame = QFrame()
-        toggles_frame.setFixedSize(450, 88)
+        toggles_frame.setFixedSize(500, 100)
         toggles_frame.setFrameShape(QFrame.StyledPanel)
         toggles_frame.setFrameShadow(QFrame.Raised)
         toggles_frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -1069,13 +1069,13 @@ class EXEBuilderApp(QWidget):
             self.suppress_exit_dialogue,
             self.close_after_build,
         ]:
-            cb.setFixedSize(225, 24)
+            cb.setFixedSize(225, 28)
             cb.setChecked(True)
             cb.setFont(QFont("Rubik UI", 13, QFont.Bold))
 
         self.suppress_exit_dialogue.setChecked(False)
 
-        self.open_output_dir_after_build.setFixedSize(215, 24)
+        self.open_output_dir_after_build.setFixedSize(240, 28)
         self.open_output_dir_after_build.setChecked(True)
         self.open_output_dir_after_build.setFont(QFont("Rubik UI", 13, QFont.Bold))
 
