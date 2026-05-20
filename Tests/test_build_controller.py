@@ -1154,6 +1154,43 @@ def test_build_exe_adds_parent_search_path_for_sibling_packages(tmp_path, monkey
     assert f"--add-data={project_root}{os.pathsep}." in app.captured_cmd
 
 
+def test_build_complete_focuses_existing_output_directory_window(tmp_path, monkeypatch):
+    output_dir = tmp_path / "dist"
+    output_dir.mkdir()
+    opened_paths = []
+    focused_paths = []
+
+    monkeypatch.setattr(build_controller.os, "startfile", lambda path: opened_paths.append(path), raising=False)
+
+    app = make_app(
+        build_start_time=0,
+        last_build_seconds=45,
+        status_label=DummyLabel(),
+        output_path=str(output_dir),
+        open_output_dir_after_build_enabled=True,
+        minimize_after_build_enabled=False,
+        close_after_build_enabled=False,
+        state_ctrl=SimpleNamespace(save_state=lambda: None),
+        validation_controller=DummyValidationController(),
+        set_status=lambda _message: None,
+        build_process=None,
+    )
+    controller = BuildController(app)
+    monkeypatch.setattr(
+        controller,
+        "_focus_existing_output_explorer_window",
+        lambda path: focused_paths.append(path) or True,
+    )
+    monkeypatch.setattr(build_controller.time, "time", lambda: 5)
+    monkeypatch.setattr(controller, "stop_eta", lambda: None)
+    monkeypatch.setattr(build_controller.QTimer, "singleShot", lambda *_args, **_kwargs: None)
+
+    controller._on_build_complete_ui(0, "", "")
+
+    assert focused_paths == [os.path.normpath(str(output_dir))]
+    assert opened_paths == []
+
+
 def test_build_complete_opens_output_directory_for_non_desktop_path(tmp_path, monkeypatch):
     output_dir = tmp_path / "dist"
     output_dir.mkdir()
@@ -1175,6 +1212,41 @@ def test_build_complete_opens_output_directory_for_non_desktop_path(tmp_path, mo
         build_process=None,
     )
     controller = BuildController(app)
+    monkeypatch.setattr(controller, "_focus_existing_output_explorer_window", lambda _path: False)
+    monkeypatch.setattr(build_controller.time, "time", lambda: 5)
+    monkeypatch.setattr(controller, "stop_eta", lambda: None)
+    monkeypatch.setattr(build_controller.QTimer, "singleShot", lambda *_args, **_kwargs: None)
+
+    controller._on_build_complete_ui(0, "", "")
+
+    assert opened_paths == [os.path.normpath(str(output_dir))]
+
+
+def test_build_complete_opens_output_directory_when_focus_helper_fails(tmp_path, monkeypatch):
+    output_dir = tmp_path / "dist"
+    output_dir.mkdir()
+    opened_paths = []
+
+    def raise_focus_error(_path):
+        raise RuntimeError("focus failed")
+
+    monkeypatch.setattr(build_controller.os, "startfile", lambda path: opened_paths.append(path), raising=False)
+
+    app = make_app(
+        build_start_time=0,
+        last_build_seconds=45,
+        status_label=DummyLabel(),
+        output_path=str(output_dir),
+        open_output_dir_after_build_enabled=True,
+        minimize_after_build_enabled=False,
+        close_after_build_enabled=False,
+        state_ctrl=SimpleNamespace(save_state=lambda: None),
+        validation_controller=DummyValidationController(),
+        set_status=lambda _message: None,
+        build_process=None,
+    )
+    controller = BuildController(app)
+    monkeypatch.setattr(controller, "_focus_existing_output_explorer_window", raise_focus_error)
     monkeypatch.setattr(build_controller.time, "time", lambda: 5)
     monkeypatch.setattr(controller, "stop_eta", lambda: None)
     monkeypatch.setattr(build_controller.QTimer, "singleShot", lambda *_args, **_kwargs: None)
@@ -1187,6 +1259,7 @@ def test_build_complete_opens_output_directory_for_non_desktop_path(tmp_path, mo
 def test_build_complete_skips_opening_output_directory_for_desktop(monkeypatch):
     desktop_path = os.path.normpath(os.path.join(os.path.expanduser("~"), "Desktop"))
     opened_paths = []
+    focused_paths = []
 
     monkeypatch.setattr(build_controller.os, "startfile", lambda path: opened_paths.append(path), raising=False)
 
@@ -1204,6 +1277,11 @@ def test_build_complete_skips_opening_output_directory_for_desktop(monkeypatch):
         build_process=None,
     )
     controller = BuildController(app)
+    monkeypatch.setattr(
+        controller,
+        "_focus_existing_output_explorer_window",
+        lambda path: focused_paths.append(path) or True,
+    )
     monkeypatch.setattr(build_controller.time, "time", lambda: 5)
     monkeypatch.setattr(controller, "stop_eta", lambda: None)
     monkeypatch.setattr(build_controller.QTimer, "singleShot", lambda *_args, **_kwargs: None)
@@ -1211,6 +1289,7 @@ def test_build_complete_skips_opening_output_directory_for_desktop(monkeypatch):
     controller._on_build_complete_ui(0, "", "")
 
     assert opened_paths == []
+    assert focused_paths == []
 
 
 def test_build_complete_opens_output_directory_before_closing(tmp_path, monkeypatch):
@@ -1240,6 +1319,7 @@ def test_build_complete_opens_output_directory_before_closing(tmp_path, monkeypa
         build_process=None,
     )
     controller = BuildController(app)
+    monkeypatch.setattr(controller, "_focus_existing_output_explorer_window", lambda _path: False)
     monkeypatch.setattr(build_controller.time, "time", lambda: 5)
     monkeypatch.setattr(controller, "stop_eta", lambda: None)
     monkeypatch.setattr(build_controller.QTimer, "singleShot", lambda *_args, **_kwargs: None)

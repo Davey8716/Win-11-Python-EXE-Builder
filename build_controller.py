@@ -353,6 +353,126 @@ class BuildController(QObject):
     def _get_desktop_path(self):
         return os.path.normpath(os.path.join(os.path.expanduser("~"), "Desktop"))
 
+    def _normalize_explorer_path_for_compare(self, path):
+        if not path:
+            return ""
+        return os.path.normcase(os.path.abspath(os.path.normpath(path)))
+
+    def _path_from_explorer_url(self, url):
+        if not url or not url.startswith("file:"):
+            return ""
+
+        try:
+            from urllib.parse import unquote, urlparse
+
+            parsed = urlparse(url)
+            path = unquote(parsed.path or "")
+            if parsed.netloc:
+                return os.path.normpath(f"//{parsed.netloc}{path}")
+            return os.path.normpath(path.lstrip("/"))
+        except Exception:
+            return ""
+
+    def _get_explorer_window_path(self, window):
+        try:
+            folder_path = window.Document.Folder.Self.Path
+        except Exception:
+            folder_path = ""
+
+        if folder_path:
+            return folder_path
+
+        try:
+            return self._path_from_explorer_url(window.LocationURL)
+        except Exception:
+            return ""
+
+    def _focus_window_by_handle(self, hwnd):
+        if not hwnd:
+            return False
+
+        try:
+            import win32con
+            import win32gui
+        except Exception:
+            return False
+
+        try:
+            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+        except Exception:
+            pass
+
+        flags = win32con.SWP_NOMOVE | win32con.SWP_NOSIZE | win32con.SWP_SHOWWINDOW
+
+        try:
+            win32gui.SetWindowPos(
+                hwnd,
+                win32con.HWND_TOPMOST,
+                0,
+                0,
+                0,
+                0,
+                flags,
+            )
+            win32gui.SetForegroundWindow(hwnd)
+            win32gui.SetWindowPos(
+                hwnd,
+                win32con.HWND_NOTOPMOST,
+                0,
+                0,
+                0,
+                0,
+                flags,
+            )
+            return True
+        except Exception:
+            try:
+                win32gui.SetForegroundWindow(hwnd)
+                return True
+            except Exception:
+                return False
+
+    def _focus_existing_output_explorer_window(self, output_dir):
+        if sys.platform != "win32":
+            return False
+
+        target_path = self._normalize_explorer_path_for_compare(output_dir)
+        if not target_path:
+            return False
+
+        try:
+            import win32com.client
+
+            windows = win32com.client.Dispatch("Shell.Application").Windows()
+        except Exception:
+            return False
+
+        try:
+            count = windows.Count
+        except Exception:
+            return False
+
+        for index in range(count):
+            try:
+                window = windows.Item(index)
+            except Exception:
+                continue
+
+            window_path = self._normalize_explorer_path_for_compare(
+                self._get_explorer_window_path(window)
+            )
+            if window_path != target_path:
+                continue
+
+            try:
+                hwnd = int(window.HWND)
+            except Exception:
+                hwnd = None
+
+            return self._focus_window_by_handle(hwnd)
+
+        return False
+
     def _maybe_open_output_directory_on_success(self):
         app = self.app
 
@@ -364,6 +484,14 @@ class BuildController(QObject):
             return
 
         if output_dir == self._get_desktop_path():
+            return
+
+        try:
+            focused_existing_window = self._focus_existing_output_explorer_window(output_dir)
+        except Exception:
+            focused_existing_window = False
+
+        if focused_existing_window:
             return
 
         try:
