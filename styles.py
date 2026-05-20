@@ -700,10 +700,14 @@ SCRIPT_PICKER_DROPDOWN_STYLE = f"""
 
     QComboBox::drop-down {{
         border: none;
-        background-color: {qcolor_name(Colors.WINDOW)};
+        background-color: {qcolor_name(Colors.WHITE)};
         border-top-right-radius: 4px;
         border-bottom-right-radius: 4px;
         width: 28px;
+    }}
+
+    QComboBox::down-arrow {{
+        background-color: {qcolor_name(Colors.WHITE)};
     }}
 
     QComboBox QAbstractItemView {{

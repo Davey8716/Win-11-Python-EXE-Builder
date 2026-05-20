@@ -9,6 +9,7 @@ from styles import (
     ENV_SYNC_BUTTON_STYLE,
     ENV_SYNC_STATUS_LINE_STYLE,
     REFRESH_BUTTON_TEXT,
+    SCRIPT_PICKER_DROPDOWN_STYLE,
     build_disabled_button,
     build_disabled_checkbox,
     build_disabled_checkbox_without_checkmark,
@@ -32,6 +33,19 @@ def test_combo_box_disabled_style_greys_drop_down_and_arrow():
     assert f"background-color: {disabled_bg};" in COMBO_BOX_STYLE
     assert f"color: {disabled_text};" in COMBO_BOX_STYLE
     assert "border-radius: 4px;" in COMBO_BOX_LINE_EDIT_STYLE
+
+
+def test_script_picker_dropdown_matches_main_combo_colors():
+    title_bg = qcolor_name(Colors.TITLE_BG)
+    text_light = qcolor_name(Colors.TEXT_LIGHT)
+    white = qcolor_name(Colors.WHITE)
+
+    assert "QComboBox {" in SCRIPT_PICKER_DROPDOWN_STYLE
+    assert f"background-color: {title_bg};" in SCRIPT_PICKER_DROPDOWN_STYLE
+    assert f"color: {text_light};" in SCRIPT_PICKER_DROPDOWN_STYLE
+    assert "QComboBox::drop-down" in SCRIPT_PICKER_DROPDOWN_STYLE
+    assert "QComboBox::down-arrow" in SCRIPT_PICKER_DROPDOWN_STYLE
+    assert f"background-color: {white};" in SCRIPT_PICKER_DROPDOWN_STYLE
 
 
 def test_path_line_edit_styles_have_rounded_borders():
