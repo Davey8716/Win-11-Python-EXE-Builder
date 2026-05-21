@@ -934,16 +934,13 @@ def test_mass_datetime_build_waits_for_success_before_next_output(tmp_path, monk
     assert build_names(app) == ["Builder", "Builder_ISO_2026-05-19"]
 
 
-def test_mass_datetime_desktop_build_centers_all_outputs_after_final_wait(tmp_path, monkeypatch):
+def test_mass_datetime_desktop_build_centers_all_outputs_after_final_success(tmp_path, monkeypatch):
     patch_build_runtime(monkeypatch)
-    delayed_callbacks = []
     centered = []
 
     def record_single_shot(ms, callback):
         if ms == 0:
             callback()
-        elif ms == 1000:
-            delayed_callbacks.append(callback)
 
     app = make_buildable_app(
         tmp_path,
@@ -961,33 +958,25 @@ def test_mass_datetime_desktop_build_centers_all_outputs_after_final_wait(tmp_pa
     for _ in range(7):
         built_dirs.append(finish_current_build_successfully(controller, app))
 
-    assert centered == []
-    assert len(delayed_callbacks) == 1
+    assert centered == [app.current_build_paths]
     assert all(str(path) in app.current_build_paths for path in built_dirs)
     assert os.path.join(desktop_path, "build") in app.current_build_paths
     assert os.path.join(desktop_path, "spec") in app.current_build_paths
     assert app.debug_log_path in app.current_build_paths
 
-    delayed_callbacks[0]()
 
-    assert centered == [app.current_build_paths]
-
-
-def test_regional_mass_datetime_desktop_builds_center_all_outputs_after_final_wait(tmp_path, monkeypatch):
+def test_regional_mass_datetime_desktop_builds_center_all_outputs_after_final_success(tmp_path, monkeypatch):
     for dropdown_factory in (
         iso_mass_datetime_dropdown,
         uk_mass_datetime_dropdown,
         usa_mass_datetime_dropdown,
     ):
         patch_build_runtime(monkeypatch)
-        delayed_callbacks = []
         centered = []
 
         def record_single_shot(ms, callback):
             if ms == 0:
                 callback()
-            elif ms == 1000:
-                delayed_callbacks.append(callback)
 
         case_dir = tmp_path / f"{dropdown_factory.__name__}_desktop"
         case_dir.mkdir()
@@ -1003,13 +992,8 @@ def test_regional_mass_datetime_desktop_builds_center_all_outputs_after_final_wa
         for _ in range(2):
             built_dirs.append(finish_current_build_successfully(controller, app))
 
-        assert centered == []
-        assert len(delayed_callbacks) == 1
-        assert all(str(path) in app.current_build_paths for path in built_dirs)
-
-        delayed_callbacks[0]()
-
         assert centered == [app.current_build_paths]
+        assert all(str(path) in app.current_build_paths for path in built_dirs)
 
 
 def test_mass_datetime_non_desktop_build_opens_output_after_final_success(tmp_path, monkeypatch):
@@ -1057,6 +1041,59 @@ def test_failed_mass_datetime_build_does_not_present_partial_outputs(tmp_path, m
     assert delayed_callbacks == []
     assert centered == []
     assert controller._mass_datetime_output_group == []
+
+
+def test_mass_datetime_desktop_centering_happens_before_close_after_build(tmp_path, monkeypatch):
+    patch_build_runtime(monkeypatch)
+    events = []
+
+    app = make_buildable_app(
+        tmp_path,
+        date_time_dropdown=mass_datetime_dropdown(),
+        close_after_build_enabled=True,
+        close_app=lambda: events.append("close"),
+        state_ctrl=SimpleNamespace(save_state=lambda: events.append("save")),
+    )
+    desktop_path = os.path.normpath(app.output_path_input.text())
+    controller = BuildController(app)
+    monkeypatch.setattr(controller, "_get_desktop_path", lambda: desktop_path)
+    monkeypatch.setattr(controller, "_center_desktop_build_outputs", lambda: events.append("center"))
+
+    controller.build_exe(None)
+    for _ in range(7):
+        finish_current_build_successfully(controller, app)
+
+    assert events[-3:] == ["center", "save", "close"]
+
+
+def test_regional_mass_datetime_desktop_centering_happens_before_minimize_after_build(tmp_path, monkeypatch):
+    for dropdown_factory in (
+        iso_mass_datetime_dropdown,
+        uk_mass_datetime_dropdown,
+        usa_mass_datetime_dropdown,
+    ):
+        patch_build_runtime(monkeypatch)
+        events = []
+
+        case_dir = tmp_path / f"{dropdown_factory.__name__}_minimize"
+        case_dir.mkdir()
+        app = make_buildable_app(
+            case_dir,
+            date_time_dropdown=dropdown_factory(),
+            minimize_after_build_enabled=True,
+            showMinimized=lambda: events.append("minimize"),
+            state_ctrl=SimpleNamespace(save_state=lambda: events.append("save")),
+        )
+        desktop_path = os.path.normpath(app.output_path_input.text())
+        controller = BuildController(app)
+        monkeypatch.setattr(controller, "_get_desktop_path", lambda: desktop_path)
+        monkeypatch.setattr(controller, "_center_desktop_build_outputs", lambda: events.append("center"))
+
+        controller.build_exe(None)
+        for _ in range(2):
+            finish_current_build_successfully(controller, app)
+
+        assert events[-3:] == ["center", "save", "minimize"]
 
 
 def test_saved_mass_datetime_sentinel_restores_to_build_all_after_build(tmp_path, monkeypatch):

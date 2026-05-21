@@ -964,7 +964,10 @@ class BuildController(QObject):
             return
 
         if self._is_desktop_output_path(output_dir):
-            QTimer.singleShot(1000, self._center_desktop_build_outputs)
+            try:
+                self._center_desktop_build_outputs()
+            except Exception:
+                pass
             return
 
         self._maybe_open_output_directory_on_success()
