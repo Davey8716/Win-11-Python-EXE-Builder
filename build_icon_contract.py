@@ -1,6 +1,4 @@
-import hashlib
 import os
-import shutil
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -31,50 +29,6 @@ def resolve_build_icon_contract(icon_path):
     return BuildIconContract(os.path.normpath(icon) if icon else "")
 
 
-def apply_output_folder_icon_metadata(icon_path, output_folder):
-    folder = Path(output_folder) if output_folder else None
-    if folder is None or not folder.is_dir():
-        return False
-
-    contract = resolve_build_icon_contract(icon_path)
-    if not contract.icon_path:
-        return clear_output_folder_icon_metadata(folder)
-
-    source_icon = Path(contract.icon_path)
-    if not source_icon.is_file():
-        return False
-
-    _remove_generated_folder_icon_files(folder)
-    _remove_previous_cached_folder_icon(folder)
-
-    cache_dir = folder.parent / FOLDER_ICON_CACHE_DIR_NAME
-    cache_dir.mkdir(exist_ok=True)
-    icon_name = _folder_icon_file_name(source_icon, folder)
-    target_icon = cache_dir / icon_name
-    shutil.copyfile(source_icon, target_icon)
-    icon_resource = _desktop_ini_icon_resource(target_icon, folder)
-
-    desktop_ini = folder / DESKTOP_INI_NAME
-    desktop_ini.write_text(
-        "\n".join(
-            [
-                "[.ShellClassInfo]",
-                f"; {DESKTOP_INI_MARKER}",
-                f"IconResource={icon_resource},0",
-                "",
-            ]
-        ),
-        encoding="utf-8",
-    )
-
-    _set_windows_attributes(cache_dir, hidden=True, system=True)
-    _set_windows_attributes(target_icon, hidden=True, system=True)
-    _set_windows_attributes(desktop_ini, hidden=True, system=True)
-    _set_windows_attributes(folder, readonly=True, system=True)
-    _notify_shell_icon_change(folder)
-    return True
-
-
 def clear_output_folder_icon_metadata(output_folder):
     folder = Path(output_folder) if output_folder else None
     if folder is None or not folder.is_dir():
@@ -92,26 +46,7 @@ def clear_output_folder_icon_metadata(output_folder):
             pass
 
     _set_windows_attributes(folder, readonly=False, system=False)
-    _notify_shell_icon_change(folder)
     return removed
-
-
-def _folder_icon_file_name(source_icon, folder):
-    digest = hashlib.sha256()
-    try:
-        digest.update(source_icon.read_bytes())
-    except OSError:
-        digest.update(os.path.normcase(os.path.abspath(os.path.normpath(str(source_icon)))).encode("utf-8"))
-    digest.update(b"\0")
-    digest.update(os.path.normcase(os.path.abspath(os.path.normpath(str(source_icon)))).encode("utf-8"))
-    digest.update(b"\0")
-    digest.update(os.path.normcase(os.path.abspath(os.path.normpath(str(folder)))).encode("utf-8"))
-    return f"{FOLDER_ICON_PREFIX}{digest.hexdigest()[:16]}{FOLDER_ICON_SUFFIX}"
-
-
-def _desktop_ini_icon_resource(target_icon, folder):
-    relative_path = os.path.relpath(target_icon, folder)
-    return relative_path.replace(os.sep, "\\")
 
 
 def _generated_cached_icon_path_from_desktop_ini(folder):
@@ -217,19 +152,5 @@ def _set_windows_attributes(path, *, hidden=None, readonly=None, system=None):
                 attrs &= ~flags[name]
 
         return bool(kernel32.SetFileAttributesW(path_text, attrs))
-    except Exception:
-        return False
-
-
-def _notify_shell_icon_change(path):
-    if sys.platform != "win32":
-        return False
-
-    try:
-        import ctypes
-
-        ctypes.windll.shell32.SHChangeNotify(0x08000000, 0x0000, None, None)
-        ctypes.windll.shell32.SHChangeNotify(0x00002000, 0x0005, str(path), None)
-        return True
     except Exception:
         return False

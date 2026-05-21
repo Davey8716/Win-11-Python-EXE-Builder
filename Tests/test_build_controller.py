@@ -623,15 +623,29 @@ def finish_current_build_successfully(controller, app):
     return target_dir
 
 
-def assert_folder_uses_generated_icon(target_dir, expected_icon_bytes):
-    desktop_ini = target_dir / "desktop.ini"
-    assert desktop_ini.exists()
-    desktop_ini_text = desktop_ini.read_text(encoding="utf-8")
-    assert build_icon_contract.DESKTOP_INI_MARKER in desktop_ini_text
-    assert "IconResource=..\\.exe_builder_folder_icons\\.exe_builder_folder_icon_" in desktop_ini_text
+def create_legacy_folder_icon_metadata(target_dir, icon_bytes=b"folder-icon"):
+    cache_dir = target_dir.parent / build_icon_contract.FOLDER_ICON_CACHE_DIR_NAME
+    cache_dir.mkdir(exist_ok=True)
+    cache_icon = cache_dir / f"{build_icon_contract.FOLDER_ICON_PREFIX}legacy.ico"
+    cache_icon.write_bytes(icon_bytes)
+    (target_dir / "desktop.ini").write_text(
+        "\n".join(
+            [
+                "[.ShellClassInfo]",
+                f"; {build_icon_contract.DESKTOP_INI_MARKER}",
+                f"IconResource=..\\{cache_dir.name}\\{cache_icon.name},0",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    return cache_icon
+
+
+def assert_folder_has_no_generated_icon_metadata(target_dir):
+    assert not (target_dir / "desktop.ini").exists()
     assert not list(target_dir.glob(".exe_builder_folder_icon_*.ico"))
-    cache_icons = list((target_dir.parent / ".exe_builder_folder_icons").glob(".exe_builder_folder_icon_*.ico"))
-    assert any(path.read_bytes() == expected_icon_bytes for path in cache_icons)
+    assert not (target_dir.parent / ".exe_builder_folder_icons").exists()
 
 
 def test_build_icon_contract_emits_explicit_none_without_tray_args():
@@ -653,19 +667,13 @@ def test_build_icon_contract_reuses_same_icon_for_exe_and_tray(tmp_path):
     assert f"{normalized_icon}{os.pathsep}_exe_builder_tray_icon.ico" in contract.pyinstaller_args
 
 
-def test_folder_icon_metadata_generation_and_cleanup(tmp_path):
+def test_clear_legacy_folder_icon_metadata_removes_generated_files(tmp_path):
     output_folder = tmp_path / "Builder"
     output_folder.mkdir()
-    icon = tmp_path / "app.ico"
-    icon.write_bytes(b"folder-icon")
+    create_legacy_folder_icon_metadata(output_folder)
 
-    assert build_icon_contract.apply_output_folder_icon_metadata(str(icon), output_folder) is True
-    assert_folder_uses_generated_icon(output_folder, b"folder-icon")
-
-    assert build_icon_contract.apply_output_folder_icon_metadata("", output_folder) is True
-    assert not (output_folder / "desktop.ini").exists()
-    assert not list(output_folder.glob(".exe_builder_folder_icon_*.ico"))
-    assert not (output_folder.parent / ".exe_builder_folder_icons").exists()
+    assert build_icon_contract.clear_output_folder_icon_metadata(output_folder) is True
+    assert_folder_has_no_generated_icon_metadata(output_folder)
 
 
 def test_shutdown_stops_running_build_thread_and_clears_state():
@@ -802,12 +810,7 @@ def test_rebuilding_same_output_uses_new_icon_and_clears_exact_artifacts(tmp_pat
     target_dir.mkdir()
     controller._on_build_complete_ui(0, "", "")
 
-    desktop_ini = target_dir / "desktop.ini"
-    assert desktop_ini.exists()
-    assert "IconResource=..\\.exe_builder_folder_icons\\.exe_builder_folder_icon_" in desktop_ini.read_text(encoding="utf-8")
-    assert not list(target_dir.glob(".exe_builder_folder_icon_*.ico"))
-    cache_icons = list((target_dir.parent / ".exe_builder_folder_icons").glob(".exe_builder_folder_icon_*.ico"))
-    assert any(path.read_bytes() == b"icon-b" for path in cache_icons)
+    assert_folder_has_no_generated_icon_metadata(target_dir)
 
 
 def test_rebuilding_same_output_with_no_icon_passes_explicit_none(tmp_path, monkeypatch):
@@ -823,15 +826,12 @@ def test_rebuilding_same_output_with_no_icon_passes_explicit_none(tmp_path, monk
     target_dir = Path(app.output_path_input.text()) / "Builder"
     target_dir.mkdir()
     controller._on_build_complete_ui(0, "", "")
-    assert (target_dir / "desktop.ini").exists()
-    assert not list(target_dir.glob(".exe_builder_folder_icon_*.ico"))
-    assert list((target_dir.parent / ".exe_builder_folder_icons").glob(".exe_builder_folder_icon_*.ico"))
+    assert_folder_has_no_generated_icon_metadata(target_dir)
 
     app.icon_path = ""
+    create_legacy_folder_icon_metadata(target_dir)
     controller.build_exe(None)
     target_dir.mkdir()
-    build_icon_contract.apply_output_folder_icon_metadata(str(icon), target_dir)
-    assert (target_dir / "desktop.ini").exists()
     controller._on_build_complete_ui(0, "", "")
 
     first_cmd, second_cmd = app.captured_cmds
@@ -840,9 +840,7 @@ def test_rebuilding_same_output_with_no_icon_passes_explicit_none(tmp_path, monk
     assert build_icon_arg(second_cmd) == "NONE"
     assert "--icon" not in second_cmd
     assert "_exe_builder_tray_icon.ico" not in " ".join(second_cmd)
-    assert not (target_dir / "desktop.ini").exists()
-    assert not list(target_dir.glob(".exe_builder_folder_icon_*.ico"))
-    assert not (target_dir.parent / ".exe_builder_folder_icons").exists()
+    assert_folder_has_no_generated_icon_metadata(target_dir)
 
 
 def test_mass_datetime_build_uses_explicit_no_icon_for_every_output(tmp_path, monkeypatch):
@@ -886,7 +884,7 @@ def test_mass_datetime_build_applies_selected_icon_to_every_output(tmp_path, mon
     assert all(build_icon_arg(cmd) == normalized_icon for cmd in app.captured_cmds)
     assert all(f"{normalized_icon}{os.pathsep}_exe_builder_tray_icon.ico" in cmd for cmd in app.captured_cmds)
     for target_dir in built_dirs:
-        assert_folder_uses_generated_icon(target_dir, b"batch-icon")
+        assert_folder_has_no_generated_icon_metadata(target_dir)
 
 
 def test_regional_mass_datetime_builds_apply_selected_icon_to_every_output(tmp_path, monkeypatch):
@@ -917,7 +915,7 @@ def test_regional_mass_datetime_builds_apply_selected_icon_to_every_output(tmp_p
         assert all(build_icon_arg(cmd) == normalized_icon for cmd in app.captured_cmds)
         assert all(f"{normalized_icon}{os.pathsep}_exe_builder_tray_icon.ico" in cmd for cmd in app.captured_cmds)
         for target_dir in built_dirs:
-            assert_folder_uses_generated_icon(target_dir, dropdown_factory.__name__.encode("utf-8"))
+            assert_folder_has_no_generated_icon_metadata(target_dir)
 
 
 def test_mass_datetime_build_waits_for_success_before_next_output(tmp_path, monkeypatch):

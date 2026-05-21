@@ -18,7 +18,6 @@ from PySide6.QtCore import QThread
 from pathlib import Path
 import shutil
 from build_icon_contract import (
-    apply_output_folder_icon_metadata,
     clear_output_folder_icon_metadata,
     resolve_build_icon_contract,
 )
@@ -76,8 +75,6 @@ class BuildController(QObject):
         self._mass_datetime_debug_log_prefix = "EXE_BUILDER_BUILD_ALL_DEBUG"
         self._mass_datetime_log_title = "DATE/TIME"
         self._mass_datetime_output_group = []
-        self._last_build_target_dir = ""
-        self._last_build_icon_path = ""
         self.build_thread = None
         self.worker = None
 
@@ -972,19 +969,6 @@ class BuildController(QObject):
 
         self._maybe_open_output_directory_on_success()
 
-    def _apply_last_output_folder_icon_metadata(self):
-        target_dir = os.path.normpath(getattr(self, "_last_build_target_dir", "") or "")
-        if not target_dir or not os.path.isdir(target_dir):
-            return
-
-        try:
-            apply_output_folder_icon_metadata(
-                getattr(self, "_last_build_icon_path", ""),
-                target_dir,
-            )
-        except Exception:
-            pass
-
     def _run_success_post_build_action(self):
         app = self.app
         if getattr(app, "minimize_after_build_enabled", False):
@@ -1352,9 +1336,6 @@ class BuildController(QObject):
 
         cmd.append(entry_point)
 
-        self._last_build_target_dir = target_dir
-        self._last_build_icon_path = icon_contract.icon_path
-
         app.current_build_paths = [
             target_dir,
             os.path.join(outdir, "build"),
@@ -1401,7 +1382,6 @@ class BuildController(QObject):
 
         if ret == 0:
             app.last_build_seconds = int(time.time() - app.build_start_time)
-            self._apply_last_output_folder_icon_metadata()
             if mass_active:
                 self._remember_mass_datetime_output_group()
 
