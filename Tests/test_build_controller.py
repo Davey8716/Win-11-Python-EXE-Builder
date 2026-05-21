@@ -1128,6 +1128,13 @@ def test_build_exe_adds_project_root_to_paths_and_data(tmp_path, monkeypatch):
     assert f"--paths={project_root}" in app.captured_cmd
     assert f"--add-data={project_root}{os.pathsep}." in app.captured_cmd
     assert app.captured_cmd.index(f"--paths={project_root}") < app.captured_cmd.index(str(script))
+    assert f"--workpath={output_dir / 'build' / 'Builder_project'}" in app.captured_cmd
+    assert f"--specpath={output_dir / 'spec' / 'Builder_project'}" in app.captured_cmd
+    assert app.current_build_paths == [
+        os.path.join(str(output_dir), "Builder_project"),
+        os.path.join(str(output_dir), "build"),
+        os.path.join(str(output_dir), "spec"),
+    ]
 
 
 def test_build_exe_adds_parent_search_path_for_sibling_packages(tmp_path, monkeypatch):
@@ -1287,10 +1294,12 @@ def test_build_complete_opens_output_directory_when_focus_helper_fails(tmp_path,
     assert opened_paths == [os.path.normpath(str(output_dir))]
 
 
-def test_build_complete_skips_opening_output_directory_for_desktop(monkeypatch):
-    desktop_path = os.path.normpath(os.path.join(os.path.expanduser("~"), "Desktop"))
+def test_build_complete_centers_desktop_outputs_without_opening_explorer(tmp_path, monkeypatch):
+    desktop_path = os.path.normpath(str(tmp_path / "Desktop"))
+    os.makedirs(desktop_path)
     opened_paths = []
     focused_paths = []
+    centered = []
 
     monkeypatch.setattr(build_controller.os, "startfile", lambda path: opened_paths.append(path), raising=False)
 
@@ -1308,6 +1317,8 @@ def test_build_complete_skips_opening_output_directory_for_desktop(monkeypatch):
         build_process=None,
     )
     controller = BuildController(app)
+    monkeypatch.setattr(controller, "_get_desktop_path", lambda: desktop_path)
+    monkeypatch.setattr(controller, "_center_desktop_build_outputs", lambda: centered.append(True))
     monkeypatch.setattr(
         controller,
         "_focus_existing_output_explorer_window",
@@ -1321,6 +1332,150 @@ def test_build_complete_skips_opening_output_directory_for_desktop(monkeypatch):
 
     assert opened_paths == []
     assert focused_paths == []
+    assert centered == [True]
+
+
+def test_desktop_centering_groups_existing_build_outputs_and_debug_log(tmp_path, monkeypatch):
+    desktop_path = tmp_path / "Desktop"
+    desktop_path.mkdir()
+    final_output = desktop_path / "Builder"
+    build_output = desktop_path / "build"
+    spec_output = desktop_path / "spec"
+    missing_output = desktop_path / "missing"
+    debug_log = desktop_path / "EXE_BUILDER_DEBUG_Builder.log"
+    for path in [final_output, build_output, spec_output]:
+        path.mkdir()
+    debug_log.write_text("BUILD STARTED\n", encoding="utf-8")
+    moved_paths = []
+
+    app = make_app(
+        current_build_paths=[
+            str(final_output),
+            str(build_output),
+            str(spec_output),
+            str(missing_output),
+        ],
+        debug_log_path=str(debug_log),
+    )
+    controller = BuildController(app)
+    monkeypatch.setattr(controller, "_move_desktop_icons_to_center", lambda paths: moved_paths.extend(paths) or True)
+
+    assert controller._center_desktop_build_outputs() is True
+    assert moved_paths == [
+        os.path.normpath(str(final_output)),
+        os.path.normpath(str(build_output)),
+        os.path.normpath(str(spec_output)),
+        os.path.normpath(str(debug_log)),
+    ]
+
+
+def test_build_complete_restores_ui_before_desktop_centering_and_minimize(tmp_path, monkeypatch):
+    desktop_path = os.path.normpath(str(tmp_path / "Desktop"))
+    os.makedirs(desktop_path)
+    events = []
+
+    app = make_app(
+        build_start_time=0,
+        last_build_seconds=45,
+        status_label=DummyLabel(),
+        output_path=desktop_path,
+        open_output_dir_after_build_enabled=False,
+        minimize_after_build_enabled=True,
+        close_after_build_enabled=False,
+        state_ctrl=SimpleNamespace(save_state=lambda: events.append(("save", app.building))),
+        set_status=lambda _message: events.append(("status", app.building)),
+        build_process=object(),
+        building=True,
+        showMinimized=lambda: events.append(("minimize", app.building)),
+    )
+    app.validation_controller = SimpleNamespace(
+        update_build_button=lambda: events.append(("button", app.building)),
+        update_ui_state=lambda: events.append(("ui", app.building)),
+    )
+    controller = BuildController(app)
+    monkeypatch.setattr(controller, "_get_desktop_path", lambda: desktop_path)
+    monkeypatch.setattr(controller, "_center_desktop_build_outputs", lambda: events.append(("center", app.building)))
+    monkeypatch.setattr(build_controller.time, "time", lambda: 5)
+    monkeypatch.setattr(controller, "stop_eta", lambda: events.append(("eta", app.building)))
+    monkeypatch.setattr(build_controller.QTimer, "singleShot", lambda *_args, **_kwargs: None)
+
+    controller._on_build_complete_ui(0, "", "")
+
+    assert events == [
+        ("eta", True),
+        ("status", False),
+        ("button", False),
+        ("ui", False),
+        ("center", False),
+        ("save", False),
+        ("minimize", False),
+    ]
+
+
+def test_build_complete_closes_after_desktop_centering(tmp_path, monkeypatch):
+    desktop_path = os.path.normpath(str(tmp_path / "Desktop"))
+    os.makedirs(desktop_path)
+    events = []
+
+    app = make_app(
+        build_start_time=0,
+        last_build_seconds=45,
+        status_label=DummyLabel(),
+        output_path=desktop_path,
+        open_output_dir_after_build_enabled=False,
+        minimize_after_build_enabled=False,
+        close_after_build_enabled=True,
+        close_app=lambda: events.append("close"),
+        state_ctrl=SimpleNamespace(save_state=lambda: events.append("save")),
+        validation_controller=DummyValidationController(),
+        set_status=lambda _message: None,
+        build_process=None,
+    )
+    controller = BuildController(app)
+    monkeypatch.setattr(controller, "_get_desktop_path", lambda: desktop_path)
+    monkeypatch.setattr(controller, "_center_desktop_build_outputs", lambda: events.append("center"))
+    monkeypatch.setattr(build_controller.time, "time", lambda: 5)
+    monkeypatch.setattr(controller, "stop_eta", lambda: None)
+    monkeypatch.setattr(build_controller.QTimer, "singleShot", lambda *_args, **_kwargs: None)
+
+    controller._on_build_complete_ui(0, "", "")
+
+    assert events == ["center", "save", "close"]
+
+
+def test_desktop_centering_failure_does_not_block_save_or_close(tmp_path, monkeypatch):
+    desktop_path = os.path.normpath(str(tmp_path / "Desktop"))
+    os.makedirs(desktop_path)
+    events = []
+
+    def raise_center_error():
+        events.append("center")
+        raise RuntimeError("desktop unavailable")
+
+    app = make_app(
+        build_start_time=0,
+        last_build_seconds=45,
+        status_label=DummyLabel(),
+        output_path=desktop_path,
+        open_output_dir_after_build_enabled=False,
+        minimize_after_build_enabled=False,
+        close_after_build_enabled=True,
+        close_app=lambda: events.append("close"),
+        state_ctrl=SimpleNamespace(save_state=lambda: events.append("save")),
+        validation_controller=DummyValidationController(),
+        set_status=lambda _message: None,
+        build_process=None,
+    )
+    controller = BuildController(app)
+    monkeypatch.setattr(controller, "_get_desktop_path", lambda: desktop_path)
+    monkeypatch.setattr(controller, "_center_desktop_build_outputs", raise_center_error)
+    monkeypatch.setattr(build_controller.time, "time", lambda: 5)
+    monkeypatch.setattr(controller, "stop_eta", lambda: None)
+    monkeypatch.setattr(build_controller.QTimer, "singleShot", lambda *_args, **_kwargs: None)
+
+    controller._on_build_complete_ui(0, "", "")
+
+    assert events == ["center", "save", "close"]
 
 
 def test_build_complete_opens_output_directory_before_closing(tmp_path, monkeypatch):

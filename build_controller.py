@@ -365,6 +365,12 @@ class BuildController(QObject):
     def _get_desktop_path(self):
         return os.path.normpath(os.path.join(os.path.expanduser("~"), "Desktop"))
 
+    def _is_desktop_output_path(self, output_dir):
+        return (
+            self._normalize_explorer_path_for_compare(output_dir)
+            == self._normalize_explorer_path_for_compare(self._get_desktop_path())
+        )
+
     def _normalize_explorer_path_for_compare(self, path):
         if not path:
             return ""
@@ -485,6 +491,388 @@ class BuildController(QObject):
 
         return False
 
+    def _desktop_build_group_paths(self):
+        app = self.app
+        paths = list(getattr(app, "current_build_paths", []) or [])
+        debug_log_path = getattr(app, "debug_log_path", "")
+        if debug_log_path:
+            paths.append(debug_log_path)
+
+        existing_paths = []
+        seen = set()
+        for path in paths:
+            normalized = os.path.normpath(path) if path else ""
+            if not normalized or not os.path.exists(normalized):
+                continue
+
+            key = self._normalize_explorer_path_for_compare(normalized)
+            if key in seen:
+                continue
+
+            existing_paths.append(normalized)
+            seen.add(key)
+
+        return existing_paths
+
+    def _find_desktop_list_view(self):
+        if sys.platform != "win32":
+            return None
+
+        try:
+            import win32gui
+        except Exception:
+            return None
+
+        def list_view_from_def_view(def_view):
+            if not def_view:
+                return None
+            try:
+                return win32gui.FindWindowEx(def_view, 0, "SysListView32", None)
+            except Exception:
+                return None
+
+        try:
+            progman = win32gui.FindWindow("Progman", None)
+            list_view = list_view_from_def_view(
+                win32gui.FindWindowEx(progman, 0, "SHELLDLL_DefView", None)
+            )
+            if list_view:
+                return list_view
+        except Exception:
+            pass
+
+        found = []
+
+        def enum_windows(hwnd, _lparam):
+            if found:
+                return False
+            try:
+                def_view = win32gui.FindWindowEx(hwnd, 0, "SHELLDLL_DefView", None)
+            except Exception:
+                def_view = None
+
+            list_view = list_view_from_def_view(def_view)
+            if list_view:
+                found.append(list_view)
+                return False
+            return True
+
+        try:
+            win32gui.EnumWindows(enum_windows, None)
+        except Exception:
+            return None
+
+        return found[0] if found else None
+
+    def _desktop_icon_count(self, list_view):
+        try:
+            import win32gui
+
+            return int(win32gui.SendMessage(list_view, 0x1004, 0, 0))
+        except Exception:
+            return 0
+
+    def _desktop_icon_text(self, list_view, index):
+        try:
+            import ctypes
+        except Exception:
+            return ""
+
+        try:
+            import win32process
+
+            _thread_id, process_id = win32process.GetWindowThreadProcessId(list_view)
+        except Exception:
+            return ""
+
+        if not process_id:
+            return ""
+
+        kernel32 = ctypes.windll.kernel32
+        user32 = ctypes.windll.user32
+        kernel32.OpenProcess.argtypes = [
+            ctypes.c_uint,
+            ctypes.c_bool,
+            ctypes.c_uint,
+        ]
+        kernel32.OpenProcess.restype = ctypes.c_void_p
+        kernel32.VirtualAllocEx.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_size_t,
+            ctypes.c_uint,
+            ctypes.c_uint,
+        ]
+        kernel32.VirtualAllocEx.restype = ctypes.c_void_p
+        kernel32.WriteProcessMemory.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_size_t,
+            ctypes.POINTER(ctypes.c_size_t),
+        ]
+        kernel32.WriteProcessMemory.restype = ctypes.c_bool
+        kernel32.ReadProcessMemory.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_size_t,
+            ctypes.POINTER(ctypes.c_size_t),
+        ]
+        kernel32.ReadProcessMemory.restype = ctypes.c_bool
+        kernel32.VirtualFreeEx.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_size_t,
+            ctypes.c_uint,
+        ]
+        kernel32.VirtualFreeEx.restype = ctypes.c_bool
+        kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+        kernel32.CloseHandle.restype = ctypes.c_bool
+        user32.SendMessageW.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_uint,
+            ctypes.c_size_t,
+            ctypes.c_void_p,
+        ]
+        user32.SendMessageW.restype = ctypes.c_ssize_t
+
+        PROCESS_VM_OPERATION = 0x0008
+        PROCESS_VM_READ = 0x0010
+        PROCESS_VM_WRITE = 0x0020
+        PROCESS_QUERY_INFORMATION = 0x0400
+        MEM_COMMIT = 0x1000
+        MEM_RELEASE = 0x8000
+        MEM_RESERVE = 0x2000
+        PAGE_READWRITE = 0x04
+        LVIF_TEXT = 0x0001
+        LVM_GETITEMTEXTW = 0x1073
+        text_chars = 260
+        text_bytes = text_chars * ctypes.sizeof(ctypes.c_wchar)
+
+        class LVITEMW(ctypes.Structure):
+            _fields_ = [
+                ("mask", ctypes.c_uint),
+                ("iItem", ctypes.c_int),
+                ("iSubItem", ctypes.c_int),
+                ("state", ctypes.c_uint),
+                ("stateMask", ctypes.c_uint),
+                ("pszText", ctypes.c_void_p),
+                ("cchTextMax", ctypes.c_int),
+                ("iImage", ctypes.c_int),
+                ("lParam", ctypes.c_ssize_t),
+                ("iIndent", ctypes.c_int),
+                ("iGroupId", ctypes.c_int),
+                ("cColumns", ctypes.c_uint),
+                ("puColumns", ctypes.c_void_p),
+                ("piColFmt", ctypes.c_void_p),
+                ("iGroup", ctypes.c_int),
+            ]
+
+        process = None
+        remote_text = None
+        remote_item = None
+        try:
+            access = (
+                PROCESS_VM_OPERATION
+                | PROCESS_VM_READ
+                | PROCESS_VM_WRITE
+                | PROCESS_QUERY_INFORMATION
+            )
+            process = kernel32.OpenProcess(access, False, process_id)
+            if not process:
+                return ""
+
+            remote_text = kernel32.VirtualAllocEx(
+                process,
+                None,
+                text_bytes,
+                MEM_COMMIT | MEM_RESERVE,
+                PAGE_READWRITE,
+            )
+            remote_item = kernel32.VirtualAllocEx(
+                process,
+                None,
+                ctypes.sizeof(LVITEMW),
+                MEM_COMMIT | MEM_RESERVE,
+                PAGE_READWRITE,
+            )
+            if not remote_text or not remote_item:
+                return ""
+
+            item = LVITEMW()
+            item.mask = LVIF_TEXT
+            item.iItem = index
+            item.iSubItem = 0
+            item.pszText = remote_text
+            item.cchTextMax = text_chars
+
+            written = ctypes.c_size_t()
+            if not kernel32.WriteProcessMemory(
+                process,
+                remote_item,
+                ctypes.byref(item),
+                ctypes.sizeof(item),
+                ctypes.byref(written),
+            ):
+                return ""
+
+            user32.SendMessageW(list_view, LVM_GETITEMTEXTW, index, remote_item)
+
+            buffer = ctypes.create_string_buffer(text_bytes)
+            read = ctypes.c_size_t()
+            if not kernel32.ReadProcessMemory(
+                process,
+                remote_text,
+                buffer,
+                text_bytes,
+                ctypes.byref(read),
+            ):
+                return ""
+
+            return buffer.raw.decode("utf-16-le", errors="ignore").split("\x00", 1)[0]
+        except Exception:
+            return ""
+        finally:
+            try:
+                if remote_text:
+                    kernel32.VirtualFreeEx(process, remote_text, 0, MEM_RELEASE)
+                if remote_item:
+                    kernel32.VirtualFreeEx(process, remote_item, 0, MEM_RELEASE)
+                if process:
+                    kernel32.CloseHandle(process)
+            except Exception:
+                pass
+
+    def _desktop_icon_indices_by_name(self, list_view):
+        indices = {}
+        for index in range(self._desktop_icon_count(list_view)):
+            name = self._desktop_icon_text(list_view, index)
+            if not name:
+                continue
+            indices.setdefault(name.casefold(), index)
+        return indices
+
+    def _primary_available_desktop_rect(self):
+        try:
+            from PySide6.QtGui import QGuiApplication
+
+            screen = QGuiApplication.primaryScreen()
+            if screen:
+                geometry = screen.availableGeometry()
+                return geometry.x(), geometry.y(), geometry.width(), geometry.height()
+        except Exception:
+            pass
+
+        if sys.platform == "win32":
+            try:
+                import ctypes
+
+                user32 = ctypes.windll.user32
+                return 0, 0, user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
+            except Exception:
+                pass
+
+        return 0, 0, 1280, 720
+
+    def _centered_desktop_icon_positions(self, count):
+        if count <= 0:
+            return []
+
+        x, y, width, height = self._primary_available_desktop_rect()
+        columns = 1 if count == 1 else 2 if count <= 4 else 3
+        rows = (count + columns - 1) // columns
+        spacing_x = 112
+        spacing_y = 96
+        group_width = (columns - 1) * spacing_x
+        group_height = (rows - 1) * spacing_y
+        start_x = int(x + max(0, width - group_width) / 2)
+        start_y = int(y + max(0, height - group_height) / 2)
+
+        return [
+            (
+                start_x + (index % columns) * spacing_x,
+                start_y + (index // columns) * spacing_y,
+            )
+            for index in range(count)
+        ]
+
+    def _set_desktop_icon_position(self, list_view, index, x, y):
+        try:
+            import win32gui
+
+            lparam = ((int(y) & 0xFFFF) << 16) | (int(x) & 0xFFFF)
+            win32gui.SendMessage(list_view, 0x100F, index, lparam)
+            return True
+        except Exception:
+            return False
+
+    def _move_desktop_icons_to_center(self, paths):
+        list_view = self._find_desktop_list_view()
+        if not list_view:
+            return False
+
+        indices_by_name = self._desktop_icon_indices_by_name(list_view)
+        icon_indices = []
+        for path in paths:
+            name = os.path.basename(os.path.normpath(path))
+            candidate_names = [name]
+            stem, extension = os.path.splitext(name)
+            if extension:
+                candidate_names.append(stem)
+
+            icon_index = None
+            for candidate_name in candidate_names:
+                icon_index = indices_by_name.get(candidate_name.casefold())
+                if icon_index is not None:
+                    break
+
+            if icon_index is not None:
+                icon_indices.append(icon_index)
+
+        if not icon_indices:
+            return False
+
+        moved = False
+        for icon_index, (x, y) in zip(
+            icon_indices,
+            self._centered_desktop_icon_positions(len(icon_indices)),
+        ):
+            moved = self._set_desktop_icon_position(list_view, icon_index, x, y) or moved
+
+        return moved
+
+    def _center_desktop_build_outputs(self):
+        paths = self._desktop_build_group_paths()
+        if not paths:
+            return False
+
+        try:
+            return self._move_desktop_icons_to_center(paths)
+        except Exception:
+            return False
+
+    def _present_successful_build_outputs(self):
+        output_dir = os.path.normpath(getattr(self.app, "output_path", "") or "")
+        if not output_dir or not os.path.isdir(output_dir):
+            return
+
+        if self._is_desktop_output_path(output_dir):
+            try:
+                self._center_desktop_build_outputs()
+            except Exception:
+                pass
+            return
+
+        self._maybe_open_output_directory_on_success()
+
+    def _run_success_post_build_action(self):
+        app = self.app
+        if getattr(app, "minimize_after_build_enabled", False):
+            app.showMinimized()
+        if getattr(app, "close_after_build_enabled", False):
+            app.close_app()
+
     def _maybe_open_output_directory_on_success(self):
         app = self.app
 
@@ -495,7 +883,7 @@ class BuildController(QObject):
         if not output_dir or not os.path.isdir(output_dir):
             return
 
-        if output_dir == self._get_desktop_path():
+        if self._is_desktop_output_path(output_dir):
             return
 
         try:
@@ -825,10 +1213,10 @@ class BuildController(QObject):
             cmd += ["--icon", icon]
 
         app.current_build_paths = [
-            os.path.join(outdir, final_exe_name + ".exe"),
-            os.path.join(outdir, "build", final_exe_name),
-            os.path.join(outdir, "spec", final_exe_name),
-        ]   
+            target_dir,
+            os.path.join(outdir, "build"),
+            os.path.join(outdir, "spec"),
+        ]
 
         # ==================================================
         # Run PyInstaller (threaded)
@@ -883,12 +1271,6 @@ class BuildController(QObject):
                 msg = "Build complete."
 
             app.status_label.setStyleSheet(status_text_style(Colors.SUCCESS, border_width=1))
-            if getattr(app, "minimize_after_build_enabled", False):
-                app.showMinimized()
-            self._maybe_open_output_directory_on_success()
-            if getattr(app, "close_after_build_enabled", False):
-                app.close_app()
-            app.state_ctrl.save_state()
 
         else:
             if mass_active:
@@ -906,6 +1288,12 @@ class BuildController(QObject):
         app._status_lock = True
         app.set_status(msg)
         app.validation_controller.update_build_button()
+        app.validation_controller.update_ui_state()
+
+        if ret == 0:
+            self._present_successful_build_outputs()
+            app.state_ctrl.save_state()
+            self._run_success_post_build_action()
         
             
         QTimer.singleShot(5000, self._unlock_status)
