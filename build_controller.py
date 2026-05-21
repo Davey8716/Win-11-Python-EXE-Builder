@@ -17,8 +17,12 @@ from PySide6.QtCore import QObject, Signal,QTimer
 from PySide6.QtCore import QThread
 from pathlib import Path
 import shutil
+from build_icon_contract import (
+    apply_output_folder_icon_metadata,
+    clear_output_folder_icon_metadata,
+    resolve_build_icon_contract,
+)
 from styles import Colors, status_text_style
-from tray_icon_support import get_tray_icon_pyinstaller_args
 
 CREATE_NO_WINDOW = 0x08000000
 
@@ -37,6 +41,8 @@ class BuildController(QObject):
         self._mass_datetime_debug_log_path = ""
         self._mass_datetime_debug_log_prefix = "EXE_BUILDER_BUILD_ALL_DEBUG"
         self._mass_datetime_log_title = "DATE/TIME"
+        self._last_build_target_dir = ""
+        self._last_build_icon_path = ""
         self.build_thread = None
         self.worker = None
 
@@ -1166,6 +1172,11 @@ class BuildController(QObject):
 
         for stale_path in (target_dir, build_path, spec_path):
             if os.path.isdir(stale_path):
+                if os.path.normcase(os.path.abspath(stale_path)) == os.path.normcase(os.path.abspath(target_dir)):
+                    try:
+                        clear_output_folder_icon_metadata(stale_path)
+                    except Exception:
+                        pass
                 shutil.rmtree(stale_path, ignore_errors=True)
             elif os.path.exists(stale_path):
                 try:
@@ -1205,18 +1216,18 @@ class BuildController(QObject):
         if project_root:
             cmd.append(f"--add-data={project_root}{os.pathsep}.")
 
-        cmd.extend(get_tray_icon_pyinstaller_args(icon))
+        icon_contract = resolve_build_icon_contract(icon)
 
         data_file = os.path.join(project_root, "screen_mover_state.json")
         if os.path.isfile(data_file):
             cmd.append(f"--add-data={data_file}{os.pathsep}.")
 
-        if icon:
-            cmd += ["--icon", icon]
-        else:
-            cmd.append("--icon=NONE")
+        cmd.extend(icon_contract.pyinstaller_args)
 
         cmd.append(entry_point)
+
+        self._last_build_target_dir = target_dir
+        self._last_build_icon_path = icon_contract.icon_path
 
         app.current_build_paths = [
             target_dir,
@@ -1263,6 +1274,7 @@ class BuildController(QObject):
 
         if ret == 0:
             app.last_build_seconds = int(time.time() - app.build_start_time)
+            self._apply_last_build_folder_icon_metadata()
             if mass_active and self._mass_datetime_queue:
                 self.stop_eta()
                 app.building = False
@@ -1303,6 +1315,15 @@ class BuildController(QObject):
         
             
         QTimer.singleShot(5000, self._unlock_status)
+
+    def _apply_last_build_folder_icon_metadata(self):
+        try:
+            apply_output_folder_icon_metadata(
+                getattr(self, "_last_build_icon_path", ""),
+                getattr(self, "_last_build_target_dir", ""),
+            )
+        except Exception:
+            pass
 
     def _unlock_status(self):
         app = self.app

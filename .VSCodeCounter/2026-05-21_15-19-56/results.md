@@ -1,29 +1,29 @@
 # Summary
 
-Date : 2026-05-18 19:15:49
+Date : 2026-05-21 15:19:56
 
 Directory c:\\Users\\davey\\Desktop\\Projects\\Win-11-Python-EXE-Builder
 
-Total : 41 files,  5531 codes, 645 comments, 1771 blanks, all 7947 lines
+Total : 53 files,  9839 codes, 689 comments, 2687 blanks, all 13215 lines
 
 Summary / [Details](details.md) / [Diff Summary](diff.md) / [Diff Details](diff-details.md)
 
 ## Languages
 | language | files | code | comment | blank | total |
 | :--- | ---: | ---: | ---: | ---: | ---: |
-| Python | 30 | 5,366 | 645 | 1,627 | 7,638 |
-| Markdown | 3 | 136 | 0 | 135 | 271 |
-| XML | 6 | 24 | 0 | 6 | 30 |
+| Python | 37 | 9,267 | 684 | 2,514 | 12,465 |
+| XML | 11 | 387 | 5 | 16 | 408 |
+| Markdown | 3 | 180 | 0 | 154 | 334 |
 | Ini | 1 | 4 | 0 | 1 | 5 |
 | YAML | 1 | 1 | 0 | 2 | 3 |
 
 ## Directories
 | path | files | code | comment | blank | total |
 | :--- | ---: | ---: | ---: | ---: | ---: |
-| . | 41 | 5,531 | 645 | 1,771 | 7,947 |
-| . (Files) | 22 | 4,583 | 645 | 1,396 | 6,624 |
+| . | 53 | 9,839 | 689 | 2,687 | 13,215 |
+| . (Files) | 24 | 6,357 | 684 | 1,707 | 8,748 |
 | .github | 1 | 1 | 0 | 2 | 3 |
-| Icons | 8 | 74 | 0 | 81 | 155 |
-| Tests | 10 | 873 | 0 | 292 | 1,165 |
+| Icons | 13 | 437 | 5 | 91 | 533 |
+| Tests | 15 | 3,044 | 0 | 887 | 3,931 |
 
 Summary / [Details](details.md) / [Diff Summary](diff.md) / [Diff Details](diff-details.md)

@@ -1,26 +1,23 @@
 # Diff Summary
 
-Date : 2026-05-18 19:15:49
+Date : 2026-05-21 15:19:56
 
 Directory c:\\Users\\davey\\Desktop\\Projects\\Win-11-Python-EXE-Builder
 
-Total : 22 files,  990 codes, -42 comments, 170 blanks, all 1118 lines
+Total : 15 files,  2176 codes, -4 comments, 481 blanks, all 2653 lines
 
 [Summary](results.md) / [Details](details.md) / Diff Summary / [Diff Details](diff-details.md)
 
 ## Languages
 | language | files | code | comment | blank | total |
 | :--- | ---: | ---: | ---: | ---: | ---: |
-| Python | 17 | 993 | -42 | 178 | 1,129 |
-| XML | 4 | 18 | 0 | 4 | 22 |
-| Markdown | 1 | -21 | 0 | -12 | -33 |
+| Python | 15 | 2,176 | -4 | 481 | 2,653 |
 
 ## Directories
 | path | files | code | comment | blank | total |
 | :--- | ---: | ---: | ---: | ---: | ---: |
-| . | 22 | 990 | -42 | 170 | 1,118 |
-| . (Files) | 14 | 563 | -42 | 47 | 568 |
-| Icons | 4 | 18 | 0 | 4 | 22 |
-| Tests | 4 | 409 | 0 | 119 | 528 |
+| . | 15 | 2,176 | -4 | 481 | 2,653 |
+| . (Files) | 9 | 781 | -4 | 130 | 907 |
+| Tests | 6 | 1,395 | 0 | 351 | 1,746 |
 
 [Summary](results.md) / [Details](details.md) / Diff Summary / [Diff Details](diff-details.md)

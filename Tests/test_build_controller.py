@@ -5,6 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import build_controller
+import build_icon_contract
 from build_controller import BuildController
 from datetime_build_options import (
     ISO_MASS_DATETIME_BUILD_SENTINEL,
@@ -554,6 +555,62 @@ def build_icon_arg(cmd):
     return None
 
 
+def latest_build_target(app):
+    return Path(app.output_path_input.text()) / build_names(app)[-1]
+
+
+def finish_current_build_successfully(controller, app):
+    target_dir = latest_build_target(app)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    controller._on_build_complete_ui(0, "", "")
+    return target_dir
+
+
+def assert_folder_uses_generated_icon(target_dir, expected_icon_bytes):
+    desktop_ini = target_dir / "desktop.ini"
+    assert desktop_ini.exists()
+    desktop_ini_text = desktop_ini.read_text(encoding="utf-8")
+    assert build_icon_contract.DESKTOP_INI_MARKER in desktop_ini_text
+    assert "IconResource=..\\.exe_builder_folder_icons\\.exe_builder_folder_icon_" in desktop_ini_text
+    assert not list(target_dir.glob(".exe_builder_folder_icon_*.ico"))
+    cache_icons = list((target_dir.parent / ".exe_builder_folder_icons").glob(".exe_builder_folder_icon_*.ico"))
+    assert any(path.read_bytes() == expected_icon_bytes for path in cache_icons)
+
+
+def test_build_icon_contract_emits_explicit_none_without_tray_args():
+    contract = build_icon_contract.resolve_build_icon_contract("")
+
+    assert contract.icon_path == ""
+    assert contract.pyinstaller_args == ["--icon=NONE"]
+
+
+def test_build_icon_contract_reuses_same_icon_for_exe_and_tray(tmp_path):
+    icon = tmp_path / "app.ico"
+    icon.write_bytes(b"icon")
+
+    contract = build_icon_contract.resolve_build_icon_contract(str(icon))
+    normalized_icon = os.path.normpath(str(icon))
+
+    assert contract.icon_path == normalized_icon
+    assert build_icon_arg(contract.pyinstaller_args) == normalized_icon
+    assert f"{normalized_icon}{os.pathsep}_exe_builder_tray_icon.ico" in contract.pyinstaller_args
+
+
+def test_folder_icon_metadata_generation_and_cleanup(tmp_path):
+    output_folder = tmp_path / "Builder"
+    output_folder.mkdir()
+    icon = tmp_path / "app.ico"
+    icon.write_bytes(b"folder-icon")
+
+    assert build_icon_contract.apply_output_folder_icon_metadata(str(icon), output_folder) is True
+    assert_folder_uses_generated_icon(output_folder, b"folder-icon")
+
+    assert build_icon_contract.apply_output_folder_icon_metadata("", output_folder) is True
+    assert not (output_folder / "desktop.ini").exists()
+    assert not list(output_folder.glob(".exe_builder_folder_icon_*.ico"))
+    assert not (output_folder.parent / ".exe_builder_folder_icons").exists()
+
+
 def test_shutdown_stops_running_build_thread_and_clears_state():
     app = make_app(
         _eta_running=True,
@@ -607,7 +664,6 @@ def patch_build_runtime(monkeypatch):
     monkeypatch.setattr(build_controller, "validate_bundle_inputs", lambda app: (True, ""))
     monkeypatch.setattr(build_controller, "QThread", DummyThread)
     monkeypatch.setattr(build_controller, "BuildWorker", CapturingWorker)
-    monkeypatch.setattr(build_controller, "get_tray_icon_pyinstaller_args", lambda _icon: [])
     monkeypatch.setattr(BuildController, "start_eta", lambda self: None)
     monkeypatch.setattr(BuildController, "stop_eta", lambda self: None)
     monkeypatch.setattr(build_controller, "datetime", FixedDateTime)
@@ -650,23 +706,11 @@ def test_mass_datetime_build_runs_all_outputs_in_sequence(tmp_path, monkeypatch)
 
 def test_rebuilding_same_output_uses_new_icon_and_clears_exact_artifacts(tmp_path, monkeypatch):
     patch_build_runtime(monkeypatch)
-    tray_icons = []
-
-    def fake_tray_args(icon):
-        tray_icons.append(icon)
-        return [
-            "--runtime-hook",
-            "hook.py",
-            "--add-data",
-            f"{icon}{os.pathsep}_exe_builder_tray_icon.ico",
-        ] if icon else []
-
-    monkeypatch.setattr(build_controller, "get_tray_icon_pyinstaller_args", fake_tray_args)
 
     icon_a = tmp_path / "a.ico"
     icon_b = tmp_path / "b.ico"
-    icon_a.write_text("", encoding="utf-8")
-    icon_b.write_text("", encoding="utf-8")
+    icon_a.write_bytes(b"icon-a")
+    icon_b.write_bytes(b"icon-b")
 
     app = make_buildable_app(tmp_path, icon_path=str(icon_a))
     controller = BuildController(app)
@@ -693,34 +737,45 @@ def test_rebuilding_same_output_uses_new_icon_and_clears_exact_artifacts(tmp_pat
     assert build_icon_arg(first_cmd) == icon_a_path
     assert build_icon_arg(second_cmd) == icon_b_path
     assert icon_a_path not in second_cmd
-    assert tray_icons == [icon_a_path, icon_b_path]
+    assert f"{icon_a_path}{os.pathsep}_exe_builder_tray_icon.ico" not in " ".join(second_cmd)
+    assert f"{icon_b_path}{os.pathsep}_exe_builder_tray_icon.ico" in second_cmd
     assert all(not (stale_path / "stale.txt").exists() for stale_path in stale_paths)
+
+    target_dir = output_dir / "Builder"
+    target_dir.mkdir()
+    controller._on_build_complete_ui(0, "", "")
+
+    desktop_ini = target_dir / "desktop.ini"
+    assert desktop_ini.exists()
+    assert "IconResource=..\\.exe_builder_folder_icons\\.exe_builder_folder_icon_" in desktop_ini.read_text(encoding="utf-8")
+    assert not list(target_dir.glob(".exe_builder_folder_icon_*.ico"))
+    cache_icons = list((target_dir.parent / ".exe_builder_folder_icons").glob(".exe_builder_folder_icon_*.ico"))
+    assert any(path.read_bytes() == b"icon-b" for path in cache_icons)
 
 
 def test_rebuilding_same_output_with_no_icon_passes_explicit_none(tmp_path, monkeypatch):
     patch_build_runtime(monkeypatch)
-    tray_icons = []
-
-    def fake_tray_args(icon):
-        tray_icons.append(icon)
-        return [
-            "--runtime-hook",
-            "hook.py",
-            "--add-data",
-            f"{icon}{os.pathsep}_exe_builder_tray_icon.ico",
-        ] if icon else []
-
-    monkeypatch.setattr(build_controller, "get_tray_icon_pyinstaller_args", fake_tray_args)
 
     icon = tmp_path / "app.ico"
-    icon.write_text("", encoding="utf-8")
+    icon.write_bytes(b"icon")
 
     app = make_buildable_app(tmp_path, icon_path=str(icon))
     controller = BuildController(app)
 
     controller.build_exe(None)
+    target_dir = Path(app.output_path_input.text()) / "Builder"
+    target_dir.mkdir()
+    controller._on_build_complete_ui(0, "", "")
+    assert (target_dir / "desktop.ini").exists()
+    assert not list(target_dir.glob(".exe_builder_folder_icon_*.ico"))
+    assert list((target_dir.parent / ".exe_builder_folder_icons").glob(".exe_builder_folder_icon_*.ico"))
+
     app.icon_path = ""
     controller.build_exe(None)
+    target_dir.mkdir()
+    build_icon_contract.apply_output_folder_icon_metadata(str(icon), target_dir)
+    assert (target_dir / "desktop.ini").exists()
+    controller._on_build_complete_ui(0, "", "")
 
     first_cmd, second_cmd = app.captured_cmds
 
@@ -728,17 +783,13 @@ def test_rebuilding_same_output_with_no_icon_passes_explicit_none(tmp_path, monk
     assert build_icon_arg(second_cmd) == "NONE"
     assert "--icon" not in second_cmd
     assert "_exe_builder_tray_icon.ico" not in " ".join(second_cmd)
-    assert tray_icons == [os.path.normpath(str(icon)), ""]
+    assert not (target_dir / "desktop.ini").exists()
+    assert not list(target_dir.glob(".exe_builder_folder_icon_*.ico"))
+    assert not (target_dir.parent / ".exe_builder_folder_icons").exists()
 
 
 def test_mass_datetime_build_uses_explicit_no_icon_for_every_output(tmp_path, monkeypatch):
     patch_build_runtime(monkeypatch)
-    tray_icons = []
-    monkeypatch.setattr(
-        build_controller,
-        "get_tray_icon_pyinstaller_args",
-        lambda icon: tray_icons.append(icon) or [],
-    )
 
     app = make_buildable_app(
         tmp_path,
@@ -754,7 +805,62 @@ def test_mass_datetime_build_uses_explicit_no_icon_for_every_output(tmp_path, mo
     assert len(app.captured_cmds) == 7
     assert all(build_icon_arg(cmd) == "NONE" for cmd in app.captured_cmds)
     assert all("--icon" not in cmd for cmd in app.captured_cmds)
-    assert tray_icons == [""] * 7
+    assert all("_exe_builder_tray_icon.ico" not in " ".join(cmd) for cmd in app.captured_cmds)
+
+
+def test_mass_datetime_build_applies_selected_icon_to_every_output(tmp_path, monkeypatch):
+    patch_build_runtime(monkeypatch)
+    icon = tmp_path / "app.ico"
+    icon.write_bytes(b"batch-icon")
+    app = make_buildable_app(
+        tmp_path,
+        date_time_dropdown=mass_datetime_dropdown(),
+        icon_path=str(icon),
+    )
+    controller = BuildController(app)
+
+    controller.build_exe(None)
+    built_dirs = []
+    for _ in range(7):
+        built_dirs.append(finish_current_build_successfully(controller, app))
+
+    normalized_icon = os.path.normpath(str(icon))
+    assert len(app.captured_cmds) == 7
+    assert all(build_icon_arg(cmd) == normalized_icon for cmd in app.captured_cmds)
+    assert all(f"{normalized_icon}{os.pathsep}_exe_builder_tray_icon.ico" in cmd for cmd in app.captured_cmds)
+    for target_dir in built_dirs:
+        assert_folder_uses_generated_icon(target_dir, b"batch-icon")
+
+
+def test_regional_mass_datetime_builds_apply_selected_icon_to_every_output(tmp_path, monkeypatch):
+    for dropdown_factory in (
+        iso_mass_datetime_dropdown,
+        uk_mass_datetime_dropdown,
+        usa_mass_datetime_dropdown,
+    ):
+        patch_build_runtime(monkeypatch)
+        icon = tmp_path / f"{dropdown_factory.__name__}.ico"
+        icon.write_bytes(dropdown_factory.__name__.encode("utf-8"))
+        case_dir = tmp_path / dropdown_factory.__name__
+        case_dir.mkdir()
+        app = make_buildable_app(
+            case_dir,
+            date_time_dropdown=dropdown_factory(),
+            icon_path=str(icon),
+        )
+        controller = BuildController(app)
+
+        controller.build_exe(None)
+        built_dirs = []
+        for _ in range(2):
+            built_dirs.append(finish_current_build_successfully(controller, app))
+
+        normalized_icon = os.path.normpath(str(icon))
+        assert len(app.captured_cmds) == 2
+        assert all(build_icon_arg(cmd) == normalized_icon for cmd in app.captured_cmds)
+        assert all(f"{normalized_icon}{os.pathsep}_exe_builder_tray_icon.ico" in cmd for cmd in app.captured_cmds)
+        for target_dir in built_dirs:
+            assert_folder_uses_generated_icon(target_dir, dropdown_factory.__name__.encode("utf-8"))
 
 
 def test_mass_datetime_build_waits_for_success_before_next_output(tmp_path, monkeypatch):
@@ -1215,7 +1321,6 @@ def test_build_exe_adds_project_root_to_paths_and_data(tmp_path, monkeypatch):
     monkeypatch.setattr(build_controller, "validate_bundle_inputs", lambda app: (True, ""))
     monkeypatch.setattr(build_controller, "QThread", DummyThread)
     monkeypatch.setattr(build_controller, "BuildWorker", FakeWorker)
-    monkeypatch.setattr(build_controller, "get_tray_icon_pyinstaller_args", lambda _icon: [])
     monkeypatch.setattr(BuildController, "start_eta", lambda self: None)
 
     monkeypatch.setattr(
@@ -1278,7 +1383,6 @@ def test_build_exe_adds_parent_search_path_for_sibling_packages(tmp_path, monkey
     monkeypatch.setattr(build_controller, "validate_bundle_inputs", lambda app: (True, ""))
     monkeypatch.setattr(build_controller, "QThread", DummyThread)
     monkeypatch.setattr(build_controller, "BuildWorker", FakeWorker)
-    monkeypatch.setattr(build_controller, "get_tray_icon_pyinstaller_args", lambda _icon: [])
     monkeypatch.setattr(BuildController, "start_eta", lambda self: None)
     monkeypatch.setattr(
         build_controller.subprocess,
