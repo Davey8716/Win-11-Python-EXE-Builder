@@ -17,7 +17,7 @@ from datetime_build_options import (
 from environment_sync_controller import EnvironmentSyncController
 from path_hover import attach_path_hovers
 from tooltips import attach_tooltips
-from PySide6.QtCore import QPoint, QSize, Qt
+from PySide6.QtCore import QPoint, QSize, Qt, QTimer
 from PySide6.QtWidgets import QWidget,QVBoxLayout,QLabel,QPushButton,QFrame,QApplication,QHBoxLayout,QVBoxLayout,QCheckBox,QLineEdit,QHBoxLayout, QComboBox,QTextEdit,QListView,QScrollArea,QMessageBox,QDialogButtonBox
 from validation_controller import ValidationController
 from activation_controller import ActivationController
@@ -329,9 +329,11 @@ class EXEBuilderApp(QWidget):
         self.env_sync_title_frame.setFrameShadow(QFrame.Raised)
 
         env_sync_title_layout = QHBoxLayout(self.env_sync_title_frame)
-        env_sync_title_layout.setContentsMargins(2,2,2,2)
+        env_sync_title_layout.setContentsMargins(3,3,3,3)
+        env_sync_title_layout.setSpacing(3)
 
         self.env_sync_title = QLabel("Environment Sync")
+        self.env_sync_title.setFixedHeight(30)
         self.env_sync_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
 
         env_sync_title_layout.addStretch()
@@ -427,14 +429,14 @@ class EXEBuilderApp(QWidget):
 
         row2 = QWidget(self)
         row2_layout = QVBoxLayout(row2)
-        row2_layout.setContentsMargins(1,1,1,1)
-        row2_layout.setSpacing(1)
+        row2_layout.setContentsMargins(0,0,0,0)
+        row2_layout.setSpacing(0)
 
-        combined_frame = QFrame()
-        combined_frame.setFrameShape(QFrame.StyledPanel)
-        combined_frame.setFrameShadow(QFrame.Raised)
+        self.interpreter_frame = QFrame()
+        self.interpreter_frame.setFrameShape(QFrame.StyledPanel)
+        self.interpreter_frame.setFrameShadow(QFrame.Raised)
 
-        combined_layout = QVBoxLayout(combined_frame)
+        combined_layout = QVBoxLayout(self.interpreter_frame)
         combined_layout.setContentsMargins(1,1,1,1)
         combined_layout.setSpacing(1)
 
@@ -447,9 +449,11 @@ class EXEBuilderApp(QWidget):
         self.apps_title_frame.setFrameShadow(QFrame.Raised)
 
         apps_title_layout = QHBoxLayout(self.apps_title_frame)
-        apps_title_layout.setContentsMargins(2,2,2,2)
+        apps_title_layout.setContentsMargins(3,3,3,3)
+        apps_title_layout.setSpacing(3)
 
         self.apps_title = QLabel("Interpreter Select")
+        self.apps_title.setFixedHeight(30)
         self.apps_title.setFont(QFont("Rubik UI", 14, QFont.Bold))
 
         apps_title_layout.addStretch()
@@ -541,7 +545,7 @@ class EXEBuilderApp(QWidget):
         combined_layout.addWidget(apps_row)
         combined_layout.addWidget(interpreter_container)
 
-        row2_layout.addWidget(combined_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        row2_layout.addWidget(self.interpreter_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
         self.left_layout.addWidget(row2, alignment=Qt.AlignHCenter | Qt.AlignTop)
  
         # =============================================================
@@ -564,11 +568,11 @@ class EXEBuilderApp(QWidget):
         icons_title_layout.addWidget(self.icons_title)
         icons_title_layout.addStretch()
 
-        icon_frame = QFrame()
-        icon_frame.setFrameShape(QFrame.StyledPanel)
-        icon_frame.setFrameShadow(QFrame.Raised)
+        self.icon_frame = QFrame()
+        self.icon_frame.setFrameShape(QFrame.StyledPanel)
+        self.icon_frame.setFrameShadow(QFrame.Raised)
 
-        icon_frame_layout = QVBoxLayout(icon_frame)
+        icon_frame_layout = QVBoxLayout(self.icon_frame)
         icon_frame_layout.setContentsMargins(1,1,1,1)
         icon_frame_layout.setSpacing(1)
 
@@ -643,7 +647,7 @@ class EXEBuilderApp(QWidget):
         
         icon_frame_layout.addWidget(icon_block)
         self.main_layout.addWidget(self.icons_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
-        self.main_layout.addWidget(icon_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        self.main_layout.addWidget(self.icon_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
 
         # =================================================
         # PYTHON FILE TITLE FRAME
@@ -757,11 +761,11 @@ class EXEBuilderApp(QWidget):
         output_title_layout.addWidget(self.output_title)
         output_title_layout.addStretch()
 
-        output_frame = QFrame()
-        output_frame.setFrameShape(QFrame.StyledPanel)
-        output_frame.setFrameShadow(QFrame.Raised)
+        self.output_frame = QFrame()
+        self.output_frame.setFrameShape(QFrame.StyledPanel)
+        self.output_frame.setFrameShadow(QFrame.Raised)
 
-        output_layout = QVBoxLayout(output_frame)
+        output_layout = QVBoxLayout(self.output_frame)
         output_layout.setContentsMargins(3,3,3,3)
         output_layout.setSpacing(3)
 
@@ -884,7 +888,7 @@ class EXEBuilderApp(QWidget):
 
         output_layout.addWidget(exe_row)
         self.main_layout.addWidget(self.output_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
-        self.main_layout.addWidget(output_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        self.main_layout.addWidget(self.output_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
         
         # =============================================================
         # Build FRAME
@@ -940,18 +944,22 @@ class EXEBuilderApp(QWidget):
         build_layout.addWidget(self.status_label)
         build_layout.addWidget(self.build_btn, alignment=Qt.AlignCenter)
 
+        output_frame_width = max(
+            500,
+            self.output_btn.sizeHint().width() + self.date_time_dropdown.width() + 40,
+        )
+        self.output_frame.setFixedSize(output_frame_width, 170)
+        self.interpreter_frame.setFixedSize(output_frame_width, self.output_frame.height())
+
         for frame in [
             self.env_sync_frame,
-            combined_frame,
+            self.interpreter_frame,
             interpreter_container,
-            icon_frame,
+            self.icon_frame,
             python_frame,
-            output_frame,
+            self.output_frame,
         ]:
             frame.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
-
-            output_frame_width = max(500, self.output_btn.sizeHint().width() + self.date_time_dropdown.width() + 40)
-            output_frame.setFixedSize(output_frame_width,170)
 
         for dropdowns in [
             self.date_time_dropdown,
@@ -966,10 +974,10 @@ class EXEBuilderApp(QWidget):
 
         frames = [
             self.env_sync_frame,
-            combined_frame,
-            icon_frame,
+            self.interpreter_frame,
+            self.icon_frame,
             python_frame,
-            output_frame,
+            self.output_frame,
             build_frame,
         ]
 
@@ -1229,7 +1237,7 @@ class EXEBuilderApp(QWidget):
 
         self.validator.update_ui_state()
         self.validation_controller.update_build_button()
-        self._align_interpreter_title_to_output_select()
+        self._sync_paired_section_geometry()
         self._sync_center_divider_height()
 
     def add_env_sync_status_row(self, version, package_count, status):
@@ -1266,17 +1274,64 @@ class EXEBuilderApp(QWidget):
         self.env_sync_rows_layout.addWidget(row)
         self._sync_center_divider_height()
 
-    def _align_interpreter_title_to_output_select(self):
+    def _sync_paired_section_geometry(self):
         if not all(
             hasattr(self, attr)
             for attr in (
+                "env_sync_title",
+                "icons_title",
+                "apps_title",
+                "output_title",
+                "env_sync_title_frame",
+                "icons_title_frame",
                 "apps_title_frame",
                 "output_title_frame",
+                "env_sync_frame",
+                "icon_frame",
+                "interpreter_frame",
+                "output_frame",
                 "content_row",
                 "env_sync_rows_scroll_area",
             )
         ):
             return
+
+        self.content_row.setMinimumHeight(0)
+        self.content_row.setMaximumHeight(16777215)
+        self.left_content.setMinimumHeight(0)
+        self.left_content.setMaximumHeight(16777215)
+        self.right_content.setMinimumHeight(0)
+        self.right_content.setMaximumHeight(16777215)
+        self.env_sync_frame.setMinimumHeight(0)
+        self.env_sync_frame.setMaximumHeight(16777215)
+
+        for source, target in (
+            (self.icons_title, self.env_sync_title),
+            (self.output_title, self.apps_title),
+        ):
+            title_height = max(
+                source.height(),
+                source.sizeHint().height(),
+                target.height(),
+                target.sizeHint().height(),
+            )
+            source.setFixedHeight(title_height)
+            target.setFixedHeight(title_height)
+
+        for source, target in (
+            (self.icons_title_frame, self.env_sync_title_frame),
+            (self.output_title_frame, self.apps_title_frame),
+        ):
+            frame_height = max(
+                source.height(),
+                source.sizeHint().height(),
+                target.height(),
+                target.sizeHint().height(),
+            )
+            source.setFixedHeight(frame_height)
+            target.setFixedHeight(frame_height)
+
+        self.interpreter_frame.setFixedHeight(self.output_frame.height())
 
         base_height = getattr(
             self,
@@ -1292,10 +1347,19 @@ class EXEBuilderApp(QWidget):
 
         interpreter_top = self.apps_title_frame.mapTo(self.content_row, QPoint(0, 0)).y()
         output_top = self.output_title_frame.mapTo(self.content_row, QPoint(0, 0)).y()
-        alignment_delta = max(0, output_top - interpreter_top)
+        alignment_delta = output_top - interpreter_top
+        next_height = self.env_sync_rows_scroll_area.height() + alignment_delta
+        if alignment_delta > 0 and next_height >= base_height:
+            self.env_sync_rows_scroll_area.setFixedHeight(next_height)
 
-        if alignment_delta:
-            self.env_sync_rows_scroll_area.setFixedHeight(base_height + alignment_delta)
+        self.env_sync_frame.setFixedHeight(self.env_sync_frame.sizeHint().height())
+        self.icon_frame.setFixedHeight(self.icon_frame.sizeHint().height())
+        self.interpreter_frame.setFixedHeight(self.output_frame.height())
+
+        for widget in (self, self.content_row, self.left_content, self.right_content):
+            layout = widget.layout()
+            if layout is not None:
+                layout.activate()
 
     def _sync_center_divider_height(self):
         if not all(
@@ -1369,6 +1433,15 @@ class EXEBuilderApp(QWidget):
         )
         dialog.exec()
         return dialog.clickedButton() == close_button
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self._finalize_paired_section_geometry()
+        QTimer.singleShot(0, self._finalize_paired_section_geometry)
+
+    def _finalize_paired_section_geometry(self):
+        self._sync_paired_section_geometry()
+        self._sync_center_divider_height()
 
     def set_status(self, text):
         self.status_label.setPlainText(text)
