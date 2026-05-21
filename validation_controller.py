@@ -599,6 +599,15 @@ class ValidationController:
             if label:
                 label.setStyleSheet(env_sync_label_style)
 
+        env_sync_warning_label = getattr(app, "env_sync_warning_label", None)
+        if env_sync_warning_label:
+            env_sync_warning_color = (
+                Colors.BUILD_DISABLED_TEXT if building else Colors.WARNING
+            )
+            env_sync_warning_label.setStyleSheet(
+                f"QLabel {{ color: {qcolor_name(env_sync_warning_color)}; }}"
+            )
+
         # -------------------------------
         # ICON BUTTON TEXT (match grey state)
         # -------------------------------

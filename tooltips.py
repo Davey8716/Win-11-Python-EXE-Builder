@@ -249,7 +249,10 @@ def attach_tooltips(app):
     # -----------------------------
 
     env_sync_summary = (
-        "Scans installed Python profiles and syncs every version toward one union package set."
+        "Environment Sync aligns detected Python profiles, but it does not guarantee\n"
+        "package compatibility. If the build interpreter is missing required\n"
+        "dependencies, the EXE build may fail. Some environments still may not\n"
+        "sync if required packages are not compatible with that Python version."
     )
 
     QtTooltip(
@@ -263,8 +266,14 @@ def attach_tooltips(app):
         blocked_hover_widgets=[
             app.env_sync_scan_btn,
             app.env_sync_match_btn,
+            app.env_sync_warning_label,
             app.env_sync_log_input,
         ],
+    )
+
+    QtTooltip(
+        app.env_sync_warning_label,
+        env_sync_summary,
     )
 
     QtTooltip(
@@ -282,7 +291,8 @@ def attach_tooltips(app):
     QtTooltip(
         app.env_sync_match_btn,
         "Installs missing or mismatched packages so detected Python profiles converge\n"
-        "toward the same union dependency state. This is separate from the EXE build chain."
+        "toward the same union dependency state. This does not guarantee package\n"
+        "compatibility; some packages may not install on every Python version."
     )
 
     QtTooltip(

@@ -58,6 +58,7 @@ from styles import (
     MAIN_FRAME_STYLE,
     TITLE_FRAME_STYLE,
     button_base,
+    qcolor_name,
     Colors,
 )
 
@@ -138,7 +139,7 @@ class EXEBuilderApp(QWidget):
         self.last_build_seconds = 45
         self.last_build_counter = 0
         
-        self.setFixedSize(1050, 860)
+        self.setFixedSize(1050, 915)
         self.setWindowTitle(" ")
         self.setContentsMargins(0,0,0,0)
         
@@ -374,6 +375,19 @@ class EXEBuilderApp(QWidget):
         env_sync_action_layout.addWidget(self.env_sync_match_btn)
         env_sync_action_layout.addStretch()
 
+        self.env_sync_warning_label = QLabel(
+            "Warning: builds can fail when the selected Python environment is "
+            "missing dependencies. Scan profiles and sync missing or mismatched "
+            "packages when needed. Some environments still may not sync if required "
+            "packages are not compatible with that Python version or build."
+        )
+        self.env_sync_warning_label.setFixedWidth(485)
+        self.env_sync_warning_label.setWordWrap(True)
+        self.env_sync_warning_label.setFont(QFont("Rubik UI", 10, QFont.Bold))
+        self.env_sync_warning_label.setStyleSheet(
+            f"QLabel {{ color: {qcolor_name(Colors.WARNING)}; }}"
+        )
+
         self.env_sync_status_header = QWidget()
         env_sync_status_header_layout = QHBoxLayout(self.env_sync_status_header)
         env_sync_status_header_layout.setContentsMargins(0,0,0,0)
@@ -419,6 +433,7 @@ class EXEBuilderApp(QWidget):
         self.env_sync_rows_scroll_area.setWidget(self.env_sync_rows_container)
 
         env_sync_layout.addWidget(self.env_sync_action_row)
+        env_sync_layout.addWidget(self.env_sync_warning_label)
         env_sync_layout.addWidget(self.env_sync_status_header)
         env_sync_layout.addWidget(self.env_sync_rows_scroll_area)
         env_sync_layout.addWidget(self.env_sync_log_input)
