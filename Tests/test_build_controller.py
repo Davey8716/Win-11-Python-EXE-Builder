@@ -756,8 +756,8 @@ def test_mass_datetime_build_runs_all_outputs_in_sequence(tmp_path, monkeypatch)
 
     assert controller._mass_datetime_active is False
     assert app.append_datetime is False
-    assert app.datetime_format == ""
-    assert app.date_time_dropdown.currentText() == NO_DATETIME_LABEL
+    assert app.datetime_format == MASS_DATETIME_BUILD_SENTINEL
+    assert app.date_time_dropdown.currentText() == "Build All Date/Time Outputs"
     assert app.saved_state is True
 
 
@@ -1059,7 +1059,7 @@ def test_failed_mass_datetime_build_does_not_present_partial_outputs(tmp_path, m
     assert controller._mass_datetime_output_group == []
 
 
-def test_saved_mass_datetime_sentinel_restores_to_no_datetime_after_build(tmp_path, monkeypatch):
+def test_saved_mass_datetime_sentinel_restores_to_build_all_after_build(tmp_path, monkeypatch):
     patch_build_runtime(monkeypatch)
     app = make_buildable_app(
         tmp_path,
@@ -1075,8 +1075,8 @@ def test_saved_mass_datetime_sentinel_restores_to_no_datetime_after_build(tmp_pa
 
     assert controller._mass_datetime_active is False
     assert app.append_datetime is False
-    assert app.datetime_format == ""
-    assert app.date_time_dropdown.currentText() == NO_DATETIME_LABEL
+    assert app.datetime_format == MASS_DATETIME_BUILD_SENTINEL
+    assert app.date_time_dropdown.currentText() == "Build All Date/Time Outputs"
     assert app.saved_state is True
 
 
@@ -1102,8 +1102,8 @@ def test_iso_mass_datetime_build_runs_iso_outputs_only(tmp_path, monkeypatch):
 
     assert controller._mass_datetime_active is False
     assert app.append_datetime is False
-    assert app.datetime_format == ""
-    assert app.date_time_dropdown.currentText() == NO_DATETIME_LABEL
+    assert app.datetime_format == ISO_MASS_DATETIME_BUILD_SENTINEL
+    assert app.date_time_dropdown.currentText() == "Build All ISO Date/Time Outputs"
     assert app.saved_state is True
 
 
@@ -1143,8 +1143,8 @@ def test_uk_mass_datetime_build_runs_uk_outputs_only(tmp_path, monkeypatch):
 
     assert controller._mass_datetime_active is False
     assert app.append_datetime is False
-    assert app.datetime_format == ""
-    assert app.date_time_dropdown.currentText() == NO_DATETIME_LABEL
+    assert app.datetime_format == UK_MASS_DATETIME_BUILD_SENTINEL
+    assert app.date_time_dropdown.currentText() == "Build All UK Date/Time Outputs"
 
 
 def test_uk_mass_datetime_build_waits_for_success_before_next_output(tmp_path, monkeypatch):
@@ -1183,8 +1183,8 @@ def test_usa_mass_datetime_build_runs_usa_outputs_only(tmp_path, monkeypatch):
 
     assert controller._mass_datetime_active is False
     assert app.append_datetime is False
-    assert app.datetime_format == ""
-    assert app.date_time_dropdown.currentText() == NO_DATETIME_LABEL
+    assert app.datetime_format == USA_MASS_DATETIME_BUILD_SENTINEL
+    assert app.date_time_dropdown.currentText() == "Build All USA Date/Time Outputs"
 
 
 def test_usa_mass_datetime_build_waits_for_success_before_next_output(tmp_path, monkeypatch):
@@ -1221,9 +1221,9 @@ def test_mass_datetime_build_stops_on_failure_and_restores_state(tmp_path, monke
 
     assert build_names(app) == ["Builder"]
     assert controller._mass_datetime_active is False
-    assert app.append_datetime is True
-    assert app.datetime_format == "%Y-%m-%d"
-    assert app.date_time_dropdown.currentText() == "ISO | YYYY-MM-DD"
+    assert app.append_datetime is False
+    assert app.datetime_format == MASS_DATETIME_BUILD_SENTINEL
+    assert app.date_time_dropdown.currentText() == "Build All Date/Time Outputs"
     assert app.saved_state is True
     assert app.status_label.stylesheet == build_controller.status_text_style(
         build_controller.Colors.ERROR,
@@ -1251,9 +1251,9 @@ def test_iso_mass_datetime_build_stops_on_failure_and_restores_state(tmp_path, m
 
     assert build_names(app) == ["Builder_ISO_2026-05-19"]
     assert controller._mass_datetime_active is False
-    assert app.append_datetime is True
-    assert app.datetime_format == "%Y-%m-%d"
-    assert app.date_time_dropdown.currentText() == "ISO | YYYY-MM-DD"
+    assert app.append_datetime is False
+    assert app.datetime_format == ISO_MASS_DATETIME_BUILD_SENTINEL
+    assert app.date_time_dropdown.currentText() == "Build All ISO Date/Time Outputs"
     assert app.saved_state is True
     assert app.status_label.stylesheet == build_controller.status_text_style(
         build_controller.Colors.ERROR,
@@ -1281,9 +1281,9 @@ def test_uk_mass_datetime_build_stops_on_failure_and_restores_state(tmp_path, mo
 
     assert build_names(app) == ["Builder_UK_19-05-2026"]
     assert controller._mass_datetime_active is False
-    assert app.append_datetime is True
-    assert app.datetime_format == "%d-%m-%Y"
-    assert app.date_time_dropdown.currentText() == "UK | DD-MM-YYYY"
+    assert app.append_datetime is False
+    assert app.datetime_format == UK_MASS_DATETIME_BUILD_SENTINEL
+    assert app.date_time_dropdown.currentText() == "Build All UK Date/Time Outputs"
     assert app.saved_state is True
     assert app.status_label.stylesheet == build_controller.status_text_style(
         build_controller.Colors.ERROR,
@@ -1311,9 +1311,9 @@ def test_usa_mass_datetime_build_stops_on_failure_and_restores_state(tmp_path, m
 
     assert build_names(app) == ["Builder_USA_05-19-2026"]
     assert controller._mass_datetime_active is False
-    assert app.append_datetime is True
-    assert app.datetime_format == "%m-%d-%Y"
-    assert app.date_time_dropdown.currentText() == "USA | MM-DD-YYYY"
+    assert app.append_datetime is False
+    assert app.datetime_format == USA_MASS_DATETIME_BUILD_SENTINEL
+    assert app.date_time_dropdown.currentText() == "Build All USA Date/Time Outputs"
     assert app.saved_state is True
     assert app.status_label.stylesheet == build_controller.status_text_style(
         build_controller.Colors.ERROR,
@@ -1352,9 +1352,9 @@ def test_mass_datetime_build_cancel_restores_state(tmp_path, monkeypatch):
 
     assert app.cancelled is True
     assert controller._mass_datetime_active is False
-    assert app.append_datetime is True
-    assert app.datetime_format == "%d-%m-%Y"
-    assert app.date_time_dropdown.currentText() == "UK | DD-MM-YYYY"
+    assert app.append_datetime is False
+    assert app.datetime_format == MASS_DATETIME_BUILD_SENTINEL
+    assert app.date_time_dropdown.currentText() == "Build All Date/Time Outputs"
     assert app.saved_state is True
 
 
@@ -1389,9 +1389,9 @@ def test_iso_mass_datetime_build_cancel_restores_state(tmp_path, monkeypatch):
 
     assert app.cancelled is True
     assert controller._mass_datetime_active is False
-    assert app.append_datetime is True
-    assert app.datetime_format == "%Y-%m-%d_%H-%M"
-    assert app.date_time_dropdown.currentText() == "ISO | YYYY-MM-DD_HH-MM"
+    assert app.append_datetime is False
+    assert app.datetime_format == ISO_MASS_DATETIME_BUILD_SENTINEL
+    assert app.date_time_dropdown.currentText() == "Build All ISO Date/Time Outputs"
     assert app.saved_state is True
 
 
@@ -1426,9 +1426,9 @@ def test_uk_mass_datetime_build_cancel_restores_state(tmp_path, monkeypatch):
 
     assert app.cancelled is True
     assert controller._mass_datetime_active is False
-    assert app.append_datetime is True
-    assert app.datetime_format == "%d-%m-%Y_%H-%M"
-    assert app.date_time_dropdown.currentText() == "UK | DD-MM-YYYY_HH-MM"
+    assert app.append_datetime is False
+    assert app.datetime_format == UK_MASS_DATETIME_BUILD_SENTINEL
+    assert app.date_time_dropdown.currentText() == "Build All UK Date/Time Outputs"
     assert app.saved_state is True
 
 
@@ -1463,9 +1463,9 @@ def test_usa_mass_datetime_build_cancel_restores_state(tmp_path, monkeypatch):
 
     assert app.cancelled is True
     assert controller._mass_datetime_active is False
-    assert app.append_datetime is True
-    assert app.datetime_format == "%m-%d-%Y_%H-%M"
-    assert app.date_time_dropdown.currentText() == "USA | MM-DD-YYYY_HH-MM"
+    assert app.append_datetime is False
+    assert app.datetime_format == USA_MASS_DATETIME_BUILD_SENTINEL
+    assert app.date_time_dropdown.currentText() == "Build All USA Date/Time Outputs"
     assert app.saved_state is True
 
 

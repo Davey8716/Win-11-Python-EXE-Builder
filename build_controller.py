@@ -35,6 +35,13 @@ DATETIME_FORMAT_REGIONS = {
     "%m-%d-%Y_%H-%M": "USA",
 }
 
+MASS_DATETIME_BUILD_SENTINELS = {
+    MASS_DATETIME_BUILD_SENTINEL,
+    ISO_MASS_DATETIME_BUILD_SENTINEL,
+    UK_MASS_DATETIME_BUILD_SENTINEL,
+    USA_MASS_DATETIME_BUILD_SENTINEL,
+}
+
 def _write_debug_log_banner(file, title):
     file.write(f"=== {title} ===\n\n")
 
@@ -114,7 +121,12 @@ class BuildController(QObject):
             return
 
         index = -1
-        if append_datetime and datetime_format and hasattr(dropdown, "findData"):
+        if (
+            datetime_format in MASS_DATETIME_BUILD_SENTINELS
+            and hasattr(dropdown, "findData")
+        ):
+            index = dropdown.findData(datetime_format)
+        elif append_datetime and datetime_format and hasattr(dropdown, "findData"):
             index = dropdown.findData(datetime_format)
         elif not append_datetime:
             index = self._find_no_datetime_index()
@@ -161,20 +173,10 @@ class BuildController(QObject):
 
     def _start_mass_datetime_build(self, sentinel=MASS_DATETIME_BUILD_SENTINEL):
         app = self.app
-        restore_state = getattr(app, "_mass_datetime_restore_state", None) or {
-            "append_datetime": getattr(app, "append_datetime", False),
-            "datetime_format": getattr(app, "datetime_format", None),
+        restore_state = {
+            "append_datetime": False,
+            "datetime_format": sentinel,
         }
-        if restore_state.get("datetime_format") in {
-            MASS_DATETIME_BUILD_SENTINEL,
-            ISO_MASS_DATETIME_BUILD_SENTINEL,
-            UK_MASS_DATETIME_BUILD_SENTINEL,
-            USA_MASS_DATETIME_BUILD_SENTINEL,
-        }:
-            restore_state = {
-                "append_datetime": False,
-                "datetime_format": "",
-            }
         sequence, debug_log_prefix, log_title = self._mass_datetime_build_config(sentinel)
 
         self._mass_datetime_restore_state = restore_state
