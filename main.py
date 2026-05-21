@@ -437,8 +437,8 @@ class EXEBuilderApp(QWidget):
         self.interpreter_frame.setFrameShadow(QFrame.Raised)
 
         combined_layout = QVBoxLayout(self.interpreter_frame)
-        combined_layout.setContentsMargins(1,1,1,1)
-        combined_layout.setSpacing(1)
+        combined_layout.setContentsMargins(3,3,3,3)
+        combined_layout.setSpacing(3)
 
         # =================================================
         # Apps TITLE FRAME
@@ -465,9 +465,11 @@ class EXEBuilderApp(QWidget):
         # =================================================
 
         apps_row = QWidget()
+        apps_row.setFixedHeight(37)
+        apps_row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         apps_layout = QHBoxLayout(apps_row)
         apps_layout.setContentsMargins(1,1,1,1)
-        apps_layout.setSpacing(1)
+        apps_layout.setSpacing(4)
 
         self.open_python_site_btn = QPushButton("Python.org")
         apps_layout.addWidget(self.open_python_site_btn)
@@ -478,14 +480,17 @@ class EXEBuilderApp(QWidget):
         # =================================================
 
         interpreter_container = QWidget()
+        interpreter_container.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         interpreter_layout = QVBoxLayout(interpreter_container)
-        interpreter_layout.setContentsMargins(1,1,1,1)
+        interpreter_layout.setContentsMargins(0,0,0,0)
         interpreter_layout.setSpacing(3)
 
         interpreter_btn_row = QWidget()
+        interpreter_btn_row.setFixedHeight(37)
+        interpreter_btn_row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         interpreter_btn_layout = QHBoxLayout(interpreter_btn_row)
         interpreter_btn_layout.setContentsMargins(1,1,1,1)
-        interpreter_btn_layout.setSpacing(3)
+        interpreter_btn_layout.setSpacing(4)
         self.interpreter_btn = QPushButton("Py Interpreter")
     
         self.select_interpreter = QComboBox()
@@ -526,9 +531,11 @@ class EXEBuilderApp(QWidget):
 
         # --- Path row (input + refresh inline) ---
         interpreter_entry_row = QWidget()
+        interpreter_entry_row.setFixedHeight(37)
+        interpreter_entry_row.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         interpreter_entry_layout = QHBoxLayout(interpreter_entry_row)
-        interpreter_entry_layout.setContentsMargins(3,3,3,3)
-        interpreter_entry_layout.setSpacing(5)
+        interpreter_entry_layout.setContentsMargins(1,1,1,1)
+        interpreter_entry_layout.setSpacing(3)
 
         self.python_entry_input = PathDisplayLineEdit()
         self.python_entry_input.setPlaceholderText("No python entry is selected.")
@@ -544,6 +551,7 @@ class EXEBuilderApp(QWidget):
         self.left_layout.addWidget(self.apps_title_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
         combined_layout.addWidget(apps_row)
         combined_layout.addWidget(interpreter_container)
+        combined_layout.addStretch()
 
         row2_layout.addWidget(self.interpreter_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
         self.left_layout.addWidget(row2, alignment=Qt.AlignHCenter | Qt.AlignTop)
