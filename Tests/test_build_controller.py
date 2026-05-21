@@ -81,6 +81,21 @@ def test_build_debug_log_name_appends_python_version_when_enabled(tmp_path):
     assert "py3.14" in log_name
 
 
+def test_build_debug_log_name_appends_datetime_region_and_timestamp(tmp_path, monkeypatch):
+    monkeypatch.setattr(build_controller, "datetime", FixedDateTime)
+
+    app = make_app(
+        append_datetime=True,
+        datetime_format="%Y-%m-%d",
+    )
+    controller = BuildController(app)
+
+    log_name = controller._build_debug_log_name(str(tmp_path / "project" / "main.py"))
+
+    assert log_name.startswith("EXE_BUILDER_DEBUG_Builder_project_ISO_2026-05-19_")
+    assert log_name.endswith(".log")
+
+
 def test_mass_datetime_debug_log_reuses_single_txt_file(tmp_path, monkeypatch):
     monkeypatch.setattr(build_controller, "datetime", FixedDateTime)
 
@@ -133,6 +148,8 @@ def test_iso_mass_datetime_debug_log_reuses_separate_txt_file(tmp_path, monkeypa
         entry_script=str(script),
         project_root=str(script.parent),
         python_interpreter_path=str(tmp_path / "Python314" / "python.exe"),
+        append_datetime=True,
+        datetime_format="%Y-%m-%d",
     )
     controller = BuildController(app)
     controller._start_mass_datetime_build = lambda *_args, **_kwargs: None
@@ -147,7 +164,7 @@ def test_iso_mass_datetime_debug_log_reuses_separate_txt_file(tmp_path, monkeypa
 
     first_log_path = Path(app.debug_log_path)
     assert first_log_path.parent == tmp_path
-    assert first_log_path.name.startswith("EXE_BUILDER_BUILD_ALL_ISO_DEBUG_Builder_project_")
+    assert first_log_path.name.startswith("EXE_BUILDER_BUILD_ALL_ISO_DEBUG_Builder_project_ISO_2026-05-19_")
     assert first_log_path.suffix == ".txt"
     assert first_log_path.exists()
 
@@ -177,6 +194,8 @@ def test_uk_mass_datetime_debug_log_reuses_separate_txt_file(tmp_path, monkeypat
         entry_script=str(script),
         project_root=str(script.parent),
         python_interpreter_path=str(tmp_path / "Python314" / "python.exe"),
+        append_datetime=True,
+        datetime_format="%d-%m-%Y",
     )
     controller = BuildController(app)
     controller._mass_datetime_active = True
@@ -190,7 +209,7 @@ def test_uk_mass_datetime_debug_log_reuses_separate_txt_file(tmp_path, monkeypat
 
     first_log_path = Path(app.debug_log_path)
     assert first_log_path.parent == tmp_path
-    assert first_log_path.name.startswith("EXE_BUILDER_BUILD_ALL_UK_DEBUG_Builder_project_")
+    assert first_log_path.name.startswith("EXE_BUILDER_BUILD_ALL_UK_DEBUG_Builder_project_UK_19-05-2026_")
     assert first_log_path.suffix == ".txt"
     assert first_log_path.exists()
 
@@ -220,6 +239,8 @@ def test_usa_mass_datetime_debug_log_reuses_separate_txt_file(tmp_path, monkeypa
         entry_script=str(script),
         project_root=str(script.parent),
         python_interpreter_path=str(tmp_path / "Python314" / "python.exe"),
+        append_datetime=True,
+        datetime_format="%m-%d-%Y",
     )
     controller = BuildController(app)
     controller._mass_datetime_active = True
@@ -233,7 +254,7 @@ def test_usa_mass_datetime_debug_log_reuses_separate_txt_file(tmp_path, monkeypa
 
     first_log_path = Path(app.debug_log_path)
     assert first_log_path.parent == tmp_path
-    assert first_log_path.name.startswith("EXE_BUILDER_BUILD_ALL_USA_DEBUG_Builder_project_")
+    assert first_log_path.name.startswith("EXE_BUILDER_BUILD_ALL_USA_DEBUG_Builder_project_USA_05-19-2026_")
     assert first_log_path.suffix == ".txt"
     assert first_log_path.exists()
 
@@ -722,12 +743,12 @@ def test_mass_datetime_build_runs_all_outputs_in_sequence(tmp_path, monkeypatch)
 
     assert build_names(app) == [
         "Builder",
-        "Builder_2026-05-19",
-        "Builder_2026-05-19_12-34",
-        "Builder_19-05-2026",
-        "Builder_19-05-2026_12-34",
-        "Builder_05-19-2026",
-        "Builder_05-19-2026_12-34",
+        "Builder_ISO_2026-05-19",
+        "Builder_ISO_2026-05-19_12-34",
+        "Builder_UK_19-05-2026",
+        "Builder_UK_19-05-2026_12-34",
+        "Builder_USA_05-19-2026",
+        "Builder_USA_05-19-2026_12-34",
     ]
     assert controller._mass_datetime_active is True
 
@@ -910,7 +931,7 @@ def test_mass_datetime_build_waits_for_success_before_next_output(tmp_path, monk
 
     controller._on_build_complete_ui(0, "", "")
 
-    assert build_names(app) == ["Builder", "Builder_2026-05-19"]
+    assert build_names(app) == ["Builder", "Builder_ISO_2026-05-19"]
 
 
 def test_mass_datetime_desktop_build_centers_all_outputs_after_final_wait(tmp_path, monkeypatch):
@@ -1066,14 +1087,14 @@ def test_iso_mass_datetime_build_runs_iso_outputs_only(tmp_path, monkeypatch):
 
     controller.build_exe(None)
 
-    assert build_names(app) == ["Builder_2026-05-19"]
+    assert build_names(app) == ["Builder_ISO_2026-05-19"]
     assert controller._mass_datetime_active is True
 
     controller._on_build_complete_ui(0, "", "")
 
     assert build_names(app) == [
-        "Builder_2026-05-19",
-        "Builder_2026-05-19_12-34",
+        "Builder_ISO_2026-05-19",
+        "Builder_ISO_2026-05-19_12-34",
     ]
     assert controller._mass_datetime_active is True
 
@@ -1093,11 +1114,11 @@ def test_iso_mass_datetime_build_waits_for_success_before_next_output(tmp_path, 
 
     controller.build_exe(None)
 
-    assert build_names(app) == ["Builder_2026-05-19"]
+    assert build_names(app) == ["Builder_ISO_2026-05-19"]
 
     controller._on_build_complete_ui(0, "", "")
 
-    assert build_names(app) == ["Builder_2026-05-19", "Builder_2026-05-19_12-34"]
+    assert build_names(app) == ["Builder_ISO_2026-05-19", "Builder_ISO_2026-05-19_12-34"]
 
 
 def test_uk_mass_datetime_build_runs_uk_outputs_only(tmp_path, monkeypatch):
@@ -1107,14 +1128,14 @@ def test_uk_mass_datetime_build_runs_uk_outputs_only(tmp_path, monkeypatch):
 
     controller.build_exe(None)
 
-    assert build_names(app) == ["Builder_19-05-2026"]
+    assert build_names(app) == ["Builder_UK_19-05-2026"]
     assert controller._mass_datetime_active is True
 
     controller._on_build_complete_ui(0, "", "")
 
     assert build_names(app) == [
-        "Builder_19-05-2026",
-        "Builder_19-05-2026_12-34",
+        "Builder_UK_19-05-2026",
+        "Builder_UK_19-05-2026_12-34",
     ]
     assert controller._mass_datetime_active is True
 
@@ -1133,11 +1154,11 @@ def test_uk_mass_datetime_build_waits_for_success_before_next_output(tmp_path, m
 
     controller.build_exe(None)
 
-    assert build_names(app) == ["Builder_19-05-2026"]
+    assert build_names(app) == ["Builder_UK_19-05-2026"]
 
     controller._on_build_complete_ui(0, "", "")
 
-    assert build_names(app) == ["Builder_19-05-2026", "Builder_19-05-2026_12-34"]
+    assert build_names(app) == ["Builder_UK_19-05-2026", "Builder_UK_19-05-2026_12-34"]
 
 
 def test_usa_mass_datetime_build_runs_usa_outputs_only(tmp_path, monkeypatch):
@@ -1147,14 +1168,14 @@ def test_usa_mass_datetime_build_runs_usa_outputs_only(tmp_path, monkeypatch):
 
     controller.build_exe(None)
 
-    assert build_names(app) == ["Builder_05-19-2026"]
+    assert build_names(app) == ["Builder_USA_05-19-2026"]
     assert controller._mass_datetime_active is True
 
     controller._on_build_complete_ui(0, "", "")
 
     assert build_names(app) == [
-        "Builder_05-19-2026",
-        "Builder_05-19-2026_12-34",
+        "Builder_USA_05-19-2026",
+        "Builder_USA_05-19-2026_12-34",
     ]
     assert controller._mass_datetime_active is True
 
@@ -1173,11 +1194,11 @@ def test_usa_mass_datetime_build_waits_for_success_before_next_output(tmp_path, 
 
     controller.build_exe(None)
 
-    assert build_names(app) == ["Builder_05-19-2026"]
+    assert build_names(app) == ["Builder_USA_05-19-2026"]
 
     controller._on_build_complete_ui(0, "", "")
 
-    assert build_names(app) == ["Builder_05-19-2026", "Builder_05-19-2026_12-34"]
+    assert build_names(app) == ["Builder_USA_05-19-2026", "Builder_USA_05-19-2026_12-34"]
 
 
 def test_mass_datetime_build_stops_on_failure_and_restores_state(tmp_path, monkeypatch):
@@ -1228,7 +1249,7 @@ def test_iso_mass_datetime_build_stops_on_failure_and_restores_state(tmp_path, m
     controller.build_exe(None)
     controller._on_build_complete_ui(1, "", "failed")
 
-    assert build_names(app) == ["Builder_2026-05-19"]
+    assert build_names(app) == ["Builder_ISO_2026-05-19"]
     assert controller._mass_datetime_active is False
     assert app.append_datetime is True
     assert app.datetime_format == "%Y-%m-%d"
@@ -1258,7 +1279,7 @@ def test_uk_mass_datetime_build_stops_on_failure_and_restores_state(tmp_path, mo
     controller.build_exe(None)
     controller._on_build_complete_ui(1, "", "failed")
 
-    assert build_names(app) == ["Builder_19-05-2026"]
+    assert build_names(app) == ["Builder_UK_19-05-2026"]
     assert controller._mass_datetime_active is False
     assert app.append_datetime is True
     assert app.datetime_format == "%d-%m-%Y"
@@ -1288,7 +1309,7 @@ def test_usa_mass_datetime_build_stops_on_failure_and_restores_state(tmp_path, m
     controller.build_exe(None)
     controller._on_build_complete_ui(1, "", "failed")
 
-    assert build_names(app) == ["Builder_05-19-2026"]
+    assert build_names(app) == ["Builder_USA_05-19-2026"]
     assert controller._mass_datetime_active is False
     assert app.append_datetime is True
     assert app.datetime_format == "%m-%d-%Y"

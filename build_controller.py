@@ -18,12 +18,22 @@ from PySide6.QtCore import QThread
 from pathlib import Path
 import shutil
 from build_icon_contract import (
+    apply_output_folder_icon_metadata,
     clear_output_folder_icon_metadata,
     resolve_build_icon_contract,
 )
 from styles import Colors, status_text_style
 
 CREATE_NO_WINDOW = 0x08000000
+
+DATETIME_FORMAT_REGIONS = {
+    "%Y-%m-%d": "ISO",
+    "%Y-%m-%d_%H-%M": "ISO",
+    "%d-%m-%Y": "UK",
+    "%d-%m-%Y_%H-%M": "UK",
+    "%m-%d-%Y": "USA",
+    "%m-%d-%Y_%H-%M": "USA",
+}
 
 def _write_debug_log_banner(file, title):
     file.write(f"=== {title} ===\n\n")
@@ -362,18 +372,45 @@ class BuildController(QObject):
 
         return version
 
-    def _build_debug_log_name(self, script):
+    def _get_datetime_region_identifier(self):
+        if not getattr(self.app, "append_datetime", False):
+            return ""
+
+        return DATETIME_FORMAT_REGIONS.get(getattr(self.app, "datetime_format", ""), "")
+
+    def _get_datetime_timestamp_suffix(self):
+        if not getattr(self.app, "append_datetime", False):
+            return ""
+
+        fmt = getattr(self.app, "datetime_format", "")
+        return datetime.now().strftime(fmt) if fmt else ""
+
+    def _build_name_parts(self, script):
         script = os.path.normpath(script) if script else ""
         script_name = os.path.splitext(os.path.basename(script))[0].lower() if script else ""
         parent_name = os.path.basename(os.path.dirname(script)) if script else ""
 
-        parts = ["EXE_BUILDER_DEBUG"]
+        parts = []
 
         if script:
             parts.append(self.app.exe_name_input.text().strip() or "exe")
 
             if script_name in {"main", "app", "run"} and parent_name:
                 parts.append(parent_name)
+
+        return parts
+
+    def _build_debug_log_name(self, script):
+        parts = ["EXE_BUILDER_DEBUG"]
+        parts.extend(self._build_name_parts(script))
+
+        datetime_region = self._get_datetime_region_identifier()
+        if datetime_region:
+            parts.append(datetime_region)
+
+        datetime_timestamp = self._get_datetime_timestamp_suffix()
+        if datetime_timestamp:
+            parts.append(datetime_timestamp)
 
         if getattr(self.app, "append_py_version", False):
             parts.append(self._get_python_version_suffix())
@@ -383,17 +420,16 @@ class BuildController(QObject):
         return "_".join(parts) + ".log"
 
     def _build_mass_datetime_debug_log_name(self, script):
-        script = os.path.normpath(script) if script else ""
-        script_name = os.path.splitext(os.path.basename(script))[0].lower() if script else ""
-        parent_name = os.path.basename(os.path.dirname(script)) if script else ""
-
         parts = [self._mass_datetime_debug_log_prefix]
+        parts.extend(self._build_name_parts(script))
 
-        if script:
-            parts.append(self.app.exe_name_input.text().strip() or "exe")
+        datetime_region = self._get_datetime_region_identifier()
+        if datetime_region:
+            parts.append(datetime_region)
 
-            if script_name in {"main", "app", "run"} and parent_name:
-                parts.append(parent_name)
+        datetime_timestamp = self._get_datetime_timestamp_suffix()
+        if datetime_timestamp:
+            parts.append(datetime_timestamp)
 
         if getattr(self.app, "append_py_version", False):
             parts.append(self._get_python_version_suffix())
@@ -931,6 +967,19 @@ class BuildController(QObject):
 
         self._maybe_open_output_directory_on_success()
 
+    def _apply_last_output_folder_icon_metadata(self):
+        target_dir = os.path.normpath(getattr(self, "_last_build_target_dir", "") or "")
+        if not target_dir or not os.path.isdir(target_dir):
+            return
+
+        try:
+            apply_output_folder_icon_metadata(
+                getattr(self, "_last_build_icon_path", ""),
+                target_dir,
+            )
+        except Exception:
+            pass
+
     def _run_success_post_build_action(self):
         app = self.app
         if getattr(app, "minimize_after_build_enabled", False):
@@ -1211,11 +1260,7 @@ class BuildController(QObject):
         # ==================================================
 
         app.last_build_counter += 1
-        timestamp = ""
-        if getattr(app, "append_datetime", False):
-            fmt = getattr(app, "datetime_format", "")
-            if fmt:
-                timestamp = datetime.now().strftime(fmt)
+        timestamp = self._get_datetime_timestamp_suffix()
         
 
         script_path = Path(script)
@@ -1230,7 +1275,10 @@ class BuildController(QObject):
                 parts.append(parent_name)
 
         # date/time
-        if getattr(app, "append_datetime", False):
+        datetime_region = self._get_datetime_region_identifier()
+        if datetime_region:
+            parts.append(datetime_region)
+        if timestamp:
             parts.append(timestamp)
 
         # python version
@@ -1348,6 +1396,7 @@ class BuildController(QObject):
 
         if ret == 0:
             app.last_build_seconds = int(time.time() - app.build_start_time)
+            self._apply_last_output_folder_icon_metadata()
             if mass_active:
                 self._remember_mass_datetime_output_group()
 
