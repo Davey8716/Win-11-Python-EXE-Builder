@@ -6,6 +6,7 @@ import ui_handlers
 from datetime_build_options import (
     ISO_MASS_DATETIME_BUILD_SENTINEL,
     MASS_DATETIME_BUILD_SENTINEL,
+    NO_DATETIME_LABEL,
     UK_MASS_DATETIME_BUILD_SENTINEL,
     USA_MASS_DATETIME_BUILD_SENTINEL,
 )
@@ -18,6 +19,31 @@ class DummyDropdown:
 
     def currentData(self):
         return self.data
+
+
+class DummyIndexedDropdown:
+    def __init__(self, options, current_index):
+        self.options = options
+        self.current_index = current_index
+        self.blocked = False
+
+    def currentData(self):
+        return self.options[self.current_index]["data"]
+
+    def currentIndex(self):
+        return self.current_index
+
+    def count(self):
+        return len(self.options)
+
+    def itemText(self, index):
+        return self.options[index]["text"]
+
+    def blockSignals(self, value):
+        self.blocked = value
+
+    def setCurrentIndex(self, index):
+        self.current_index = index
 
 
 class DummyStateController:
@@ -147,6 +173,37 @@ def test_usa_mass_datetime_selection_saves_sentinel_and_keeps_restore_state():
         "append_datetime": True,
         "datetime_format": "%m-%d-%Y_%H-%M",
     }
+    assert state_ctrl.saved is True
+    assert validator.status_updated is True
+    assert validator.ui_updated is True
+
+
+def test_none_datetime_selection_uses_no_datetime_label_index():
+    state_ctrl = DummyStateController()
+    validator = DummyValidator()
+    dropdown = DummyIndexedDropdown(
+        [
+            {"text": "Append Date/Time", "data": None},
+            {"text": "──────────", "data": None},
+            {"text": "ISO", "data": None},
+            {"text": NO_DATETIME_LABEL, "data": None},
+        ],
+        current_index=2,
+    )
+    app = SimpleNamespace(
+        date_time_dropdown=dropdown,
+        append_datetime=True,
+        datetime_format="%Y-%m-%d",
+        state_ctrl=state_ctrl,
+        validator=validator,
+    )
+
+    UIHandlers(app).on_datetime_format_changed(0)
+
+    assert app.mass_datetime_build_selected is False
+    assert app.append_datetime is False
+    assert app.datetime_format == ""
+    assert dropdown.currentIndex() == 3
     assert state_ctrl.saved is True
     assert validator.status_updated is True
     assert validator.ui_updated is True

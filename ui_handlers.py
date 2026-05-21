@@ -3,6 +3,7 @@ import os,subprocess,time,webbrowser
 from datetime_build_options import (
     ISO_MASS_DATETIME_BUILD_SENTINEL,
     MASS_DATETIME_BUILD_SENTINEL,
+    NO_DATETIME_LABEL,
     UK_MASS_DATETIME_BUILD_SENTINEL,
     USA_MASS_DATETIME_BUILD_SENTINEL,
 )
@@ -14,6 +15,16 @@ MASS_DATETIME_BUILD_SENTINELS = {
     UK_MASS_DATETIME_BUILD_SENTINEL,
     USA_MASS_DATETIME_BUILD_SENTINEL,
 }
+
+
+def _find_no_datetime_index(dropdown):
+    if not hasattr(dropdown, "count") or not hasattr(dropdown, "itemText"):
+        return -1
+    for index in range(dropdown.count()):
+        if dropdown.itemText(index) == NO_DATETIME_LABEL:
+            return index
+    return -1
+
 
 class UIHandlers:
     def __init__(self, app):
@@ -375,10 +386,10 @@ class UIHandlers:
             app.append_datetime = False
             app.datetime_format = ""
 
-            # visually set to "None" (index 2 in your setup)
-            if app.date_time_dropdown.currentIndex() != 2:
+            none_index = _find_no_datetime_index(app.date_time_dropdown)
+            if none_index != -1 and app.date_time_dropdown.currentIndex() != none_index:
                 app.date_time_dropdown.blockSignals(True)
-                app.date_time_dropdown.setCurrentIndex(2)
+                app.date_time_dropdown.setCurrentIndex(none_index)
                 app.date_time_dropdown.blockSignals(False)
 
         else:

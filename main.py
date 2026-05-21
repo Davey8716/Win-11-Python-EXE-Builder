@@ -6,16 +6,13 @@ import threading
 from ctypes import wintypes
 from build_controller import BuildController
 from datetime_build_options import (
-    DATETIME_FORMAT_OPTIONS,
     ISO_MASS_DATETIME_BUILD_LABEL,
-    ISO_MASS_DATETIME_BUILD_SENTINEL,
     MASS_DATETIME_BUILD_LABEL,
     MASS_DATETIME_BUILD_SENTINEL,
     NO_DATETIME_LABEL,
+    REGIONAL_DATETIME_DROPDOWN_GROUPS,
     UK_MASS_DATETIME_BUILD_LABEL,
-    UK_MASS_DATETIME_BUILD_SENTINEL,
     USA_MASS_DATETIME_BUILD_LABEL,
-    USA_MASS_DATETIME_BUILD_SENTINEL,
 )
 from environment_sync_controller import EnvironmentSyncController
 from path_hover import attach_path_hovers
@@ -803,26 +800,17 @@ class EXEBuilderApp(QWidget):
         _add("──────────", enabled=False)
         _add(MASS_DATETIME_BUILD_LABEL, MASS_DATETIME_BUILD_SENTINEL)
 
-        # ISO
-        _add("──────────", enabled=False)
-        _add("ISO", enabled=False)
-        _add(ISO_MASS_DATETIME_BUILD_LABEL, ISO_MASS_DATETIME_BUILD_SENTINEL)
-        for label, data in DATETIME_FORMAT_OPTIONS[0:2]:
-            _add(label, data)
-
-        # UK
-        _add("──────────", enabled=False)
-        _add("UK", enabled=False)
-        _add(UK_MASS_DATETIME_BUILD_LABEL, UK_MASS_DATETIME_BUILD_SENTINEL)
-        for label, data in DATETIME_FORMAT_OPTIONS[2:4]:
-            _add(label, data)
-
-        # USA
-        _add("──────────", enabled=False)
-        _add("USA", enabled=False)
-        _add(USA_MASS_DATETIME_BUILD_LABEL, USA_MASS_DATETIME_BUILD_SENTINEL)
-        for label, data in DATETIME_FORMAT_OPTIONS[4:6]:
-            _add(label, data)
+        for (
+            region_label,
+            build_all_label,
+            build_all_data,
+            format_options,
+        ) in REGIONAL_DATETIME_DROPDOWN_GROUPS:
+            _add("──────────", enabled=False)
+            _add(region_label, enabled=False)
+            for label, data in format_options:
+                _add(label, data)
+            _add(build_all_label, build_all_data)
 
         date_dropdown_metrics = QFontMetrics(self.date_time_dropdown.font())
         longest_date_label = max(
