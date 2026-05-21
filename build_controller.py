@@ -18,13 +18,30 @@ from PySide6.QtCore import QThread
 from pathlib import Path
 import shutil
 from build_icon_contract import (
-    apply_output_folder_icon_metadata,
     clear_output_folder_icon_metadata,
     resolve_build_icon_contract,
 )
 from styles import Colors, status_text_style
 
 CREATE_NO_WINDOW = 0x08000000
+
+def _write_debug_log_banner(file, title):
+    file.write(f"=== {title} ===\n\n")
+
+
+def _write_debug_log_section(file, title, lines):
+    file.write(f"--- {title} ---\n")
+    for line in lines:
+        file.write(f"  {line}\n")
+    file.write("\n")
+
+
+def _write_debug_log_stderr(file, stderr):
+    file.write("  STDERR:\n")
+    for line in (stderr or "<empty>").splitlines():
+        file.write(f"    {line}\n")
+    file.write("\n")
+
 
 class BuildController(QObject):
     build_complete_signal = Signal(int, str, str)
@@ -918,14 +935,18 @@ class BuildController(QObject):
 
         try:
             with open(app.debug_log_path, "w", encoding="utf-8") as f:
-                f.write("BUILD STARTED\n")
-
-            with open(app.debug_log_path, "a", encoding="utf-8") as f:
-                f.write(f"ENTRY_SCRIPT={repr(app.entry_script)}\n")
-                f.write(f"PROJECT_ROOT={repr(app.project_root)}\n")
-                f.write(f"OUTPUT_DIR={repr(outdir)}\n")
-                f.write(f"PYTHON_INTERPRETER_PATH={repr(app.python_interpreter_path)}\n")
-                f.write(f"IS_FROZEN={getattr(sys, 'frozen', False)}\n")
+                _write_debug_log_banner(f, "BUILD STARTED")
+                _write_debug_log_section(
+                    f,
+                    "Build Inputs",
+                    [
+                        f"ENTRY_SCRIPT={repr(app.entry_script)}",
+                        f"PROJECT_ROOT={repr(app.project_root)}",
+                        f"OUTPUT_DIR={repr(outdir)}",
+                        f"PYTHON_INTERPRETER_PATH={repr(app.python_interpreter_path)}",
+                        f"IS_FROZEN={getattr(sys, 'frozen', False)}",
+                    ],
+                )
         except OSError:
             pass
 
@@ -949,20 +970,30 @@ class BuildController(QObject):
 
             with open(app.debug_log_path, mode, encoding="utf-8") as f:
                 if is_first_mass_log_write:
-                    f.write(f"BUILD ALL {self._mass_datetime_log_title} OUTPUTS STARTED\n")
+                    _write_debug_log_banner(
+                        f,
+                        f"BUILD ALL {self._mass_datetime_log_title} OUTPUTS STARTED",
+                    )
 
-                f.write("\n")
-                f.write(
-                    f"BUILD ALL {self._mass_datetime_log_title} OUTPUT "
-                    f"{self._mass_datetime_index}/{self._mass_datetime_total}: "
-                    f"{self._mass_datetime_current_label}\n"
+                _write_debug_log_banner(
+                    f,
+                    (
+                        f"OUTPUT {self._mass_datetime_index}/"
+                        f"{self._mass_datetime_total}: "
+                        f"{self._mass_datetime_current_label}"
+                    ),
                 )
-                f.write("BUILD STARTED\n")
-                f.write(f"ENTRY_SCRIPT={repr(app.entry_script)}\n")
-                f.write(f"PROJECT_ROOT={repr(app.project_root)}\n")
-                f.write(f"OUTPUT_DIR={repr(outdir)}\n")
-                f.write(f"PYTHON_INTERPRETER_PATH={repr(app.python_interpreter_path)}\n")
-                f.write(f"IS_FROZEN={getattr(sys, 'frozen', False)}\n")
+                _write_debug_log_section(
+                    f,
+                    "Build Inputs",
+                    [
+                        f"ENTRY_SCRIPT={repr(app.entry_script)}",
+                        f"PROJECT_ROOT={repr(app.project_root)}",
+                        f"OUTPUT_DIR={repr(outdir)}",
+                        f"PYTHON_INTERPRETER_PATH={repr(app.python_interpreter_path)}",
+                        f"IS_FROZEN={getattr(sys, 'frozen', False)}",
+                    ],
+                )
         except OSError:
             pass
 
@@ -1274,7 +1305,6 @@ class BuildController(QObject):
 
         if ret == 0:
             app.last_build_seconds = int(time.time() - app.build_start_time)
-            self._apply_last_build_folder_icon_metadata()
             if mass_active and self._mass_datetime_queue:
                 self.stop_eta()
                 app.building = False
@@ -1315,15 +1345,6 @@ class BuildController(QObject):
         
             
         QTimer.singleShot(5000, self._unlock_status)
-
-    def _apply_last_build_folder_icon_metadata(self):
-        try:
-            apply_output_folder_icon_metadata(
-                getattr(self, "_last_build_icon_path", ""),
-                getattr(self, "_last_build_target_dir", ""),
-            )
-        except Exception:
-            pass
 
     def _unlock_status(self):
         app = self.app
@@ -1367,8 +1388,14 @@ class BuildWorker(QObject):
     def run(self):
         try:
             with open(self.app.debug_log_path, "a", encoding="utf-8") as f:
-                f.write("ENTERED run_build\n")
-                f.write("CMD: " + " ".join(self.cmd) + "\n")
+                _write_debug_log_section(
+                    f,
+                    "PyInstaller Command",
+                    [
+                        "ENTERED run_build",
+                        "CMD: " + " ".join(self.cmd),
+                    ],
+                )
 
             proc = subprocess.Popen(
                 self.cmd,
@@ -1384,8 +1411,9 @@ class BuildWorker(QObject):
             ret = proc.returncode
 
             with open(self.app.debug_log_path, "a", encoding="utf-8") as f:
-                f.write(f"RETURN CODE: {ret}\n")
-                f.write("STDERR:\n" + (err or "<empty>") + "\n")
+                f.write("--- Build Result ---\n")
+                f.write(f"  RETURN CODE: {ret}\n")
+                _write_debug_log_stderr(f, err)
 
         except Exception as e:
             ret = -1

@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 import build_controller
 import build_icon_contract
-from build_controller import BuildController
+from build_controller import BuildController, BuildWorker
 from datetime_build_options import (
     ISO_MASS_DATETIME_BUILD_SENTINEL,
     MASS_DATETIME_BUILD_SENTINEL,
@@ -63,8 +63,10 @@ def test_initialize_debug_log_uses_selected_output_folder(tmp_path):
     assert log_path.exists()
 
     contents = log_path.read_text(encoding="utf-8")
-    assert f"OUTPUT_DIR={repr(str(tmp_path))}" in contents
-    assert f"ENTRY_SCRIPT={repr(str(script))}" in contents
+    assert "=== BUILD STARTED ===" in contents
+    assert "--- Build Inputs ---" in contents
+    assert f"  OUTPUT_DIR={repr(str(tmp_path))}" in contents
+    assert f"  ENTRY_SCRIPT={repr(str(script))}" in contents
 
 
 def test_build_debug_log_name_appends_python_version_when_enabled(tmp_path):
@@ -112,11 +114,12 @@ def test_mass_datetime_debug_log_reuses_single_txt_file(tmp_path, monkeypatch):
     assert Path(app.debug_log_path) == first_log_path
 
     contents = first_log_path.read_text(encoding="utf-8")
-    assert contents.count("BUILD ALL DATE/TIME OUTPUTS STARTED") == 1
-    assert f"BUILD ALL DATE/TIME OUTPUT 1/7: {NO_DATETIME_LABEL}" in contents
-    assert "BUILD ALL DATE/TIME OUTPUT 2/7: ISO | YYYY-MM-DD" in contents
-    assert contents.count(f"ENTRY_SCRIPT={repr(str(script))}") == 2
-    assert f"OUTPUT_DIR={repr(str(tmp_path))}" in contents
+    assert contents.count("=== BUILD ALL DATE/TIME OUTPUTS STARTED ===") == 1
+    assert f"=== OUTPUT 1/7: {NO_DATETIME_LABEL} ===" in contents
+    assert "=== OUTPUT 2/7: ISO | YYYY-MM-DD ===" in contents
+    assert contents.count("--- Build Inputs ---") == 2
+    assert contents.count(f"  ENTRY_SCRIPT={repr(str(script))}") == 2
+    assert f"  OUTPUT_DIR={repr(str(tmp_path))}" in contents
 
 
 def test_iso_mass_datetime_debug_log_reuses_separate_txt_file(tmp_path, monkeypatch):
@@ -155,11 +158,12 @@ def test_iso_mass_datetime_debug_log_reuses_separate_txt_file(tmp_path, monkeypa
     assert Path(app.debug_log_path) == first_log_path
 
     contents = first_log_path.read_text(encoding="utf-8")
-    assert contents.count("BUILD ALL ISO DATE/TIME OUTPUTS STARTED") == 1
-    assert "BUILD ALL ISO DATE/TIME OUTPUT 1/2: ISO | YYYY-MM-DD" in contents
-    assert "BUILD ALL ISO DATE/TIME OUTPUT 2/2: ISO | YYYY-MM-DD_HH-MM" in contents
-    assert contents.count(f"ENTRY_SCRIPT={repr(str(script))}") == 2
-    assert f"OUTPUT_DIR={repr(str(tmp_path))}" in contents
+    assert contents.count("=== BUILD ALL ISO DATE/TIME OUTPUTS STARTED ===") == 1
+    assert "=== OUTPUT 1/2: ISO | YYYY-MM-DD ===" in contents
+    assert "=== OUTPUT 2/2: ISO | YYYY-MM-DD_HH-MM ===" in contents
+    assert contents.count("--- Build Inputs ---") == 2
+    assert contents.count(f"  ENTRY_SCRIPT={repr(str(script))}") == 2
+    assert f"  OUTPUT_DIR={repr(str(tmp_path))}" in contents
 
 
 def test_uk_mass_datetime_debug_log_reuses_separate_txt_file(tmp_path, monkeypatch):
@@ -197,11 +201,12 @@ def test_uk_mass_datetime_debug_log_reuses_separate_txt_file(tmp_path, monkeypat
     assert Path(app.debug_log_path) == first_log_path
 
     contents = first_log_path.read_text(encoding="utf-8")
-    assert contents.count("BUILD ALL UK DATE/TIME OUTPUTS STARTED") == 1
-    assert "BUILD ALL UK DATE/TIME OUTPUT 1/2: UK | DD-MM-YYYY" in contents
-    assert "BUILD ALL UK DATE/TIME OUTPUT 2/2: UK | DD-MM-YYYY_HH-MM" in contents
-    assert contents.count(f"ENTRY_SCRIPT={repr(str(script))}") == 2
-    assert f"OUTPUT_DIR={repr(str(tmp_path))}" in contents
+    assert contents.count("=== BUILD ALL UK DATE/TIME OUTPUTS STARTED ===") == 1
+    assert "=== OUTPUT 1/2: UK | DD-MM-YYYY ===" in contents
+    assert "=== OUTPUT 2/2: UK | DD-MM-YYYY_HH-MM ===" in contents
+    assert contents.count("--- Build Inputs ---") == 2
+    assert contents.count(f"  ENTRY_SCRIPT={repr(str(script))}") == 2
+    assert f"  OUTPUT_DIR={repr(str(tmp_path))}" in contents
 
 
 def test_usa_mass_datetime_debug_log_reuses_separate_txt_file(tmp_path, monkeypatch):
@@ -239,11 +244,42 @@ def test_usa_mass_datetime_debug_log_reuses_separate_txt_file(tmp_path, monkeypa
     assert Path(app.debug_log_path) == first_log_path
 
     contents = first_log_path.read_text(encoding="utf-8")
-    assert contents.count("BUILD ALL USA DATE/TIME OUTPUTS STARTED") == 1
-    assert "BUILD ALL USA DATE/TIME OUTPUT 1/2: USA | MM-DD-YYYY" in contents
-    assert "BUILD ALL USA DATE/TIME OUTPUT 2/2: USA | MM-DD-YYYY_HH-MM" in contents
-    assert contents.count(f"ENTRY_SCRIPT={repr(str(script))}") == 2
-    assert f"OUTPUT_DIR={repr(str(tmp_path))}" in contents
+    assert contents.count("=== BUILD ALL USA DATE/TIME OUTPUTS STARTED ===") == 1
+    assert "=== OUTPUT 1/2: USA | MM-DD-YYYY ===" in contents
+    assert "=== OUTPUT 2/2: USA | MM-DD-YYYY_HH-MM ===" in contents
+    assert contents.count("--- Build Inputs ---") == 2
+    assert contents.count(f"  ENTRY_SCRIPT={repr(str(script))}") == 2
+    assert f"  OUTPUT_DIR={repr(str(tmp_path))}" in contents
+
+
+def test_build_worker_writes_sectioned_command_and_result_log(tmp_path, monkeypatch):
+    log_path = tmp_path / "build.log"
+    log_path.write_text("=== BUILD STARTED ===\n\n", encoding="utf-8")
+    app = make_app(debug_log_path=str(log_path), build_process=None)
+
+    class FakeProcess:
+        returncode = 0
+
+        def communicate(self):
+            return "stdout text", "warning text"
+
+    monkeypatch.setattr(
+        build_controller.subprocess,
+        "Popen",
+        lambda *_args, **_kwargs: FakeProcess(),
+    )
+
+    worker = BuildWorker(app, ["python", "-m", "PyInstaller", "app.py"])
+    worker.run()
+
+    contents = log_path.read_text(encoding="utf-8")
+    assert "--- PyInstaller Command ---" in contents
+    assert "  ENTERED run_build" in contents
+    assert "  CMD: python -m PyInstaller app.py" in contents
+    assert "--- Build Result ---" in contents
+    assert "  RETURN CODE: 0" in contents
+    assert "  STDERR:" in contents
+    assert "    warning text" in contents
 
 
 class DummySignal:
