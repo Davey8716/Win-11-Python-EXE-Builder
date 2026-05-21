@@ -913,6 +913,131 @@ def test_mass_datetime_build_waits_for_success_before_next_output(tmp_path, monk
     assert build_names(app) == ["Builder", "Builder_2026-05-19"]
 
 
+def test_mass_datetime_desktop_build_centers_all_outputs_after_final_wait(tmp_path, monkeypatch):
+    patch_build_runtime(monkeypatch)
+    delayed_callbacks = []
+    centered = []
+
+    def record_single_shot(ms, callback):
+        if ms == 0:
+            callback()
+        elif ms == 1000:
+            delayed_callbacks.append(callback)
+
+    app = make_buildable_app(
+        tmp_path,
+        date_time_dropdown=mass_datetime_dropdown(),
+        open_output_dir_after_build_enabled=True,
+    )
+    desktop_path = os.path.normpath(app.output_path_input.text())
+    controller = BuildController(app)
+    monkeypatch.setattr(controller, "_get_desktop_path", lambda: desktop_path)
+    monkeypatch.setattr(controller, "_center_desktop_build_outputs", lambda: centered.append(list(app.current_build_paths)))
+    monkeypatch.setattr(build_controller.QTimer, "singleShot", record_single_shot)
+
+    controller.build_exe(None)
+    built_dirs = []
+    for _ in range(7):
+        built_dirs.append(finish_current_build_successfully(controller, app))
+
+    assert centered == []
+    assert len(delayed_callbacks) == 1
+    assert all(str(path) in app.current_build_paths for path in built_dirs)
+    assert os.path.join(desktop_path, "build") in app.current_build_paths
+    assert os.path.join(desktop_path, "spec") in app.current_build_paths
+    assert app.debug_log_path in app.current_build_paths
+
+    delayed_callbacks[0]()
+
+    assert centered == [app.current_build_paths]
+
+
+def test_regional_mass_datetime_desktop_builds_center_all_outputs_after_final_wait(tmp_path, monkeypatch):
+    for dropdown_factory in (
+        iso_mass_datetime_dropdown,
+        uk_mass_datetime_dropdown,
+        usa_mass_datetime_dropdown,
+    ):
+        patch_build_runtime(monkeypatch)
+        delayed_callbacks = []
+        centered = []
+
+        def record_single_shot(ms, callback):
+            if ms == 0:
+                callback()
+            elif ms == 1000:
+                delayed_callbacks.append(callback)
+
+        case_dir = tmp_path / f"{dropdown_factory.__name__}_desktop"
+        case_dir.mkdir()
+        app = make_buildable_app(case_dir, date_time_dropdown=dropdown_factory())
+        desktop_path = os.path.normpath(app.output_path_input.text())
+        controller = BuildController(app)
+        monkeypatch.setattr(controller, "_get_desktop_path", lambda: desktop_path)
+        monkeypatch.setattr(controller, "_center_desktop_build_outputs", lambda: centered.append(list(app.current_build_paths)))
+        monkeypatch.setattr(build_controller.QTimer, "singleShot", record_single_shot)
+
+        controller.build_exe(None)
+        built_dirs = []
+        for _ in range(2):
+            built_dirs.append(finish_current_build_successfully(controller, app))
+
+        assert centered == []
+        assert len(delayed_callbacks) == 1
+        assert all(str(path) in app.current_build_paths for path in built_dirs)
+
+        delayed_callbacks[0]()
+
+        assert centered == [app.current_build_paths]
+
+
+def test_mass_datetime_non_desktop_build_opens_output_after_final_success(tmp_path, monkeypatch):
+    patch_build_runtime(monkeypatch)
+    opened_paths = []
+
+    monkeypatch.setattr(build_controller.os, "startfile", lambda path: opened_paths.append(path), raising=False)
+    app = make_buildable_app(
+        tmp_path,
+        date_time_dropdown=iso_mass_datetime_dropdown(),
+        open_output_dir_after_build_enabled=True,
+    )
+    controller = BuildController(app)
+    monkeypatch.setattr(controller, "_focus_existing_output_explorer_window", lambda _path: False)
+
+    controller.build_exe(None)
+    for _ in range(2):
+        finish_current_build_successfully(controller, app)
+
+    assert opened_paths == [os.path.normpath(app.output_path_input.text())]
+
+
+def test_failed_mass_datetime_build_does_not_present_partial_outputs(tmp_path, monkeypatch):
+    patch_build_runtime(monkeypatch)
+    centered = []
+    delayed_callbacks = []
+
+    def record_single_shot(ms, callback):
+        if ms == 0:
+            callback()
+        elif ms == 1000:
+            delayed_callbacks.append(callback)
+
+    app = make_buildable_app(tmp_path, date_time_dropdown=mass_datetime_dropdown())
+    desktop_path = os.path.normpath(app.output_path_input.text())
+    controller = BuildController(app)
+    monkeypatch.setattr(controller, "_get_desktop_path", lambda: desktop_path)
+    monkeypatch.setattr(controller, "_center_desktop_build_outputs", lambda: centered.append(True))
+    monkeypatch.setattr(build_controller.QTimer, "singleShot", record_single_shot)
+
+    controller.build_exe(None)
+    latest_build_target(app).mkdir(parents=True, exist_ok=True)
+    controller._on_build_complete_ui(1, "", "failed")
+
+    assert delayed_callbacks == []
+    assert centered == []
+    assert controller._mass_datetime_output_group == []
+
+
 def test_saved_mass_datetime_sentinel_restores_to_no_datetime_after_build(tmp_path, monkeypatch):
     patch_build_runtime(monkeypatch)
     app = make_buildable_app(

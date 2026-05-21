@@ -58,6 +58,7 @@ class BuildController(QObject):
         self._mass_datetime_debug_log_path = ""
         self._mass_datetime_debug_log_prefix = "EXE_BUILDER_BUILD_ALL_DEBUG"
         self._mass_datetime_log_title = "DATE/TIME"
+        self._mass_datetime_output_group = []
         self._last_build_target_dir = ""
         self._last_build_icon_path = ""
         self.build_thread = None
@@ -174,6 +175,7 @@ class BuildController(QObject):
         self._mass_datetime_debug_log_path = ""
         self._mass_datetime_debug_log_prefix = debug_log_prefix
         self._mass_datetime_log_title = log_title
+        self._reset_mass_datetime_output_group()
         self._mass_datetime_active = True
         app.mass_datetime_build_selected = True
 
@@ -208,7 +210,34 @@ class BuildController(QObject):
         if hasattr(app, "state_ctrl"):
             app.state_ctrl.save_state()
 
-    def _finish_mass_datetime_build(self):
+    def _reset_mass_datetime_output_group(self):
+        self._mass_datetime_output_group = []
+
+    def _remember_mass_datetime_output_group(self):
+        paths = list(getattr(self.app, "current_build_paths", []) or [])
+        debug_log_path = getattr(self.app, "debug_log_path", "")
+        if debug_log_path:
+            paths.append(debug_log_path)
+
+        seen = {
+            self._normalize_explorer_path_for_compare(path)
+            for path in self._mass_datetime_output_group
+        }
+        for path in paths:
+            normalized = os.path.normpath(path) if path else ""
+            if not normalized:
+                continue
+            key = self._normalize_explorer_path_for_compare(normalized)
+            if key in seen:
+                continue
+            self._mass_datetime_output_group.append(normalized)
+            seen.add(key)
+
+    def _apply_mass_datetime_output_group(self):
+        if self._mass_datetime_output_group:
+            self.app.current_build_paths = list(self._mass_datetime_output_group)
+
+    def _finish_mass_datetime_build(self, clear_output_group=True):
         self._mass_datetime_queue = []
         self._mass_datetime_total = 0
         self._mass_datetime_index = 0
@@ -217,6 +246,8 @@ class BuildController(QObject):
         self._mass_datetime_debug_log_path = ""
         self._mass_datetime_debug_log_prefix = "EXE_BUILDER_BUILD_ALL_DEBUG"
         self._mass_datetime_log_title = "DATE/TIME"
+        if clear_output_group:
+            self._reset_mass_datetime_output_group()
         self._restore_mass_datetime_state()
 
     def _cancel_mass_datetime_build(self):
@@ -889,6 +920,17 @@ class BuildController(QObject):
 
         self._maybe_open_output_directory_on_success()
 
+    def _present_successful_mass_datetime_outputs(self):
+        output_dir = os.path.normpath(getattr(self.app, "output_path", "") or "")
+        if not output_dir or not os.path.isdir(output_dir):
+            return
+
+        if self._is_desktop_output_path(output_dir):
+            QTimer.singleShot(1000, self._center_desktop_build_outputs)
+            return
+
+        self._maybe_open_output_directory_on_success()
+
     def _run_success_post_build_action(self):
         app = self.app
         if getattr(app, "minimize_after_build_enabled", False):
@@ -1302,9 +1344,13 @@ class BuildController(QObject):
             return
 
         mass_active = self._mass_datetime_active
+        mass_completed_successfully = False
 
         if ret == 0:
             app.last_build_seconds = int(time.time() - app.build_start_time)
+            if mass_active:
+                self._remember_mass_datetime_output_group()
+
             if mass_active and self._mass_datetime_queue:
                 self.stop_eta()
                 app.building = False
@@ -1313,7 +1359,10 @@ class BuildController(QObject):
                 return
 
             if mass_active:
-                self._finish_mass_datetime_build()
+                self._finish_mass_datetime_build(clear_output_group=False)
+                self._apply_mass_datetime_output_group()
+                self._reset_mass_datetime_output_group()
+                mass_completed_successfully = True
                 msg = "Mass date/time build complete."
             else:
                 msg = "Build complete."
@@ -1339,7 +1388,10 @@ class BuildController(QObject):
         app.validation_controller.update_ui_state()
 
         if ret == 0:
-            self._present_successful_build_outputs()
+            if mass_completed_successfully:
+                self._present_successful_mass_datetime_outputs()
+            else:
+                self._present_successful_build_outputs()
             app.state_ctrl.save_state()
             self._run_success_post_build_action()
         
