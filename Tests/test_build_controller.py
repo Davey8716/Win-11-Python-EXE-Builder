@@ -543,6 +543,17 @@ def build_names(app):
     return names
 
 
+def build_icon_arg(cmd):
+    if "--icon" in cmd:
+        return cmd[cmd.index("--icon") + 1]
+
+    for part in cmd:
+        if part.startswith("--icon="):
+            return part.removeprefix("--icon=")
+
+    return None
+
+
 def test_shutdown_stops_running_build_thread_and_clears_state():
     app = make_app(
         _eta_running=True,
@@ -635,6 +646,115 @@ def test_mass_datetime_build_runs_all_outputs_in_sequence(tmp_path, monkeypatch)
     assert app.datetime_format == ""
     assert app.date_time_dropdown.currentText() == NO_DATETIME_LABEL
     assert app.saved_state is True
+
+
+def test_rebuilding_same_output_uses_new_icon_and_clears_exact_artifacts(tmp_path, monkeypatch):
+    patch_build_runtime(monkeypatch)
+    tray_icons = []
+
+    def fake_tray_args(icon):
+        tray_icons.append(icon)
+        return [
+            "--runtime-hook",
+            "hook.py",
+            "--add-data",
+            f"{icon}{os.pathsep}_exe_builder_tray_icon.ico",
+        ] if icon else []
+
+    monkeypatch.setattr(build_controller, "get_tray_icon_pyinstaller_args", fake_tray_args)
+
+    icon_a = tmp_path / "a.ico"
+    icon_b = tmp_path / "b.ico"
+    icon_a.write_text("", encoding="utf-8")
+    icon_b.write_text("", encoding="utf-8")
+
+    app = make_buildable_app(tmp_path, icon_path=str(icon_a))
+    controller = BuildController(app)
+
+    controller.build_exe(None)
+
+    output_dir = Path(app.output_path_input.text())
+    stale_paths = [
+        output_dir / "Builder",
+        output_dir / "build" / "Builder",
+        output_dir / "spec" / "Builder",
+    ]
+    for stale_path in stale_paths:
+        stale_path.mkdir(parents=True, exist_ok=True)
+        (stale_path / "stale.txt").write_text("old", encoding="utf-8")
+
+    app.icon_path = str(icon_b)
+    controller.build_exe(None)
+
+    first_cmd, second_cmd = app.captured_cmds
+    icon_a_path = os.path.normpath(str(icon_a))
+    icon_b_path = os.path.normpath(str(icon_b))
+
+    assert build_icon_arg(first_cmd) == icon_a_path
+    assert build_icon_arg(second_cmd) == icon_b_path
+    assert icon_a_path not in second_cmd
+    assert tray_icons == [icon_a_path, icon_b_path]
+    assert all(not (stale_path / "stale.txt").exists() for stale_path in stale_paths)
+
+
+def test_rebuilding_same_output_with_no_icon_passes_explicit_none(tmp_path, monkeypatch):
+    patch_build_runtime(monkeypatch)
+    tray_icons = []
+
+    def fake_tray_args(icon):
+        tray_icons.append(icon)
+        return [
+            "--runtime-hook",
+            "hook.py",
+            "--add-data",
+            f"{icon}{os.pathsep}_exe_builder_tray_icon.ico",
+        ] if icon else []
+
+    monkeypatch.setattr(build_controller, "get_tray_icon_pyinstaller_args", fake_tray_args)
+
+    icon = tmp_path / "app.ico"
+    icon.write_text("", encoding="utf-8")
+
+    app = make_buildable_app(tmp_path, icon_path=str(icon))
+    controller = BuildController(app)
+
+    controller.build_exe(None)
+    app.icon_path = ""
+    controller.build_exe(None)
+
+    first_cmd, second_cmd = app.captured_cmds
+
+    assert build_icon_arg(first_cmd) == os.path.normpath(str(icon))
+    assert build_icon_arg(second_cmd) == "NONE"
+    assert "--icon" not in second_cmd
+    assert "_exe_builder_tray_icon.ico" not in " ".join(second_cmd)
+    assert tray_icons == [os.path.normpath(str(icon)), ""]
+
+
+def test_mass_datetime_build_uses_explicit_no_icon_for_every_output(tmp_path, monkeypatch):
+    patch_build_runtime(monkeypatch)
+    tray_icons = []
+    monkeypatch.setattr(
+        build_controller,
+        "get_tray_icon_pyinstaller_args",
+        lambda icon: tray_icons.append(icon) or [],
+    )
+
+    app = make_buildable_app(
+        tmp_path,
+        date_time_dropdown=mass_datetime_dropdown(),
+        icon_path="",
+    )
+    controller = BuildController(app)
+
+    controller.build_exe(None)
+    for _ in range(6):
+        controller._on_build_complete_ui(0, "", "")
+
+    assert len(app.captured_cmds) == 7
+    assert all(build_icon_arg(cmd) == "NONE" for cmd in app.captured_cmds)
+    assert all("--icon" not in cmd for cmd in app.captured_cmds)
+    assert tray_icons == [""] * 7
 
 
 def test_mass_datetime_build_waits_for_success_before_next_output(tmp_path, monkeypatch):

@@ -121,6 +121,18 @@ class DummyValidator:
         self.ui_updated = True
 
 
+class DummyRecentController:
+    def __init__(self):
+        self.icons = []
+        self.populated_icons = False
+
+    def add_recent_icon(self, path):
+        self.icons.append(path)
+
+    def populate_recent_icons_dropdown(self):
+        self.populated_icons = True
+
+
 def make_output_picker_app(**overrides):
     app = SimpleNamespace(
         output_path="",
@@ -139,6 +151,65 @@ def make_output_picker_app(**overrides):
         setattr(app, name, value)
 
     return app
+
+
+def make_icon_picker_app(**overrides):
+    app = SimpleNamespace(
+        icon_path="",
+        icon_user_cleared=True,
+        icon_path_input=DummyPathInput(),
+        icon_btn=None,
+        recent_controller=DummyRecentController(),
+        state_ctrl=DummyStateController(),
+        validator=DummyValidator(),
+    )
+
+    for name, value in overrides.items():
+        setattr(app, name, value)
+
+    return app
+
+
+def test_apply_selected_icon_clears_user_cleared_flag(monkeypatch, tmp_path):
+    icon = tmp_path / "app.ico"
+    icon.write_text("", encoding="utf-8")
+    app = make_icon_picker_app()
+    controller = FilePickerController(app)
+
+    monkeypatch.setattr(file_pickers, "flash_add_highlight", lambda *args, **kwargs: None)
+
+    controller._apply_selected_icon(str(icon))
+
+    expected = os.path.normpath(str(icon))
+    assert app.icon_path == expected
+    assert app.icon_user_cleared is False
+    assert app.icon_path_input.value == expected
+    assert app.recent_controller.icons == [expected]
+    assert app.recent_controller.populated_icons is True
+    assert app.state_ctrl.saved is True
+    assert app.validator.status_updated is True
+    assert app.validator.ui_updated is True
+
+
+def test_select_icon_clears_user_cleared_flag(monkeypatch, tmp_path):
+    icon = tmp_path / "selected.ico"
+    icon.write_text("", encoding="utf-8")
+    app = make_icon_picker_app()
+    controller = FilePickerController(app)
+
+    monkeypatch.setattr(file_pickers, "flash_add_highlight", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        file_pickers.QFileDialog,
+        "getOpenFileName",
+        lambda parent, title, start_dir, file_filter: (str(icon), ""),
+    )
+
+    controller.select_icon()
+
+    expected = os.path.normpath(str(icon))
+    assert app.icon_path == expected
+    assert app.icon_user_cleared is False
+    assert app.icon_path_input.value == expected
 
 
 def test_output_picker_uses_remembered_non_desktop_start_dir(monkeypatch, tmp_path):

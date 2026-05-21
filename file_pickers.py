@@ -274,6 +274,7 @@ class FilePickerController:
         # ------------------------------------
 
         self.app.icon_path = full_path
+        self.app.icon_user_cleared = False
 
         if hasattr(self.app, "icon_path_input"):
             display = os.path.normpath(full_path)
@@ -312,6 +313,7 @@ class FilePickerController:
             path = os.path.normpath(path)
 
             self.app.icon_path = path
+            self.app.icon_user_cleared = False
 
             # ✅ update UI
             if hasattr(self.app, "icon_path_input"):

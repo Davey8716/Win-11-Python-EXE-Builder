@@ -1012,6 +1012,7 @@ class BuildController(QObject):
         script = os.path.normpath(script) if script else ""
         outdir = os.path.normpath(outdir) if outdir else ""
         icon = os.path.normpath(icon) if icon else ""
+        app.icon_path = icon
 
         entry_point = app.entry_script
         project_root = app.project_root
@@ -1161,16 +1162,19 @@ class BuildController(QObject):
 
         build_path = os.path.join(outdir, "build", final_exe_name)
         spec_path = os.path.join(outdir, "spec", final_exe_name)
+        target_dir = os.path.join(outdir, final_exe_name)
+
+        for stale_path in (target_dir, build_path, spec_path):
+            if os.path.isdir(stale_path):
+                shutil.rmtree(stale_path, ignore_errors=True)
+            elif os.path.exists(stale_path):
+                try:
+                    os.remove(stale_path)
+                except OSError:
+                    pass
 
         os.makedirs(build_path, exist_ok=True)
         os.makedirs(spec_path, exist_ok=True)
-
-       
-
-        target_dir = os.path.join(outdir, final_exe_name)
-
-        if os.path.exists(target_dir):
-            shutil.rmtree(target_dir, ignore_errors=True)
 
         cmd = [
             *cmd_prefix,
@@ -1201,8 +1205,6 @@ class BuildController(QObject):
         if project_root:
             cmd.append(f"--add-data={project_root}{os.pathsep}.")
 
-        cmd.append(entry_point)
-
         cmd.extend(get_tray_icon_pyinstaller_args(icon))
 
         data_file = os.path.join(project_root, "screen_mover_state.json")
@@ -1211,6 +1213,10 @@ class BuildController(QObject):
 
         if icon:
             cmd += ["--icon", icon]
+        else:
+            cmd.append("--icon=NONE")
+
+        cmd.append(entry_point)
 
         app.current_build_paths = [
             target_dir,

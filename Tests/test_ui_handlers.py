@@ -46,6 +46,18 @@ class DummyIndexedDropdown:
         self.current_index = index
 
 
+class DummyIconDropdown:
+    def __init__(self):
+        self.current_index = 0
+        self.blocked = False
+
+    def blockSignals(self, value):
+        self.blocked = value
+
+    def setCurrentIndex(self, index):
+        self.current_index = index
+
+
 class DummyStateController:
     def __init__(self, state_file=None):
         self.saved = False
@@ -76,6 +88,9 @@ class DummyPathInput:
 
     def set_display_path(self, value):
         self.value = value
+
+    def clear(self):
+        self.value = ""
 
 
 def test_mass_datetime_selection_saves_sentinel_and_keeps_restore_state():
@@ -204,6 +219,36 @@ def test_none_datetime_selection_uses_no_datetime_label_index():
     assert app.append_datetime is False
     assert app.datetime_format == ""
     assert dropdown.currentIndex() == 3
+    assert state_ctrl.saved is True
+    assert validator.status_updated is True
+    assert validator.ui_updated is True
+
+
+def test_clear_icon_selects_no_icon_and_clears_runtime_state(monkeypatch):
+    state_ctrl = DummyStateController()
+    validator = DummyValidator()
+    icon_dropdown = DummyIconDropdown()
+    icon_input = DummyPathInput()
+    icon_input.set_display_path("old.ico")
+    app = SimpleNamespace(
+        icon_clear_btn=None,
+        icon_path_input=icon_input,
+        select_recent_icons=icon_dropdown,
+        icon_path="old.ico",
+        icon_user_cleared=False,
+        state_ctrl=state_ctrl,
+        validator=validator,
+    )
+
+    monkeypatch.setattr(ui_handlers, "flash_delete_highlight", lambda *args, **kwargs: None)
+
+    UIHandlers(app).clear_icon()
+
+    assert app.icon_path == ""
+    assert app.icon_user_cleared is True
+    assert icon_input.value == ""
+    assert icon_dropdown.current_index == 1
+    assert icon_dropdown.blocked is False
     assert state_ctrl.saved is True
     assert validator.status_updated is True
     assert validator.ui_updated is True
