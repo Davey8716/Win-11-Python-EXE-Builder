@@ -451,6 +451,77 @@ class BuildController(QObject):
 
         return search_paths
 
+    def _get_project_png_data_args(self, project_root):
+        if not project_root or not os.path.isdir(project_root):
+            return []
+
+        normalized_root = os.path.normpath(project_root)
+        scan_roots = [normalized_root]
+        project_container = self._find_nearest_project_container(normalized_root)
+        if (
+            project_container
+            and os.path.normcase(project_container) != os.path.normcase(normalized_root)
+        ):
+            scan_roots.append(project_container)
+
+        data_args = []
+        seen = set()
+        skipped_dirnames = {
+            ".git",
+            ".mypy_cache",
+            ".pytest_cache",
+            ".ruff_cache",
+            "__pycache__",
+            "build",
+            "dist",
+            "env",
+            "spec",
+            "venv",
+            ".venv",
+        }
+
+        for data_root in scan_roots:
+            for folder, dirnames, filenames in os.walk(data_root):
+                dirnames[:] = sorted(
+                    dirname
+                    for dirname in dirnames
+                    if dirname.lower() not in skipped_dirnames
+                )
+                for filename in sorted(filenames):
+                    if not filename.lower().endswith(".png"):
+                        continue
+
+                    source_path = os.path.normpath(os.path.join(folder, filename))
+                    destination = os.path.relpath(folder, data_root)
+                    if destination == ".":
+                        destination = "."
+                    else:
+                        destination = os.path.normpath(destination)
+
+                    key = (os.path.normcase(source_path), os.path.normcase(destination))
+                    if key in seen:
+                        continue
+
+                    seen.add(key)
+                    data_args.append(f"--add-data={source_path}{os.pathsep}{destination}")
+
+        return data_args
+
+    def _find_nearest_project_container(self, project_root):
+        markers = (".git", "pyproject.toml", "setup.py", "setup.cfg", "requirements.txt")
+        current = Path(project_root).resolve()
+
+        for _ in range(3):
+            if any((current / marker).exists() for marker in markers):
+                return os.path.normpath(str(current))
+
+            parent = current.parent
+            if parent == current:
+                break
+            current = parent
+
+        return ""
+
     def _get_desktop_path(self):
         return os.path.normpath(os.path.join(os.path.expanduser("~"), "Desktop"))
 
@@ -1325,6 +1396,8 @@ class BuildController(QObject):
 
         if project_root:
             cmd.append(f"--add-data={project_root}{os.pathsep}.")
+
+        cmd.extend(self._get_project_png_data_args(project_root))
 
         icon_contract = resolve_build_icon_contract(icon)
 

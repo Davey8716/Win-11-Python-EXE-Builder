@@ -1521,11 +1521,68 @@ def test_build_exe_suppresses_empty_clicked_disconnect_warning(tmp_path, monkeyp
     ]
 
 
+def test_get_project_png_data_args_preserves_relative_destinations(tmp_path):
+    project_root = tmp_path / "project with spaces"
+    nested_dir = project_root / "Icons" / "Screen Mover"
+    nested_dir.mkdir(parents=True)
+
+    root_png = project_root / "root icon.PNG"
+    nested_png = nested_dir / "move left.png"
+    ignored_svg = nested_dir / "move left.svg"
+
+    root_png.write_text("root", encoding="utf-8")
+    nested_png.write_text("nested", encoding="utf-8")
+    ignored_svg.write_text("ignored", encoding="utf-8")
+
+    controller = BuildController(make_app())
+
+    args = controller._get_project_png_data_args(str(project_root))
+
+    assert args == [
+        f"--add-data={os.path.normpath(str(root_png))}{os.pathsep}.",
+        (
+            f"--add-data={os.path.normpath(str(nested_png))}{os.pathsep}"
+            f"{os.path.normpath(os.path.join('Icons', 'Screen Mover'))}"
+        ),
+    ]
+    assert str(ignored_svg) not in " ".join(args)
+
+
+def test_get_project_png_data_args_includes_parent_project_sibling_assets(tmp_path):
+    repo_root = tmp_path / "Browser-App-Mover"
+    package_root = repo_root / "browser_app_mover"
+    dock_icon_dir = repo_root / "Icon Pngs" / "Green"
+    app_icon_dir = repo_root / "Icons"
+    package_root.mkdir(parents=True)
+    dock_icon_dir.mkdir(parents=True)
+    app_icon_dir.mkdir()
+    (repo_root / "pyproject.toml").write_text("[project]\nname='browser-app-mover'\n", encoding="utf-8")
+
+    dock_icon = dock_icon_dir / "Left.png"
+    app_icon = app_icon_dir / "Browser App Mover Icon.png"
+    dock_icon.write_text("dock", encoding="utf-8")
+    app_icon.write_text("app", encoding="utf-8")
+
+    controller = BuildController(make_app())
+
+    args = controller._get_project_png_data_args(str(package_root))
+
+    assert (
+        f"--add-data={os.path.normpath(str(dock_icon))}{os.pathsep}"
+        f"{os.path.normpath(os.path.join('Icon Pngs', 'Green'))}"
+    ) in args
+    assert f"--add-data={os.path.normpath(str(app_icon))}{os.pathsep}Icons" in args
+
+
 def test_build_exe_adds_project_root_to_paths_and_data(tmp_path, monkeypatch):
     project_root = tmp_path / "project"
     project_root.mkdir()
     script = project_root / "main.py"
     script.write_text("print('hello')\n", encoding="utf-8")
+    png_dir = project_root / "Icons"
+    png_dir.mkdir()
+    png_file = png_dir / "move.png"
+    png_file.write_text("png", encoding="utf-8")
 
     output_dir = tmp_path / "dist"
     output_dir.mkdir()
@@ -1569,7 +1626,9 @@ def test_build_exe_adds_project_root_to_paths_and_data(tmp_path, monkeypatch):
 
     assert f"--paths={project_root}" in app.captured_cmd
     assert f"--add-data={project_root}{os.pathsep}." in app.captured_cmd
+    assert f"--add-data={png_file}{os.pathsep}Icons" in app.captured_cmd
     assert app.captured_cmd.index(f"--paths={project_root}") < app.captured_cmd.index(str(script))
+    assert app.captured_cmd.index(f"--add-data={png_file}{os.pathsep}Icons") < app.captured_cmd.index(str(script))
     assert f"--workpath={output_dir / 'build' / 'Builder_project'}" in app.captured_cmd
     assert f"--specpath={output_dir / 'spec' / 'Builder_project'}" in app.captured_cmd
     assert app.current_build_paths == [
@@ -1577,6 +1636,66 @@ def test_build_exe_adds_project_root_to_paths_and_data(tmp_path, monkeypatch):
         os.path.join(str(output_dir), "build"),
         os.path.join(str(output_dir), "spec"),
     ]
+
+
+def test_build_exe_adds_parent_project_sibling_png_assets(tmp_path, monkeypatch):
+    repo_root = tmp_path / "Browser-App-Mover"
+    project_root = repo_root / "browser_app_mover"
+    icon_dir = repo_root / "Icon Pngs" / "Green"
+    project_root.mkdir(parents=True)
+    icon_dir.mkdir(parents=True)
+    (repo_root / "pyproject.toml").write_text("[project]\nname='browser-app-mover'\n", encoding="utf-8")
+
+    script = project_root / "main.py"
+    script.write_text("print('hello')\n", encoding="utf-8")
+    icon = icon_dir / "Left.png"
+    icon.write_text("png", encoding="utf-8")
+
+    output_dir = tmp_path / "dist"
+    output_dir.mkdir()
+
+    python_dir = tmp_path / "Python314"
+    python_dir.mkdir()
+    python_exe = python_dir / "python.exe"
+    python_exe.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(build_controller, "validate_bundle_inputs", lambda app: (True, ""))
+    monkeypatch.setattr(build_controller, "QThread", DummyThread)
+    monkeypatch.setattr(build_controller, "BuildWorker", FakeWorker)
+    monkeypatch.setattr(BuildController, "start_eta", lambda self: None)
+    monkeypatch.setattr(
+        build_controller.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(returncode=0, stdout="", stderr=""),
+    )
+
+    app = make_app(
+        script_path_input=DummyInput(str(script)),
+        output_path_input=DummyInput(str(output_dir)),
+        build_process=None,
+        icon_path="",
+        output_path="",
+        build_btn=DummyButton(),
+        status_label=DummyLabel(),
+        validation_controller=DummyValidationController(),
+        last_build_counter=0,
+        append_datetime=False,
+        repaint=lambda: None,
+        set_status=lambda _message: None,
+        python_interpreter_path=str(python_exe),
+        entry_script=str(script),
+        project_root=str(project_root),
+    )
+    controller = BuildController(app)
+
+    controller.build_exe(app)
+
+    expected_arg = (
+        f"--add-data={icon}{os.pathsep}"
+        f"{os.path.normpath(os.path.join('Icon Pngs', 'Green'))}"
+    )
+    assert expected_arg in app.captured_cmd
+    assert app.captured_cmd.index(expected_arg) < app.captured_cmd.index(str(script))
 
 
 def test_build_exe_adds_parent_search_path_for_sibling_packages(tmp_path, monkeypatch):

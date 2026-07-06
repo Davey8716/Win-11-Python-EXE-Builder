@@ -10,17 +10,36 @@ def _resolve_tray_icon_path():
     base_dir = os.path.dirname(getattr(sys, "executable", ""))
     meipass_dir = getattr(sys, "_MEIPASS", "")
 
-    candidates = [
-        os.path.join(meipass_dir, TRAY_ICON_BUNDLE_NAME),
-        os.path.join(base_dir, TRAY_ICON_BUNDLE_NAME),
-        os.path.join(base_dir, "_internal", TRAY_ICON_BUNDLE_NAME),
-    ]
+    candidates = []
+    for root in (
+        meipass_dir,
+        base_dir,
+        os.path.join(base_dir, "_internal"),
+    ):
+        candidates.extend(_expanded_bundle_icon_candidates(root))
 
     for candidate in candidates:
         if candidate and os.path.isfile(candidate):
             return candidate
 
     return ""
+
+
+def _expanded_bundle_icon_candidates(base_dir):
+    if not base_dir:
+        return []
+
+    bundle_path = os.path.join(base_dir, TRAY_ICON_BUNDLE_NAME)
+    candidates = [bundle_path]
+    if os.path.isdir(bundle_path):
+        candidates.extend(
+            sorted(
+                os.path.join(bundle_path, name)
+                for name in os.listdir(bundle_path)
+                if name.lower().endswith(".ico")
+            )
+        )
+    return candidates
 
 
 def _install_pystray_icon_fallback():
